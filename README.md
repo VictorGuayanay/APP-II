@@ -1,2 +1,2 @@
 # APP-II
-Repositorio para el proeycto de grado de Carrocerias ALAVARADO
+Repositorio para el proyecto de grado de Carrocerias ALAVARADO
