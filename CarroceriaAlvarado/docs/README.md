@@ -20,6 +20,23 @@ CarroceriaAlvarado/
 ├── .gitignore       # Archivos a ignorar por Git
 └── requirements.txt
 
+## Diseño e Implementación de la Base de Datos
+- Base de datos creada: `CarroceriaAlvaradoDB`.
+- Motor de base de datos: Microsoft SQL Server 2019.
+- Tablas:
+  - `Usuarios`: Gestión de autenticación (username, password_hash, rol).
+  - `Materiales`: Gestión del inventario (nombre, cantidad, precio_unitario).
+  - `Empleados`: Gestión de recursos humanos (nombre, cedula, rol).
+  - `Clientes`: Registro de clientes (nombre, cedula, telefono).
+  - `OrdenesTrabajo`: Gestión de trabajos (id_cliente, id_empleado, estado).
+  - `DetalleOrdenMateriales`: Relación entre órdenes y materiales (cantidad_usada).
+  - `ComprobantesPago`: Registro de pagos (monto, metodo_pago).
+  - `ReportesOperativos`: Almacena reportes generados (tipo_reporte, datos).
+- Conexión: Configurada en `backend/app.py` usando `pyodbc` con una prueba inicial exitosa.
+- Consultas: Implementadas rutas `/usuarios` y `/materiales` para listar datos.
+- Script SQL disponible en `scripts/database.sql`.
+
+
 ## Configuración del Entorno
 1. Instalar Git: `git --version`
 2. Configurar Git:
@@ -30,8 +47,11 @@ CarroceriaAlvarado/
 5. Instalar dependencias: `pip install flask flask-session pyodbc bcrypt`
 6. Probar Flask: `cd CarroceriaAlvarado/backend && python app.py`
 
-### Estado
+### Estado 
 - Flask probado con éxito: la ruta raíz ('/') devuelve '¡Entorno Flask funcionando!'
 - Eliminada la carpeta backend/utils ya que no se necesita por ahora.
 - Creada la carpeta docs/documentacion para documentación adicional.
 - Añadidos archivos informe.pdf y notas.txt a docs/documentacion.
+- Creada la base de datos con las tablas refinadas y conexión inicial con Flask.
+- Implementadas consultas iniciales para usuarios y materiales.
+- Documentado el backlog del Sprint 1.
