@@ -47,11 +47,24 @@ CarroceriaAlvarado/
 5. Instalar dependencias: `pip install flask flask-session pyodbc bcrypt`
 6. Probar Flask: `cd CarroceriaAlvarado/backend && python app.py`
 
-### Estado 
+## Implementación de la API de Autenticación
+- Tarea: HT-003.
+- Descripción: Implementación de rutas para registrar usuarios y autenticación.
+- Rutas:
+  - `/registro` (POST): Registra un nuevo usuario con contraseña encriptada usando bcrypt.
+  - `/login` (POST): Verifica las credenciales del usuario y devuelve un mensaje de éxito.
+- Tecnologías: Flask, pyodbc, bcrypt.
+- Notas: Campo password_hash cambiado a VARBINARY para almacenar correctamente los hashes.
+- Estado: Implementado y probado con éxito.
+
+
+### Estado
 - Flask probado con éxito: la ruta raíz ('/') devuelve '¡Entorno Flask funcionando!'
 - Eliminada la carpeta backend/utils ya que no se necesita por ahora.
 - Creada la carpeta docs/documentacion para documentación adicional.
 - Añadidos archivos informe.pdf y notas.txt a docs/documentacion.
 - Creada la base de datos con las tablas refinadas y conexión inicial con Flask.
 - Implementadas consultas iniciales para usuarios y materiales.
-- Documentado el backlog del Sprint 1.
+- Implementada la API de autenticación (HT-003) con manejo correcto de hashes.
+- Documentado el backlog del Sprint 1 y avances del Sprint 2.
+
