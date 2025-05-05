@@ -57,6 +57,20 @@ CarroceriaAlvarado/
 - Notas: Campo password_hash cambiado a VARBINARY para almacenar correctamente los hashes.
 - Estado: Implementado y probado con éxito.
 
+## Desarrollo de la Interfaz de Inicio de Sesión
+- Tarea: HT-006.
+- Descripción: Desarrollo de una interfaz de usuario para iniciar sesión que interactúa con la API de autenticación.
+- Archivos:
+  - `frontend/index.html`: Estructura del formulario adaptada de una plantilla moderna.
+  - `frontend/css/`: Estilos (util.css, main.css) y dependencias.
+  - `frontend/js/main.js`: Lógica para enviar solicitudes a la API.
+  - `frontend/vendor/`: Dependencias de la plantilla (Bootstrap, jQuery, etc.).
+  - `frontend/fonts/`: Fuentes utilizadas.
+  - `frontend/images/`: Imágenes de fondo.
+- Tecnologías: HTML, CSS, JavaScript, Bootstrap, jQuery.
+- Notas: Se adaptó una plantilla de login moderna para mejorar el diseño visual y funcionalidad. Se habilitó CORS en el backend para permitir la conexión.
+- Estado: Implementado y probado con éxito.
+
 
 ### Estado
 - Flask probado con éxito: la ruta raíz ('/') devuelve '¡Entorno Flask funcionando!'
@@ -66,5 +80,5 @@ CarroceriaAlvarado/
 - Creada la base de datos con las tablas refinadas y conexión inicial con Flask.
 - Implementadas consultas iniciales para usuarios y materiales.
 - Implementada la API de autenticación (HT-003) con manejo correcto de hashes.
+- Desarrollada la interfaz de inicio de sesión (HT-006) con una plantilla moderna adaptada y CORS habilitado.
 - Documentado el backlog del Sprint 1 y avances del Sprint 2.
-
