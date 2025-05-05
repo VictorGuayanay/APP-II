@@ -1,9 +1,11 @@
 from flask import Flask, request, jsonify
+from flask_cors import CORS  # Nueva importación
 import pyodbc
 import bcrypt
 import json
 
 app = Flask(__name__)
+CORS(app)  # Habilitar CORS para todas las rutas
 
 # Configuración de la conexión a SQL Server
 conn_str = (
