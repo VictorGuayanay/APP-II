@@ -71,6 +71,19 @@ CarroceriaAlvarado/
 - Notas: Se adaptó una plantilla de login moderna para mejorar el diseño visual y funcionalidad. Se habilitó CORS en el backend para permitir la conexión.
 - Estado: Implementado y probado con éxito.
 
+## Implementación de la Funcionalidad de Inicio de Sesión
+- Historia de Usuario: HU-001.
+- Descripción: Integración final del inicio de sesión con redirección a un dashboard.
+- Archivos:
+  - `frontend/dashboard.html`: Página principal después del login.
+  - `frontend/js/main.js`: Actualizado para manejar errores de credenciales y redirigir.
+- Pruebas Realizadas:
+  - Login exitoso: Redirige al dashboard correctamente.
+  - Credenciales incorrectas: Muestra "Credenciales inválidas".
+  - Usuario no encontrado: Muestra "Usuario no encontrado".
+  - Servidor no disponible: Muestra "Error al conectar con el servidor. Asegúrate de que el servidor esté activo."
+- Notas: Ajustado el manejo de errores en el frontend para procesar respuestas de la API correctamente.
+- Estado: Completado.
 
 ### Estado
 - Flask probado con éxito: la ruta raíz ('/') devuelve '¡Entorno Flask funcionando!'
@@ -81,4 +94,6 @@ CarroceriaAlvarado/
 - Implementadas consultas iniciales para usuarios y materiales.
 - Implementada la API de autenticación (HT-003) con manejo correcto de hashes.
 - Desarrollada la interfaz de inicio de sesión (HT-006) con una plantilla moderna adaptada y CORS habilitado.
+- Completada la funcionalidad de inicio de sesión (HU-001) con ajustes en el manejo de errores.
 - Documentado el backlog del Sprint 1 y avances del Sprint 2.
+- Sprint 2 Completado.
