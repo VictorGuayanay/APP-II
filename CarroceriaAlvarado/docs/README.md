@@ -85,6 +85,11 @@ CarroceriaAlvarado/
 - Notas: Ajustado el manejo de errores en el frontend para procesar respuestas de la API correctamente.
 - Estado: Completado.
 
+## Actualización del Product Backlog (Versión 3)
+- Descripción: Se creó una nueva versión del Product Backlog (V3) que incluye las tareas completadas de Sprint 1 y 2, y las tareas planificadas para Sprint 3 y 4.
+- Archivo: `docs/documentacion/Product Backlog_V3.docx`.
+- Estado: Documentado.
+
 ### Estado
 - Flask probado con éxito: la ruta raíz ('/') devuelve '¡Entorno Flask funcionando!'
 - Eliminada la carpeta backend/utils ya que no se necesita por ahora.
@@ -95,5 +100,7 @@ CarroceriaAlvarado/
 - Implementada la API de autenticación (HT-003) con manejo correcto de hashes.
 - Desarrollada la interfaz de inicio de sesión (HT-006) con una plantilla moderna adaptada y CORS habilitado.
 - Completada la funcionalidad de inicio de sesión (HU-001) con ajustes en el manejo de errores.
+- Actualizado el Product Backlog_V2 con Criterios de Aceptación y Pruebas para cerrar Sprint 1 y 2.
+- Subida la versión 3 del Product Backlog con tareas hasta Sprint 4.
 - Documentado el backlog del Sprint 1 y avances del Sprint 2.
-- Sprint 2 Completado.
+- **Sprint 1 y Sprint 2 Completados.**
