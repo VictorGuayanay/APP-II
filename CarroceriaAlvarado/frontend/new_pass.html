@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <title>Restablecer Contraseña - Carrocería Alvarado</title>
+    <title>Nueva Contraseña - Carrocería Alvarado</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!--===============================================================================================-->	
@@ -26,27 +26,55 @@
     <link rel="stylesheet" type="text/css" href="css/util.css">
     <link rel="stylesheet" type="text/css" href="css/main.css">
     <!--===============================================================================================-->
+    <style>
+        .strength-indicator {
+            margin-top: 5px;
+            font-size: 12px;
+            text-align: left;
+        }
+        .strength-low {
+            color: red;
+        }
+        .strength-medium {
+            color: orange;
+        }
+        .strength-good {
+            color: green;
+        }
+        .valid {
+            border: 2px solid green !important;
+        }
+        .invalid {
+            border: 2px solid red !important;
+        }
+    </style>
 </head>
 <body>
     <div class="limiter">
         <div class="container-login100" style="background-image: url('images/bg.jpg');">
             <div class="wrap-login100">
-                <form class="login100-form validate-form" id="resetPassForm">
+                <form class="login100-form validate-form" id="newPassForm">
                     <span class="login100-form-logo">
                         <i class="zmdi zmdi-account"></i>
                     </span>
 
                     <span class="login100-form-title p-b-34 p-t-27">
-                        Restablecer Contraseña
+                        Nueva Contraseña
                     </span>
 
-                    <div class="wrap-input100 validate-input" data-validate="Ingrese un correo válido">
-                        <input class="input100" type="email" id="email" name="email" placeholder="Correo Electrónico">
-                        <span class="focus-input100" data-placeholder=""></span>
+                    <div class="wrap-input100 validate-input" data-validate="Ingrese la nueva contraseña">
+                        <input class="input100" type="password" id="password" name="password" placeholder="Nueva Contraseña">
+                        <span class="focus-input100" data-placeholder=""></span>
+                    </div>
+                    <div id="strengthIndicator" class="strength-indicator">Fortaleza: Baja</div>
+
+                    <div class="wrap-input100 validate-input" data-validate="Repita la contraseña">
+                        <input class="input100" type="password" id="confirm_password" name="confirm_password" placeholder="Repita la Contraseña">
+                        <span class="focus-input100" data-placeholder=""></span>
                     </div>
 
                     <div class="container-login100-form-btn">
-                        <button class="login100-form-btn" type="submit">Enviar</button>
+                        <button class="login100-form-btn" type="submit">Cambiar Contraseña</button>
                     </div>
 
                     <div id="message" class="message"></div>
@@ -80,14 +108,52 @@
     <!--===============================================================================================-->
     <script>
         $(document).ready(function() {
-            $('#resetPassForm').on('submit', function(event) {
-                event.preventDefault(); // Evita el envío del formulario por defecto
+            $('#password').on('input', function() {
+                const password = $(this).val();
+                const strengthIndicator = $('#strengthIndicator');
+                let strength = 'low';
+
+                if (password.length >= 11 && password.length <= 15) {
+                    strength = 'good';
+                    strengthIndicator.text('Fortaleza: Buena');
+                } else if (password.length >= 6 && password.length <= 10) {
+                    strength = 'medium';
+                    strengthIndicator.text('Fortaleza: Media');
+                } else if (password.length >= 0 && password.length <= 5) {
+                    strength = 'low';
+                    strengthIndicator.text('Fortaleza: Baja');
+                }
+
+                strengthIndicator.removeClass('strength-low strength-medium strength-good')
+                    .addClass('strength-' + strength);
+            });
+
+            $('#confirm_password').on('input', function() {
+                const password = $('#password').val();
+                const confirmPassword = $(this).val();
+                const confirmInput = $(this);
+
+                if (password === confirmPassword && confirmPassword !== '') {
+                    confirmInput.removeClass('invalid').addClass('valid');
+                } else {
+                    confirmInput.removeClass('valid').addClass('invalid');
+                }
+            });
+
+            $('#newPassForm').on('submit', function(event) {
+                event.preventDefault();
+                const password = $('#password').val();
+                const confirmPassword = $('#confirm_password').val();
                 const messageDiv = $('#message');
-                messageDiv.text('Instrucciones enviadas a su correo electrónico').css('color', 'green');
-                // Redirige a index.html después de 3 segundos
-                setTimeout(function() {
-                    window.location.href = 'index.html';
-                }, 3000);
+
+                if (password === confirmPassword && password !== '') {
+                    messageDiv.text('Contraseña cambiada exitosamente').css('color', 'green');
+                    setTimeout(function() {
+                        window.location.href = 'index.html';
+                    }, 3000);
+                } else {
+                    messageDiv.text('Las contraseñas no coinciden o están vacías').css('color', 'red');
+                }
             });
         });
     </script>

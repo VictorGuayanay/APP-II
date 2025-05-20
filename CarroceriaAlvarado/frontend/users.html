@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <title>Dashboard - Carrocería Alvarado</title>
+    <link rel="stylesheet" type="text/css" href="vendor/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="css/main.css">
+</head>
+<body>
+    <div class="limiter">
+        <div class="container-login100" style="background-image: url('images/bg-01.jpg');">
+            <div class="wrap-login100">
+                <div class="text-center">
+                    <h2>Bienvenido Usuario a Carrocería Alvarado</h2>
+                    <p>Este es tu panel de usuario.</p>
+                    <a href="index.html" class="txt1">Cerrar Sesión</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="vendor/jquery/jquery-3.2.1.min.js"></script>
+    <script src="js/main.js"></script> 
+    <script>
+        $(document).ready(function() {
+            const token = localStorage.getItem('token');
+            const userRol = localStorage.getItem('userRol'); // Opcional usar el rol aquí si quieres lógica específica
+
+            if (!token) {
+                // Si no hay token, redirigir a login
+                window.location.href = 'index.html';
+                return; // Detener ejecución adicional
+            }
+
+            // Si el usuario es admin y llega aquí, podrías redirigirlo a admin.html
+            // if (userRol === 'Administrador') {
+            //     window.location.href = 'admin.html';
+            //     return;
+            // }
+
+            console.log("Acceso concedido a users.html.");
+            // Cargar contenido específico para usuarios no administradores
+
+            // Ejemplo: Añadir botón de logout
+            $('#logoutButtonUser').on('click', function() { // Asegúrate que este botón exista en users.html
+                localStorage.removeItem('token');
+                localStorage.removeItem('userRol');
+                window.location.href = 'index.html';
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <title>Registro - Carrocería Alvarado</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!--===============================================================================================-->	
+    <link rel="icon" type="image/png" href="images/icons/favicon.ico"/>
+    <!--===============================================================================================-->
+    <link rel="stylesheet" type="text/css" href="vendor/bootstrap/css/bootstrap.min.css">
+    <!--===============================================================================================-->
+    <link rel="stylesheet" type="text/css" href="fonts/font-awesome-4.7.0/css/font-awesome.min.css">
+    <!--===============================================================================================-->
+    <link rel="stylesheet" type="text/css" href="fonts/iconic/css/material-design-iconic-font.min.css">
+    <!--===============================================================================================-->
+    <link rel="stylesheet" type="text/css" href="vendor/animate/animate.css">
+    <!--===============================================================================================-->	
+    <link rel="stylesheet" type="text/css" href="vendor/css-hamburgers/hamburgers.min.css">
+    <!--===============================================================================================-->
+    <link rel="stylesheet" type="text/css" href="vendor/animsition/css/animsition.min.js">
+    <!--===============================================================================================-->
+    <link rel="stylesheet" type="text/css" href="vendor/select2/select2.min.css">
+    <!--===============================================================================================-->	
+    <link rel="stylesheet" type="text/css" href="vendor/daterangepicker/daterangepicker.css">
+    <!--===============================================================================================-->
+    <link rel="stylesheet" type="text/css" href="css/util.css">
+    <link rel="stylesheet" type="text/css" href="css/main.css">
+    <!--===============================================================================================-->
+    <style>
+        .strength-indicator {
+            width: 100%;
+            height: 5px;
+            margin-top: 5px;
+            background: #ddd;
+            transition: all 0.3s ease;
+        }
+        .strength-low { background: red; }
+        .strength-medium { background: yellow; }
+        .strength-good { background: green; }
+        .confirm-password {
+            border: 2px solid #ccc;
+            transition: border-color 0.3s ease;
+        }
+        .confirm-password.valid { border-color: green; }
+        .confirm-password.invalid { border-color: red; }
+        .select2-container .select2-selection--single {
+            height: 50px !important;
+        }
+        .select2-container .select2-selection__rendered {
+            line-height: 50px !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="limiter">
+        <div class="container-login100" style="background-image: url('images/bg.jpg');">
+            <div class="wrap-login100">
+                <form class="login100-form validate-form" id="registerForm">
+                    <span class="login100-form-logo">
+                        <i class="zmdi zmdi-account"></i>
+                    </span>
+
+                    <span class="login100-form-title p-b-34 p-t-27">
+                        Registro
+                    </span>
+
+                    <div class="wrap-input100 validate-input" data-validate="Ingrese el usuario">
+                        <input class="input100" type="text" id="username" name="username" placeholder="Usuario">
+                        <span class="focus-input100" data-placeholder=""></span>
+                    </div>
+
+                    <div class="wrap-input100 validate-input" data-validate="Ingrese el correo">
+                        <input class="input100" type="email" id="email" name="email" placeholder="Correo">
+                        <span class="focus-input100" data-placeholder=""></span>
+                    </div>
+
+                    <div class="wrap-input100 validate-input" data-validate="Ingrese la contraseña">
+                        <input class="input100" type="password" id="password" name="password" placeholder="Contraseña" maxlength="15">
+                        <span class="focus-input100" data-placeholder=""></span>
+                        <div class="strength-indicator" id="strengthIndicator"></div>
+                    </div>
+
+                    <div class="wrap-input100 validate-input" data-validate="Confirme la contraseña">
+                        <input class="input100 confirm-password" type="password" id="confirm_password" name="confirm_password" placeholder="Confirmar Contraseña" maxlength="15">
+                        <span class="focus-input100" data-placeholder=""></span>
+                    </div>
+
+                    <div class="wrap-input100 validate-input" data-validate="Seleccione un rol">
+                        <select class="input100" id="rol" name="rol">
+                            <option value="">Elija una opción</option>
+                            <option value="Empleado">Empleado</option>
+                            <option value="Administrador">Administrador</option>
+                        </select>
+                        <!--<span class="focus-input100" data-placeholder=""></span>-->
+                    </div>
+
+                    <div class="container-login100-form-btn">
+                        <button class="login100-form-btn" type="submit">Registra</button>
+                    </div>
+
+                    <div id="message" class="message"></div>
+
+                    <div class="text-center p-t-20">
+                        <a href="index.html" class="txt2">¿Ya tienes cuenta? Inicia Sesión</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="dropDownSelect1"></div>
+    
+    <!--===============================================================================================-->
+    <script src="vendor/jquery/jquery-3.2.1.min.js"></script>
+    <!--===============================================================================================-->
+    <script src="vendor/animsition/js/animsition.min.js"></script>
+    <!--===============================================================================================-->
+    <script src="vendor/bootstrap/js/popper.js"></script>
+    <script src="vendor/bootstrap/js/bootstrap.min.js"></script>
+    <!--===============================================================================================-->
+    <script src="vendor/select2/select2.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            $('#rol').select2({
+                minimumResultsForSearch: Infinity,
+                placeholder: "Elija una opción",
+                allowClear: true
+            });
+
+            $('#password').on('input', function() {
+                const password = $(this).val();
+                const strengthIndicator = $('#strengthIndicator');
+                let strength = 'low';
+
+                if (password.length >= 11 && password.length <= 15) {
+                    strength = 'good';
+                } else if (password.length >= 6 && password.length <= 10) {
+                    strength = 'medium';
+                } else if (password.length >= 0 && password.length <= 5) {
+                    strength = 'low';
+                }
+
+                strengthIndicator.removeClass('strength-low strength-medium strength-good')
+                    .addClass('strength-' + strength);
+            });
+
+            $('#confirm_password').on('input', function() {
+                const password = $('#password').val();
+                const confirmPassword = $(this).val();
+                const confirmInput = $(this);
+
+                if (password === confirmPassword && confirmPassword !== '') {
+                    confirmInput.removeClass('invalid').addClass('valid');
+                } else {
+                    confirmInput.removeClass('valid').addClass('invalid');
+                }
+            });
+
+            $('#registerForm').on('submit', function(event) {
+                event.preventDefault();
+
+                const username = $('#username').val().trim();
+                const email = $('#email').val().trim();
+                const password = $('#password').val().trim();
+                const confirmPassword = $('#confirm_password').val().trim();
+                const rol = $('#rol').val();
+                const messageDiv = $('#message');
+
+                console.log('Datos enviados:', { username, email, password, rol });  // Depuración
+
+                if (!username || !email || !password || !confirmPassword) {
+                    messageDiv.text('Por favor, completa todos los campos.').addClass('error');
+                    return;
+                }
+
+                if (password !== confirmPassword) {
+                    messageDiv.text('Las contraseñas no coinciden.').addClass('error');
+                    return;
+                }
+
+                if (password.length < 3) {
+                    messageDiv.text('La contraseña debe tener al menos 3 caracteres.').addClass('error');
+                    return;
+                }
+
+                if (!/@/.test(email) || !/\./.test(email)) {
+                    messageDiv.text('Correo electrónico inválido.').addClass('error');
+                    return;
+                }
+
+                if (!rol) {
+                    messageDiv.text('Por favor, seleccione un rol.').addClass('error');
+                    return;
+                }
+
+                $.ajax({
+                    url: 'http://127.0.0.1:5000/registro',
+                    method: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ username, email, password, rol }),
+                    success: function(response) {
+                        console.log('Registro exitoso:', response);  // Depuración
+                        messageDiv.text('Registro exitoso. Serás redirigido al inicio en 2 segundos...').removeClass('error').addClass('success');
+                        setTimeout(function() {
+                            window.location.href = 'index.html';
+                        }, 2000);
+                    },
+                    error: function(xhr, status, error) {
+                        console.log('Error en registro:', xhr, status, error);  // Depuración
+                        const errorMsg = xhr.responseJSON?.error || 'Error al registrar.';
+                        messageDiv.text(errorMsg).addClass('error');
+                    }
+                });
+            });
+        });
+    </script>
+    <!--===============================================================================================-->
+    <script src="vendor/daterangepicker/moment.min.js"></script>
+    <script src="vendor/daterangepicker/daterangepicker.js"></script>
+    <!--===============================================================================================-->
+    <script src="vendor/countdowntime/countdowntime.js"></script>
+</body>
+</html>
