@@ -40,6 +40,10 @@
 body, html {
 	height: 100%;
 	font-family: Poppins-Regular, sans-serif;
+  display: flex;
+  min-height: 100vh;
+  flex-direction: column;
+  background-color: #f1f1f1; /
 }
 
 /*---------------------------------------------*/
@@ -196,10 +200,10 @@ iframe {
   padding: 55px 55px 37px 55px;
 
   background: #2E4057; /* fallback */
-  background: -webkit-linear-gradient(top, #749dbc, #979893);
-  background: -o-linear-gradient(top, #749dbc, #979893);
-  background: -moz-linear-gradient(top, #749dbc, #979893);
-  background: linear-gradient(to bottom, #749dbc, #979893);
+  background: -webkit-linear-gradient(top, #749dbc, #2e2e2d);
+  background: -o-linear-gradient(top, #749dbc, #2e2e2d);
+  background: -moz-linear-gradient(top, #749dbc, #2e2e2d);
+  background: linear-gradient(to bottom, #749dbc, #2e2e2d);
 }
 
 
@@ -426,10 +430,10 @@ iframe {
   border-radius: 25px;
 
   background: #2E4057; /* fallback */
-  background: -webkit-linear-gradient(top, #e49e49, #6b96bf);
-  background: -o-linear-gradient(top, #e49e49, #6b96bf);
-  background: -moz-linear-gradient(top, #e49e49, #6b96bf);
-  background: linear-gradient(to bottom, #e49e49, #6b96bf);
+  background: -webkit-linear-gradient(top, #749dbc, #2e2e2d);
+  background: -o-linear-gradient(top, #749dbc, #2e2e2d);
+  background: -moz-linear-gradient(top, #749dbc, #2e2e2d);
+  background: linear-gradient(to bottom, #749dbc, #2e2e2d);
   position: relative;
   z-index: 1;
 
@@ -555,3 +559,90 @@ iframe {
   color: #27ae60;
 }
 
+.admin-wrapper {
+  display: flex;
+  width: 100%;
+  align-items: stretch;
+  flex-grow: 1;
+}
+
+#sidebar {
+  min-width: 250px;
+  max-width: 250px;
+  background: #23282d; /* Color de sidebar WP */
+  color: #fff;
+  transition: all 0.3s;
+}
+
+#sidebar.active {
+  margin-left: -250px;
+}
+
+#sidebar .sidebar-header {
+  padding: 20px;
+  background: #191e23; /* Un poco más oscuro para el header del sidebar */
+  text-align: center;
+  font-size: 1.5em;
+}
+
+#sidebar ul.components {
+  padding: 20px 0;
+  border-bottom: 1px solid #47748b;
+}
+
+#sidebar ul p {
+  color: #fff;
+  padding: 10px;
+}
+
+#sidebar ul li a {
+  padding: 10px 20px;
+  font-size: 1.1em;
+  display: block;
+  color: #adb5bd; /* Color de enlaces WP */
+  text-decoration: none;
+}
+
+#sidebar ul li a:hover {
+  color: #fff;
+  background: #343a40; /* Hover en enlaces */
+}
+
+#sidebar ul li.active > a, a[aria-expanded="true"] {
+  color: #fff;
+  background: #0073aa; /* Color de activo/seleccionado WP */
+}
+
+#content {
+  width: 100%;
+  padding: 20px;
+  min-height: 100vh;
+  transition: all 0.3s;
+  background-color: #f1f1f1;
+}
+
+.top-navbar {
+  background-color: #fff;
+  border-bottom: 1px solid #ddd;
+  padding: 0.75rem 1.25rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.top-navbar .navbar-brand {
+  color: #333;
+  font-weight: bold;
+}
+.top-navbar .user-info a {
+  color: #0073aa;
+  text-decoration: none;
+}
+.card-header-title {
+  font-size: 1.5rem;
+  font-weight: 400;
+  margin-bottom: 1rem;
+  color: #23282d;
+}
+.table-actions button {
+  margin-right: 5px;
+}
