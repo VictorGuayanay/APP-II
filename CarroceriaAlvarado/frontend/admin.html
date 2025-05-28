@@ -42,7 +42,8 @@
             </li>
             <li><a href="#"><i class="fa fa-briefcase"></i> Órdenes de Trabajo</a></li>
             <li><a href="#"><i class="fa fa-bar-chart"></i> Reportes</a></li>
-            <li><a href="#"><i class="fa fa-cog"></i> Configuración</a></li>
+            <li><a href="#" data-bs-toggle="modal" data-bs-target="#settingsModal" ><i class="fa fa-cog"></i> Configuración</a>
+            </li>
         </ul>
     </nav>
 
@@ -167,6 +168,37 @@
                     </div>
                 </form>
             </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="settingsModal" tabindex="-1" aria-labelledby="settingsModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="settingsModalLabel">Configuraciones Generales</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="settingsForm">
+                    <div class="mb-3">
+                        <label for="settingResetTokenExpiry" class="form-label">Duración del Token de Reseteo de Contraseña (minutos)</label>
+                        <input type="number" class="form-control" id="settingResetTokenExpiry" min="1" required>
+                        <div class="form-text">Tiempo que el enlace de reseteo de contraseña será válido.</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="settingMaxLoginAttempts" class="form-label">Máximos Intentos de Login Fallidos</label>
+                        <input type="number" class="form-control" id="settingMaxLoginAttempts" min="1" required>
+                        <div class="form-text">Número de intentos antes de bloquear la cuenta o tomar otra acción.</div>
+                    </div>
+                    
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Guardar Configuraciones</button>
+                    </div>
+                </form>
+                <div id="settingsMessage" class="mt-3"></div> </div>
         </div>
     </div>
 </div>
@@ -453,6 +485,85 @@ $(document).ready(function () {
             }
         });
     });
+
+    // --- Lógica para el Modal de Configuraciones ---
+
+    // Cuando el modal de configuraciones se va a mostrar, cargar los valores actuales
+    $('#settingsModal').on('show.bs.modal', function () {
+        console.log("Abriendo modal de configuraciones. Cargando valores actuales...");
+        const token = localStorage.getItem('token');
+        if (!token) {
+            // Esto no debería pasar si la protección de página funciona, pero es un chequeo.
+            alert("Error de autenticación. Por favor, inicie sesión de nuevo.");
+            // Cerrar el modal si se intenta abrir sin token (aunque el link ni debería funcionar)
+            var settingsModalInstance = bootstrap.Modal.getInstance(document.getElementById('settingsModal'));
+            if (settingsModalInstance) { settingsModalInstance.hide(); }
+            window.location.href = 'index.html';
+            return;
+        }
+
+        $('#settingsMessage').text('').removeClass('alert alert-success alert-danger'); // Limpiar mensajes
+
+        $.ajax({
+            url: 'http://127.0.0.1:5000/configuraciones', // Endpoint GET para obtener configuraciones
+            method: 'GET',
+            headers: { 'Authorization': 'Bearer ' + token },
+            success: function(config) {
+                console.log("Configuraciones actuales recibidas:", config);
+                $('#settingResetTokenExpiry').val(config.reset_token_expiry_minutes);
+                $('#settingMaxLoginAttempts').val(config.max_failed_login_attempts);
+            },
+            error: function(xhr) {
+                console.error("Error al cargar configuraciones:", xhr.responseText);
+                $('#settingsMessage').text(xhr.responseJSON?.error || 'Error al cargar configuraciones.').addClass('alert alert-danger');
+            }
+        });
+    });
+
+    // Manejador para guardar las configuraciones
+    $('#settingsForm').on('submit', function(event) {
+        event.preventDefault();
+        const token = localStorage.getItem('token');
+        if (!token) { /* ... manejo de token faltante ... */ return; }
+
+        const newSettings = {
+            reset_token_expiry_minutes: parseInt($('#settingResetTokenExpiry').val(), 10),
+            max_failed_login_attempts: parseInt($('#settingMaxLoginAttempts').val(), 10)
+        };
+
+        console.log("Guardando nuevas configuraciones:", newSettings);
+        $('#settingsMessage').text('').removeClass('alert alert-success alert-danger');
+
+        if (isNaN(newSettings.reset_token_expiry_minutes) || newSettings.reset_token_expiry_minutes <= 0 ||
+            isNaN(newSettings.max_failed_login_attempts) || newSettings.max_failed_login_attempts <= 0) {
+            $('#settingsMessage').text('Por favor, ingrese valores numéricos válidos y positivos.').addClass('alert alert-danger');
+            return;
+        }
+
+        $.ajax({
+            url: 'http://127.0.0.1:5000/configuraciones', // Endpoint PUT para actualizar configuraciones
+            method: 'PUT',
+            headers: {
+                'Authorization': 'Bearer ' + token,
+                'Content-Type': 'application/json'
+            },
+            data: JSON.stringify(newSettings),
+            success: function(response) {
+                console.log("Respuesta de guardar configuraciones:", response);
+                $('#settingsMessage').text(response.message || "Configuraciones guardadas exitosamente.").addClass('alert alert-success');
+                // Opcional: cerrar el modal después de un tiempo o dejarlo abierto
+                // setTimeout(function() {
+                //     var settingsModalInstance = bootstrap.Modal.getInstance(document.getElementById('settingsModal'));
+                //     if (settingsModalInstance) { settingsModalInstance.hide(); }
+                // }, 2000);
+            },
+            error: function(xhr) {
+                console.error("Error al guardar configuraciones:", xhr.responseText);
+                $('#settingsMessage').text(xhr.responseJSON?.error || 'Error al guardar configuraciones.').addClass('alert alert-danger');
+            }
+        });
+    });
+
 });
 </script>
 </body>

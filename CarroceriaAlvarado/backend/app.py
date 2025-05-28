@@ -15,6 +15,15 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = "123456789" # ¡CAMBIA ESTO POR UNA CLAVE MÁS SEGURA Y COMPLEJA EN PRODUCCIÓN!
 print(f"APP INIT: app.config['SECRET_KEY'] establecida como: '{app.config.get('SECRET_KEY')}'")
 
+
+# --- Variables Globales para Configuración (Simulación - Idealmente irían en BD o archivo de config) ---
+# Valores por defecto basados en tu código actual o en valores comunes.
+APP_CONFIG = {
+    "reset_token_expiry_minutes": 15, # Duración actual en send_reset_email
+    "max_failed_login_attempts": 5    # Un valor común
+}
+
+
 CORS(app) # Permite CORS para todas las rutas
 
 conn_str = (
@@ -40,22 +49,26 @@ def get_db_connection():
 
 def send_reset_email(email, user_id):
     try:
-        exp_time = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(minutes=15) # Token válido por 15 minutos
+        # Usar el valor de APP_CONFIG para la expiración
+        expiry_minutes = APP_CONFIG.get('reset_token_expiry_minutes', 15) # Fallback a 15 si no está en config
+        print(f"DEBUG send_reset_email: Duración del token de reseteo establecida en: {expiry_minutes} minutos.")
+        exp_time = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(minutes=expiry_minutes)
         
-        # Loguear la SECRET_KEY usada para ENCODE el token de reseteo
         secret_key_for_encode = app.config.get('SECRET_KEY')
         print(f"DEBUG send_reset_email: SECRET_KEY para ENCODE (reseteo): '{secret_key_for_encode}'")
 
         token_payload = {
             'user_id': user_id,
-            'exp': exp_time # PyJWT maneja la conversión a timestamp si es un objeto datetime
+            'exp': exp_time 
         }
-        # Usar app.config['SECRET_KEY'] consistentemente
         token = jwt.encode(token_payload, secret_key_for_encode, algorithm="HS256")
         
         print(f"DEBUG send_reset_email: Token de reseteo GENERADO para user_id {user_id}: {token}")
 
-        reset_link = f"http://127.0.0.1:8000/new_pass.html?token={token}" # Asumiendo frontend en puerto 8000
+        reset_link = f"http://127.0.0.1:8000/new_pass.html?token={token}" 
+
+        # ... (resto del código para configurar y enviar el email) ...
+        # (El código para msg, body y smtplib.SMTP permanece igual)
 
         msg = MIMEMultipart()
         msg['From'] = SMTP_USERNAME
@@ -67,7 +80,7 @@ def send_reset_email(email, user_id):
         Recibimos una solicitud para restablecer tu contraseña. Haz clic en el siguiente enlace para establecer una nueva contraseña:
         {reset_link}
 
-        Este enlace es válido por 15 minutos. Si no solicitaste este cambio, ignora este correo.
+        Este enlace es válido por {expiry_minutes} minutos. Si no solicitaste este cambio, ignora este correo.
 
         Saludos,
         Equipo Carrocería Alvarado
@@ -82,6 +95,7 @@ def send_reset_email(email, user_id):
     except Exception as e:
         print(f"Error al enviar correo de restablecimiento: {str(e)}")
         return False
+    
 
 @app.route('/registro', methods=['POST'])
 def registrar_usuario():
@@ -141,8 +155,6 @@ def registrar_usuario():
 
 @app.route('/login', methods=['POST'])
 def login():
-    # (Tu código de /login, asegurándote que use app.config['SECRET_KEY'] para encode)
-    # ... (código de la función /login) ...
     try:
         data = request.get_json()
         if not data: return jsonify({'error': 'No se recibieron datos JSON'}), 400
@@ -157,9 +169,10 @@ def login():
         try:
             conn = get_db_connection()
             cursor = conn.cursor()
-            # Asegúrate de que la tabla Usuarios tenga un campo 'estado' para verificar si el usuario está activo
+            
+            # Obtener id_usuario, hash, rol, estado, intentos_fallidos y si está bloqueado
             cursor.execute(
-                "SELECT id_usuario, email, password_hash, rol, estado FROM Usuarios WHERE username = ?",
+                "SELECT id_usuario, email, password_hash, rol, estado, intentos_fallidos, bloqueado FROM Usuarios WHERE username = ?",
                 (username,)
             )
             user_db_data = cursor.fetchone()
@@ -168,44 +181,85 @@ def login():
                 print(f"Login - Usuario no encontrado: {username}")
                 return jsonify({'error': 'Usuario no encontrado'}), 404
 
-            user_id, email, db_password_hash, rol, user_estado = user_db_data
+            user_id, email, db_password_hash, rol, user_estado_activo, intentos_fallidos_actuales, bloqueado_actual = user_db_data
             
-            if not user_estado: # Verificar si el usuario está activo (estado = 1 o True)
-                print(f"Login - Intento de login para usuario inactivo: {username}")
-                return jsonify({'error': 'La cuenta de usuario está inactiva.'}), 403 # Forbidden
+            # Verificar si la cuenta está bloqueada permanentemente por el admin (campo 'estado')
+            if not user_estado_activo:
+                print(f"Login - Intento de login para cuenta inactiva (por admin): {username}")
+                return jsonify({'error': 'Su cuenta ha sido desactivada por un administrador.'}), 403
 
+            # Verificar si la cuenta está bloqueada por intentos fallidos (campo 'bloqueado')
+            if bloqueado_actual:
+                print(f"Login - Intento de login para cuenta bloqueada por intentos: {username}")
+                return jsonify({'error': 'Su cuenta ha sido bloqueada debido a múltiples intentos fallidos. Contacte al administrador.'}), 403
+
+            # Verificar contraseña
             if bcrypt.checkpw(password.encode('utf-8'), db_password_hash):
                 print(f"Login - Contraseña correcta para {username}")
-                exp_time = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(hours=1)
                 
+                # Si el login es exitoso, resetear intentos_fallidos y el estado de bloqueo (si aplica)
+                if intentos_fallidos_actuales > 0 or bloqueado_actual: # Solo actualizar si es necesario
+                    cursor.execute("UPDATE Usuarios SET intentos_fallidos = 0, bloqueado = 0 WHERE id_usuario = ?", (user_id,))
+                    conn.commit()
+                    print(f"Login - Intentos fallidos reseteados y cuenta desbloqueada para user_id: {user_id}")
+
+                exp_time = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(hours=1)
                 secret_key_for_encode = app.config.get('SECRET_KEY')
                 print(f"DEBUG login: SECRET_KEY para ENCODE (sesión): '{secret_key_for_encode}'")
 
                 token_payload = {
-                    'user_id': user_id,
-                    'email': email,
-                    'rol': rol,
-                    'username': username, 
-                    'exp': exp_time 
+                    'user_id': user_id, 'email': email, 'rol': rol,
+                    'username': username, 'exp': exp_time 
                 }
                 token = jwt.encode(token_payload, secret_key_for_encode, algorithm="HS256")
                 
                 print(f"Login - Exitoso para {username}. Token generado. Enviando respuesta.")
                 return jsonify({
-                    'message': 'Login exitoso', 
-                    'token': token, 
-                    'rol': rol,
-                    'username': username 
+                    'message': 'Login exitoso', 'token': token, 
+                    'rol': rol, 'username': username 
                 }), 200
             else:
+                # Contraseña incorrecta
                 print(f"Login - Contraseña incorrecta para {username}")
-                return jsonify({'error': 'Credenciales inválidas'}), 401
+                intentos_fallidos_actuales += 1
+                max_intentos = APP_CONFIG.get('max_failed_login_attempts', 5)
+                intentos_restantes = max_intentos - intentos_fallidos_actuales
+                
+                mensaje_error_base = "Credenciales inválidas."
+                nuevo_estado_bloqueo = bloqueado_actual # Por defecto no cambia
+
+                if intentos_fallidos_actuales >= max_intentos:
+                    nuevo_estado_bloqueo = 1 # Bloquear la cuenta (True)
+                    cursor.execute("UPDATE Usuarios SET intentos_fallidos = ?, bloqueado = ? WHERE id_usuario = ?", 
+                                   (intentos_fallidos_actuales, nuevo_estado_bloqueo, user_id))
+                    conn.commit()
+                    print(f"Login - Usuario {username} (ID: {user_id}) bloqueado por exceder intentos. Intentos: {intentos_fallidos_actuales}")
+                    mensaje_error_base = f"Contraseña incorrecta. Su cuenta ha sido bloqueada tras {intentos_fallidos_actuales} intentos fallidos. Contacte al administrador."
+                    return jsonify({
+                        'error': mensaje_error_base,
+                        'account_locked': True
+                    }), 401 # O 403 si prefieres para cuentas bloqueadas
+                else:
+                    cursor.execute("UPDATE Usuarios SET intentos_fallidos = ? WHERE id_usuario = ?", 
+                                   (intentos_fallidos_actuales, user_id))
+                    conn.commit()
+                    print(f"Login - Usuario {username} (ID: {user_id}) intento fallido {intentos_fallidos_actuales}/{max_intentos}.")
+                    mensaje_error_base = f"Credenciales inválidas. Le quedan {intentos_restantes} {'intento' if intentos_restantes == 1 else 'intentos'}."
+                    return jsonify({
+                        'error': mensaje_error_base,
+                        'attempts_made': intentos_fallidos_actuales,
+                        'attempts_remaining': intentos_restantes,
+                        'account_locked': False
+                    }), 401
+        
         except Exception as db_e:
-            if conn: conn.rollback()
+            # No cerrar la conexión aquí si se va a usar en finally
             print(f"Error de BD en /login: {str(db_e)}")
             return jsonify({'error': f'Error de base de datos en login: {str(db_e)}'}), 500
         finally:
-            if conn: conn.close()
+            if conn: 
+                conn.close()
+                print("Login - Conexión a BD cerrada.")
     except Exception as e:
         print(f"Error general en /login: {str(e)}")
         return jsonify({'error': f'Error interno del servidor en login: {str(e)}'}), 500
@@ -680,6 +734,55 @@ def registrar_salida_inventario(admin_user_id_from_token):
     finally:
         if conn: conn.close()
 
+#configuraciones
+@app.route('/configuraciones', methods=['GET'])
+@admin_required # Solo administradores
+def get_configuraciones(admin_user_id_from_token):
+    print(f"API GET /configuraciones: Solicitud de Admin ID {admin_user_id_from_token}")
+    # Devolver una copia para evitar modificar el original directamente si se pasa por referencia
+    return jsonify(APP_CONFIG.copy()), 200
+
+@app.route('/configuraciones', methods=['PUT'])
+@admin_required # Solo administradores
+def update_configuraciones(admin_user_id_from_token):
+    global APP_CONFIG # Necesario para modificar la variable global
+    
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'No se recibieron datos JSON'}), 400
+
+    print(f"API PUT /configuraciones: Admin ID {admin_user_id_from_token} actualizando. Datos recibidos: {data}")
+
+    new_expiry = data.get('reset_token_expiry_minutes')
+    new_attempts = data.get('max_failed_login_attempts')
+
+    updated_fields = []
+
+    if new_expiry is not None:
+        try:
+            new_expiry_int = int(new_expiry)
+            if new_expiry_int <= 0:
+                return jsonify({'error': 'reset_token_expiry_minutes debe ser un entero positivo.'}), 400
+            APP_CONFIG['reset_token_expiry_minutes'] = new_expiry_int
+            updated_fields.append('Duración del token de reseteo')
+        except ValueError:
+            return jsonify({'error': 'reset_token_expiry_minutes debe ser un número entero.'}), 400
+
+    if new_attempts is not None:
+        try:
+            new_attempts_int = int(new_attempts)
+            if new_attempts_int <= 0:
+                return jsonify({'error': 'max_failed_login_attempts debe ser un entero positivo.'}), 400
+            APP_CONFIG['max_failed_login_attempts'] = new_attempts_int
+            updated_fields.append('Máximos intentos de login')
+        except ValueError:
+            return jsonify({'error': 'max_failed_login_attempts debe ser un número entero.'}), 400
+            
+    if not updated_fields:
+        return jsonify({'error': 'No se proporcionaron campos válidos para actualizar.'}), 400
+
+    print(f"API PUT /configuraciones: Nuevas configuraciones aplicadas: {APP_CONFIG}")
+    return jsonify({'message': f'Configuraciones ({", ".join(updated_fields)}) actualizadas exitosamente.'}), 200
 
 # Ruta de prueba básica
 @app.route('/')
