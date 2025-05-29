@@ -455,25 +455,81 @@ def admin_required(f):
 @app.route('/usuarios', methods=['GET'])
 @admin_required
 def get_all_usuarios(admin_user_id_from_token):
-    # (Tu código de /usuarios GET como lo tenías)
-    # ... (código de la función /usuarios GET) ...
     print(f"API /usuarios GET: Solicitud recibida por admin con ID: {admin_user_id_from_token}")
-    conn = None
+    conn = None  # Inicializar a None
     try:
-        conn = get_db_connection()
+        conn = get_db_connection() # Obtener la conexión
         cursor = conn.cursor()
-        cursor.execute("SELECT id_usuario, username, email, rol, estado FROM Usuarios")
+        # Se incluye 'bloqueado' en la consulta SELECT
+        cursor.execute("SELECT id_usuario, username, email, rol, estado, bloqueado FROM Usuarios")
         
         columns = [column[0] for column in cursor.description]
-        usuarios = [dict(zip(columns, row)) for row in cursor.fetchall()]
+        usuarios = []
+        for row in cursor.fetchall():
+            user_dict = dict(zip(columns, row))
+            user_dict['estado'] = bool(user_dict['estado']) # Asegurar que sea booleano
+            user_dict['bloqueado'] = bool(user_dict['bloqueado']) # Asegurar que sea booleano
+            usuarios.append(user_dict)
             
+        # NO SE CIERRA LA CONEXIÓN AQUÍ (SE ELIMINÓ EL conn.close() DE ESTE LUGAR)
+        
         print(f"API /usuarios GET: Devolviendo {len(usuarios)} usuarios.")
         return jsonify(usuarios), 200
+
     except Exception as e:
         print(f"Error en /usuarios GET: {str(e)}")
         return jsonify({'error': f'Error interno del servidor al obtener usuarios: {str(e)}'}), 500
     finally:
-        if conn: conn.close()
+        if conn: # Solo intentar cerrar si la conexión se estableció (conn no es None)
+            conn.close()
+            print("API /usuarios GET: Conexión a BD cerrada desde el bloque finally.")
+
+            
+@app.route('/usuarios/<int:user_id>/desbloquear', methods=['PUT']) # O podrías usar POST
+@admin_required # Solo administradores pueden desbloquear
+def desbloquear_usuario(admin_user_id_from_token, user_id):
+    print(f"API /usuarios/{user_id}/desbloquear PUT: Solicitud de admin ID {admin_user_id_from_token} para desbloquear usuario ID {user_id}")
+    
+    conn = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Verificar si el usuario existe primero
+        cursor.execute("SELECT bloqueado FROM Usuarios WHERE id_usuario = ?", (user_id,))
+        usuario = cursor.fetchone()
+        
+        if not usuario:
+            print(f"API /usuarios/{user_id}/desbloquear PUT: Error - Usuario ID {user_id} no encontrado.")
+            return jsonify({'error': 'Usuario no encontrado'}), 404
+
+        # Desbloquear al usuario y resetear los intentos fallidos
+        print(f"API /usuarios/{user_id}/desbloquear PUT: Actualizando 'bloqueado = 0' e 'intentos_fallidos = 0'.")
+        cursor.execute("UPDATE Usuarios SET bloqueado = 0, intentos_fallidos = 0 WHERE id_usuario = ?", (user_id,))
+        conn.commit()
+        
+        # Aunque cursor.rowcount sea 0 (si ya estaba desbloqueado y con 0 intentos), 
+        # el estado final es el deseado. Se considera éxito.
+        print(f"API /usuarios/{user_id}/desbloquear PUT: Usuario ID {user_id} desbloqueado exitosamente o ya estaba en el estado deseado.")
+        return jsonify({'message': f'Usuario {user_id} desbloqueado exitosamente.'}), 200
+
+    except Exception as e:
+        if conn: 
+            try:
+                conn.rollback()
+                print(f"API /usuarios/{user_id}/desbloquear PUT: Rollback realizado debido a error.")
+            except Exception as rb_e:
+                print(f"API /usuarios/{user_id}/desbloquear PUT: Error durante el rollback: {rb_e}")
+        print(f"Error en /usuarios/{user_id}/desbloquear PUT: {str(e)}")
+        return jsonify({'error': f'Error interno del servidor al desbloquear usuario: {str(e)}'}), 500
+    finally:
+        if conn:
+            conn.close()
+            print(f"API /usuarios/{user_id}/desbloquear PUT: Conexión a BD cerrada desde el bloque finally.")
+
+
+
+            
 
 
 @app.route('/usuarios/<int:user_id>/estado', methods=['PUT'])

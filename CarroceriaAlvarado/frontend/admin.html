@@ -210,63 +210,92 @@
 // Funciones auxiliares definidas fuera de $(document).ready() para que estén en el ámbito global
 // y puedan ser llamadas desde dentro del bloque ready o por otros scripts si fuera necesario.
 function loadUsers() {
-    console.log("loadUsers() - Intentando cargar usuarios desde la API...");
-    const token = localStorage.getItem('token'); 
+    console.log("loadUsers() - Iniciando carga de usuarios..."); // [DEBUG]
+    const token = localStorage.getItem('token');
+    const userTableBody = $('#userTableBody'); // [DEBUG] Referencia a la tabla
 
-    if (!token) {
-        console.error("loadUsers() - No hay token. No se puede llamar a la API. Redirigiendo a login."); 
+    // Limpiar tabla antes de cualquier cosa, para mostrar un estado de carga o error si aplica
+    userTableBody.empty().append('<tr><td colspan="6" class="text-center">Cargando usuarios...</td></tr>');
+
+    if (!token) { 
+        console.error("loadUsers() - ERROR: No hay token en localStorage. Redirigiendo a login.");
+        userTableBody.empty().append('<tr><td colspan="6" class="text-center">Error de autenticación. Redirigiendo...</td></tr>');
         window.location.href = 'index.html'; 
         return; 
     }
-    console.log("loadUsers() - Token que se usará para la API:", token); 
+    console.log("loadUsers() - Token recuperado para la API:", token);
 
     $.ajax({ 
-        url: 'http://127.0.0.1:5000/usuarios',  
+        url: 'http://127.0.0.1:5000/usuarios',  // [VERIFICAR] ¿Es esta la URL y puerto correctos de tu API Flask?
         method: 'GET',
         headers: { 
-            'Authorization': 'Bearer ' + token  
+            'Authorization': 'Bearer ' + token  // [VERIFICAR] ¿Se está enviando el token correctamente?
         },
-        success: function(users) { 
-            console.log("loadUsers() - Usuarios recibidos:", users); 
-            const userTableBody = $('#userTableBody'); 
-            userTableBody.empty();  
+        success: function(users) {
+            console.log("loadUsers() - Success! Usuarios recibidos:", users); // [DEBUG CRUCIAL] ¿Qué forma tiene 'users'? ¿Es un array? ¿Tiene datos?
+            userTableBody.empty(); // Limpiar el mensaje "Cargando..."
 
-            if (!users || users.length === 0) { 
-                userTableBody.append('<tr><td colspan="6" class="text-center">No hay usuarios registrados.</td></tr>'); 
-                return; 
+            if (!users || !Array.isArray(users) || users.length === 0) { // [DEBUG] Verificación más robusta
+                console.log("loadUsers() - No hay usuarios para mostrar o 'users' no es un array.");
+                userTableBody.append('<tr><td colspan="6" class="text-center">No hay usuarios registrados.</td></tr>');
+                return;
             }
 
-            users.forEach(function(user) { 
-                const estadoBadge = user.estado ?  
-                                    '<span class="badge bg-success">Activo</span>' :  
-                                    '<span class="badge bg-danger">Inactivo</span>'; 
+            users.forEach(function(user, index) { // [DEBUG]
+                console.log(`loadUsers() - Procesando usuario [${index}]:`, user); // [DEBUG] ¿Cada 'user' tiene las propiedades esperadas?
                 
-                const editButton = `<button class="btn btn-sm btn-warning btn-edit" data-id="${user.id_usuario}"><i class="fa fa-pencil"></i> Editar</button>`; 
-                const activateDeactivateButton = user.estado ? 
-                    `<button class="btn btn-sm btn-danger btn-deactivate" data-id="${user.id_usuario}"><i class="fa fa-ban"></i> Desactivar</button>` :
-                    `<button class="btn btn-sm btn-success btn-activate" data-id="${user.id_usuario}"><i class="fa fa-check"></i> Activar</button>`; 
+                // Verificar que las propiedades esperadas existan en el objeto 'user'
+                if (typeof user.id_usuario === 'undefined' || typeof user.username === 'undefined' || 
+                    typeof user.email === 'undefined' || typeof user.rol === 'undefined' ||
+                    typeof user.estado === 'undefined' || typeof user.bloqueado === 'undefined') {
+                    console.error("loadUsers() - Usuario con datos incompletos o formato incorrecto:", user);
+                    userTableBody.append('<tr><td colspan="6" class="text-center">Error: Datos de usuario con formato incorrecto recibido.</td></tr>');
+                    // Podrías decidir continuar con el siguiente usuario o detenerte
+                    return; // O 'continue;' si esto estuviera en un loop for clásico. En forEach, 'return' salta esta iteración.
+                }
 
-                userTableBody.append( 
+                let estadoGeneral = '';
+                if (user.bloqueado) { // user.bloqueado debería ser booleano
+                    estadoGeneral = '<span class="badge bg-danger">Bloqueado (Intentos)</span>';
+                } else if (user.estado) { // user.estado debería ser booleano
+                    estadoGeneral = '<span class="badge bg-success">Activo</span>';
+                } else {
+                    estadoGeneral = '<span class="badge bg-secondary">Inactivo (Admin)</span>';
+                }
+                
+                const editButton = `<button class="btn btn-sm btn-warning btn-edit" data-id="${user.id_usuario}"><i class="fa fa-pencil"></i> Editar</button>`;
+                let actionButtons = editButton;
+
+                if (user.estado && !user.bloqueado) {
+                    actionButtons += ` <button class="btn btn-sm btn-secondary btn-deactivate-manual" data-id="${user.id_usuario}"><i class="fa fa-toggle-off"></i> Desactivar (Admin)</button>`;
+                } else if (!user.estado && !user.bloqueado) { 
+                    actionButtons += ` <button class="btn btn-sm btn-success btn-activate-manual" data-id="${user.id_usuario}"><i class="fa fa-toggle-on"></i> Activar (Admin)</button>`;
+                }
+
+                if (user.bloqueado) {
+                    actionButtons += ` <button class="btn btn-sm btn-info btn-unlock" data-id="${user.id_usuario}"><i class="fa fa-unlock"></i> Desbloquear</button>`;
+                }
+
+                userTableBody.append(
                     `<tr>
                         <td>${user.id_usuario}</td>
                         <td>${user.username}</td>
                         <td>${user.email}</td>
                         <td>${user.rol}</td>
-                        <td>${estadoBadge}</td>
+                        <td>${estadoGeneral}</td>
                         <td class="text-center table-actions">
-                            ${editButton}
-                            ${activateDeactivateButton}
+                            ${actionButtons}
                         </td>
-                    </tr>` 
+                    </tr>`
                 );
-            }); 
+            });
         },
         error: function(xhr, status, error) { 
-            console.error("loadUsers() - Error al cargar usuarios. Status:", xhr.status, "Response:", xhr.responseText); 
-            $('#userTableBody').empty().append('<tr><td colspan="6" class="text-center">Error al cargar usuarios. Verifique la consola.</td></tr>'); 
+            console.error("loadUsers() - AJAX Error! Status:", xhr.status, "Response:", xhr.responseText, "Error Thrown:", error);
+            userTableBody.empty().append(`<tr><td colspan="6" class="text-center">Error al cargar usuarios (Código: ${xhr.status}). Verifique la consola.</td></tr>`);
 
             if (xhr.status === 401 || xhr.status === 403) { 
-                alert("Su sesión ha expirado o no tiene permisos. Será redirigido al login."); 
+                alert("Su sesión ha expirado o no tiene permisos. Será redirigido al login.");
                 localStorage.removeItem('token'); 
                 localStorage.removeItem('userRol'); 
                 localStorage.removeItem('loggedInUsername'); 
@@ -274,44 +303,72 @@ function loadUsers() {
             }
         }
     });
-} 
+}
 
-function actualizarEstadoUsuario(userId, nuevoEstado) {
-    const token = localStorage.getItem('token'); 
-    if (!token) { 
-        alert("Token no encontrado. Por favor, inicie sesión de nuevo."); 
-        window.location.href = 'index.html'; 
-        return; 
+
+function actualizarEstadoManualUsuario(userId, nuevoEstadoManual) { // nuevoEstadoManual es true para activar, false para desactivar por admin
+    const token = localStorage.getItem('token');
+    // ... (resto de la lógica de esta función, pero la URL y el data cambiarán un poco)
+    // Esta función ahora llamará a /usuarios/<id>/estado y enviará { "estado": nuevoEstadoManual }
+    console.log(`actualizarEstadoManualUsuario() - Solicitud para cambiar estado MANUAL de usuario ${userId} a ${nuevoEstadoManual}`);
+    $.ajax({
+        url: `http://127.0.0.1:5000/usuarios/${userId}/estado`, // Sigue siendo el mismo endpoint para estado
+        method: 'PUT',
+        headers: {
+            'Authorization': 'Bearer ' + token,
+            'Content-Type': 'application/json'
+        },
+        data: JSON.stringify({ estado: nuevoEstadoManual }), // El backend espera 'estado'
+        success: function(response) {
+            console.log("actualizarEstadoManualUsuario() - Respuesta:", response);
+            alert(response.message || "Estado (manual) del usuario actualizado con éxito.");
+            loadUsers(); 
+        },
+        error: function(xhr) {
+            // ... (manejo de error igual que antes) ...
+            console.error("actualizarEstadoManualUsuario() - Error. Status:", xhr.status, "Response:", xhr.responseText);
+            const errorMsg = xhr.responseJSON?.error || "Error al actualizar el estado (manual) del usuario.";
+            alert(errorMsg);
+            if (xhr.status === 401 || xhr.status === 403) {
+                localStorage.removeItem('token'); localStorage.removeItem('userRol'); localStorage.removeItem('loggedInUsername');
+                window.location.href = 'index.html';
+            }
+        }
+    });
+}
+
+// Nueva función para desbloquear (opera sobre el campo 'bloqueado')
+function desbloquearUsuarioPorAdmin(userId) {
+    const token = localStorage.getItem('token');
+    if (!token) {
+        alert("Token no encontrado. Por favor, inicie sesión de nuevo.");
+        window.location.href = 'index.html';
+        return;
     }
-
-    console.log(`actualizarEstadoUsuario() - Enviando solicitud para cambiar estado de usuario ${userId} a ${nuevoEstado}`); 
-
-    $.ajax({ 
-        url: `http://127.0.0.1:5000/usuarios/${userId}/estado`, 
-        method: 'PUT', 
-        headers: { 
-            'Authorization': 'Bearer ' + token, 
-            'Content-Type': 'application/json' 
+    console.log(`desbloquearUsuarioPorAdmin() - Solicitud para DESBLOQUEAR usuario ${userId}`);
+    $.ajax({
+        url: `http://127.0.0.1:5000/usuarios/${userId}/desbloquear`, // Nuevo endpoint
+        method: 'PUT', // O POST si lo definiste así
+        headers: {
+            'Authorization': 'Bearer ' + token
+            // No se necesita Content-Type ni body si el backend no espera datos para desbloquear
         },
-        data: JSON.stringify({ estado: nuevoEstado }), 
-        success: function(response) { 
-            console.log("actualizarEstadoUsuario() - Respuesta:", response); 
-            alert(response.message || "Estado del usuario actualizado con éxito."); 
-            loadUsers();  // Recargar la lista de usuarios para ver el cambio [cite: 20]
+        success: function(response) {
+            console.log("desbloquearUsuarioPorAdmin() - Respuesta:", response);
+            alert(response.message || "Usuario desbloqueado con éxito.");
+            loadUsers();
         },
-        error: function(xhr, status, error) {
-            console.error("actualizarEstadoUsuario() - Error. Status:", xhr.status, "Response:", xhr.responseText); 
-            const errorMsg = xhr.responseJSON?.error || "Error al actualizar el estado del usuario."; 
-            alert(errorMsg); 
-            if (xhr.status === 401 || xhr.status === 403) { 
-                localStorage.removeItem('token'); 
-                localStorage.removeItem('userRol'); 
-                localStorage.removeItem('loggedInUsername'); 
-                window.location.href = 'index.html'; 
+        error: function(xhr) {
+            console.error("desbloquearUsuarioPorAdmin() - Error. Status:", xhr.status, "Response:", xhr.responseText);
+            const errorMsg = xhr.responseJSON?.error || "Error al desbloquear el usuario.";
+            alert(errorMsg);
+            if (xhr.status === 401 || xhr.status === 403) {
+                localStorage.removeItem('token'); localStorage.removeItem('userRol'); localStorage.removeItem('loggedInUsername');
+                window.location.href = 'index.html';
             }
         }
     });
-} 
+}
 
 // Código principal que se ejecuta cuando el DOM está listo
 $(document).ready(function () { 
@@ -562,6 +619,32 @@ $(document).ready(function () {
                 $('#settingsMessage').text(xhr.responseJSON?.error || 'Error al guardar configuraciones.').addClass('alert alert-danger');
             }
         });
+    });
+
+    $(document).on('click', '.btn-deactivate-manual', function() {
+        const userId = $(this).data('id');
+        const username = $(this).closest('tr').find('td:nth-child(2)').text();
+        if (confirm(`¿Está seguro de que desea DESACTIVAR (manualmente) al usuario "${username}" (ID: ${userId})? Esto es diferente al bloqueo por intentos.`)) {
+            actualizarEstadoManualUsuario(userId, false); // false para desactivar (estado = 0)
+        }
+    });
+
+    // MANEJADOR PARA BOTONES DE ACTIVAR (MANUAL ADMIN)
+    $(document).on('click', '.btn-activate-manual', function() {
+        const userId = $(this).data('id');
+        const username = $(this).closest('tr').find('td:nth-child(2)').text();
+        if (confirm(`¿Está seguro de que desea ACTIVAR (manualmente) al usuario "${username}" (ID: ${userId})?`)) {
+            actualizarEstadoManualUsuario(userId, true); // true para activar (estado = 1)
+        }
+    });
+
+    // NUEVO MANEJADOR PARA BOTÓN DE DESBLOQUEAR (por intentos fallidos)
+    $(document).on('click', '.btn-unlock', function() {
+        const userId = $(this).data('id');
+        const username = $(this).closest('tr').find('td:nth-child(2)').text();
+        if (confirm(`¿Está seguro de que desea DESBLOQUEAR al usuario "${username}" (ID: ${userId}) que fue bloqueado por intentos fallidos?`)) {
+            desbloquearUsuarioPorAdmin(userId);
+        }
     });
 
 });
