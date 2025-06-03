@@ -681,115 +681,6 @@ def get_usuario_por_id(admin_user_id_from_token, user_id):
     finally:
         if conn: conn.close()
 
-# --- ENDPOINTS DE GESTIÓN DE INVENTARIO ---
-@app.route('/inventory/entry', methods=['POST'])
-@admin_required
-def registrar_entrada_inventario(admin_user_id_from_token):
-    # (Tu código de /inventory/entry como lo tenías)
-    # ... (código de la función /inventory/entry) ...
-    data = request.get_json()
-    if not data: return jsonify({'error': 'No se recibieron datos JSON'}), 400
-    print(f"API /inventory/entry POST: Admin ID {admin_user_id_from_token} registrando entrada. Datos: {data}")
-
-    id_material = data.get('id_material')
-    cantidad_entrada = data.get('cantidad_entrada')
-
-    if id_material is None or cantidad_entrada is None:
-        return jsonify({'error': 'Se requiere id_material y cantidad_entrada'}), 400
-    try:
-        cantidad_entrada = int(cantidad_entrada)
-        if cantidad_entrada <= 0: return jsonify({'error': 'cantidad_entrada debe ser un número positivo'}), 400
-    except ValueError: return jsonify({'error': 'cantidad_entrada debe ser un número entero'}), 400
-
-    conn = None
-    try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute("SELECT cantidad, nombre FROM Materiales WHERE id_material = ?", (id_material,))
-        material_actual = cursor.fetchone()
-        if not material_actual: return jsonify({'error': f'Material con ID {id_material} no encontrado'}), 404
-        
-        stock_actual, nombre_material = material_actual
-        nuevo_stock = stock_actual + cantidad_entrada
-        fecha_actualizacion = datetime.datetime.now()
-
-        sql_update = """
-            UPDATE Materiales SET cantidad = ?, fecha_ultima_actualizacion = ?, id_usuario_ultima_actualizacion = ?
-            WHERE id_material = ? """
-        cursor.execute(sql_update, (nuevo_stock, fecha_actualizacion, admin_user_id_from_token, id_material))
-        conn.commit()
-
-        if cursor.rowcount == 0: return jsonify({'error': 'No se pudo actualizar el inventario del material'}), 500
-
-        print(f"API /inventory/entry POST: Entrada para '{nombre_material}' (ID: {id_material}). Nuevo stock: {nuevo_stock}")
-        return jsonify({'message': 'Entrada de inventario registrada', 'id_material': id_material, 
-                        'nombre_material': nombre_material, 'cantidad_entrada': cantidad_entrada, 
-                        'nuevo_stock': nuevo_stock}), 200
-    except Exception as e:
-        if conn: conn.rollback()
-        print(f"Error en /inventory/entry: {str(e)}")
-        return jsonify({'error': f'Error interno al registrar entrada: {str(e)}'}), 500
-    finally:
-        if conn: conn.close()
-
-
-@app.route('/inventory/exit', methods=['POST'])
-@admin_required
-def registrar_salida_inventario(admin_user_id_from_token):
-    # (Tu código de /inventory/exit como lo tenías)
-    # ... (código de la función /inventory/exit) ...
-    data = request.get_json()
-    if not data: return jsonify({'error': 'No se recibieron datos JSON'}), 400
-    print(f"API /inventory/exit POST: Admin ID {admin_user_id_from_token} registrando salida. Datos: {data}")
-
-    id_material = data.get('id_material')
-    cantidad_salida = data.get('cantidad_salida')
-
-    if id_material is None or cantidad_salida is None:
-        return jsonify({'error': 'Se requiere id_material y cantidad_salida'}), 400
-    try:
-        cantidad_salida = int(cantidad_salida)
-        if cantidad_salida <= 0: return jsonify({'error': 'cantidad_salida debe ser un número positivo'}), 400
-    except ValueError: return jsonify({'error': 'cantidad_salida debe ser un número entero'}), 400
-
-    conn = None
-    try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute("SELECT cantidad, nombre FROM Materiales WHERE id_material = ?", (id_material,))
-        material_actual = cursor.fetchone()
-        if not material_actual: return jsonify({'error': f'Material con ID {id_material} no encontrado'}), 404
-        
-        stock_actual, nombre_material = material_actual
-
-        if stock_actual < cantidad_salida:
-            print(f"API /inventory/exit POST: Stock insuficiente para '{nombre_material}' (ID: {id_material}).")
-            return jsonify({'error': 'Existencias insuficientes', 'id_material': id_material, 
-                            'nombre_material': nombre_material, 'stock_actual': stock_actual, 
-                            'cantidad_solicitada': cantidad_salida}), 400
-        
-        nuevo_stock = stock_actual - cantidad_salida
-        fecha_actualizacion = datetime.datetime.now()
-
-        sql_update = """
-            UPDATE Materiales SET cantidad = ?, fecha_ultima_actualizacion = ?, id_usuario_ultima_actualizacion = ?
-            WHERE id_material = ? """
-        cursor.execute(sql_update, (nuevo_stock, fecha_actualizacion, admin_user_id_from_token, id_material))
-        conn.commit()
-
-        if cursor.rowcount == 0: return jsonify({'error': 'No se pudo actualizar el inventario'}), 500
-
-        print(f"API /inventory/exit POST: Salida para '{nombre_material}' (ID: {id_material}). Nuevo stock: {nuevo_stock}")
-        return jsonify({'message': 'Salida de inventario registrada', 'id_material': id_material, 
-                        'nombre_material': nombre_material, 'cantidad_salida': cantidad_salida, 
-                        'nuevo_stock': nuevo_stock}), 200
-    except Exception as e:
-        if conn: conn.rollback()
-        print(f"Error en /inventory/exit: {str(e)}")
-        return jsonify({'error': f'Error interno al registrar salida: {str(e)}'}), 500
-    finally:
-        if conn: conn.close()
-
 #configuraciones
 @app.route('/configuraciones', methods=['GET'])
 @admin_required # Solo administradores
@@ -839,6 +730,288 @@ def update_configuraciones(admin_user_id_from_token):
 
     print(f"API PUT /configuraciones: Nuevas configuraciones aplicadas: {APP_CONFIG}")
     return jsonify({'message': f'Configuraciones ({", ".join(updated_fields)}) actualizadas exitosamente.'}), 200
+
+
+@app.route('/materiales', methods=['GET'])
+@token_required # O @admin_required si solo los admins pueden ver la lista completa
+def get_todos_los_materiales(decoded_user_rol, decoded_user_id): # Argumentos del decorador @token_required
+    # Si usas @admin_required, el argumento sería admin_user_id_from_token
+    print(f"API GET /materiales: Solicitud recibida por usuario ID {decoded_user_id} con rol {decoded_user_rol}")
+    
+    conn = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Consulta para obtener todos los campos relevantes de la tabla Materiales
+        # Basado en tu CarroceriaAlvaradoDB.sql: id_material, nombre, descripcion, cantidad, precio_unitario, fecha_ultima_actualizacion
+        sql_query = """
+            SELECT id_material, nombre, descripcion, cantidad, precio_unitario, fecha_ultima_actualizacion 
+            FROM Materiales
+            ORDER BY nombre ASC 
+        """
+        cursor.execute(sql_query)
+        
+        columns = [column[0] for column in cursor.description]
+        materiales = []
+        for row in cursor.fetchall():
+            material_dict = dict(zip(columns, row))
+            # Asegurar que los campos numéricos y de fecha se manejen bien para JSON
+            if 'cantidad' in material_dict and material_dict['cantidad'] is not None:
+                material_dict['cantidad'] = int(material_dict['cantidad'])
+            if 'precio_unitario' in material_dict and material_dict['precio_unitario'] is not None:
+                material_dict['precio_unitario'] = float(material_dict['precio_unitario'])
+            if 'fecha_ultima_actualizacion' in material_dict and material_dict['fecha_ultima_actualizacion'] is not None:
+                # Convertir datetime a string ISO para JSON, si no lo hace automáticamente el driver/jsonify
+                material_dict['fecha_ultima_actualizacion'] = material_dict['fecha_ultima_actualizacion'].isoformat()
+            
+            materiales.append(material_dict)
+            
+        print(f"API GET /materiales: Devolviendo {len(materiales)} materiales.")
+        return jsonify(materiales), 200
+
+    except Exception as e:
+        print(f"Error en GET /materiales: {str(e)}")
+        return jsonify({'error': f'Error interno del servidor al obtener materiales: {str(e)}'}), 500
+    finally:
+        if conn:
+            conn.close()
+            print("API GET /materiales: Conexión a BD cerrada desde el bloque finally.")
+            
+            
+@app.route('/materiales', methods=['POST']) # ¡ASEGÚRATE QUE methods=['POST'] ESTÉ AQUÍ!
+@admin_required # O el decorador de rol que hayas decidido para esta acción
+def crear_nuevo_material(admin_user_id_from_token): # El argumento depende del decorador
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'No se recibieron datos JSON'}), 400
+
+    nombre = data.get('nombre')
+    descripcion = data.get('descripcion') # Puede ser None o vacío si es opcional
+    precio_unitario_str = data.get('precio_unitario')
+    
+    cantidad_inicial = 0 # Los nuevos materiales se crean con stock 0
+    fecha_actual = datetime.datetime.now()
+
+    # Validaciones básicas
+    if not nombre:
+        return jsonify({'error': 'El nombre del material es requerido'}), 400
+    if precio_unitario_str is None: # El precio puede ser 0, pero el campo debe estar presente
+        return jsonify({'error': 'El precio unitario es requerido'}), 400
+
+    try:
+        precio_unitario = float(precio_unitario_str)
+        if precio_unitario < 0:
+            return jsonify({'error': 'El precio unitario no puede ser negativo'}), 400
+    except (ValueError, TypeError):
+        return jsonify({'error': 'El precio unitario debe ser un número válido'}), 400
+
+    conn = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        # Opcional: Verificar si ya existe un material con el mismo nombre
+        cursor.execute("SELECT id_material FROM Materiales WHERE nombre = ?", (nombre,))
+        if cursor.fetchone():
+            conn.close() # Cerrar conexión antes de retornar
+            return jsonify({'error': f'Ya existe un material con el nombre "{nombre}"'}), 409 # 409 Conflict
+        
+        sql_insert = """
+            INSERT INTO Materiales (nombre, descripcion, cantidad, precio_unitario, 
+                                    fecha_ultima_actualizacion, id_usuario_ultima_actualizacion)
+            VALUES (?, ?, ?, ?, ?, ?)
+        """
+        # admin_user_id_from_token viene del decorador @admin_required
+        cursor.execute(sql_insert, 
+                       (nombre, descripcion, cantidad_inicial, precio_unitario, 
+                        fecha_actual, admin_user_id_from_token))
+        conn.commit()
+        
+        # Opcional: Obtener el ID del material recién insertado para devolverlo
+        # new_material_id = cursor.execute("SELECT @@IDENTITY AS id").fetchone()[0] 
+        # (Esto es específico de SQL Server y pyodbc; podría variar)
+
+        print(f"API POST /materiales: Material '{nombre}' creado por admin ID {admin_user_id_from_token}.")
+        return jsonify({'message': f'Material "{nombre}" creado exitosamente.'}), 201 # 201 Created
+
+    except pyodbc.Error as db_err: # Captura errores específicos de pyodbc
+        if conn: conn.rollback()
+        print(f"Error de BD en POST /materiales: {str(db_err)}")
+        return jsonify({'error': f'Error de base de datos al crear material: {str(db_err)}'}), 500
+    except Exception as e:
+        if conn: conn.rollback() # Asegurar rollback si la conexión se estableció
+        print(f"Error general en POST /materiales: {str(e)}")
+        return jsonify({'error': f'Error interno del servidor al crear material: {str(e)}'}), 500
+    finally:
+        if conn:
+            conn.close()
+            print("API POST /materiales: Conexión a BD cerrada.")
+
+
+@app.route('/inventory/entry', methods=['POST'])
+@admin_required # O el rol apropiado para gestión de inventario
+def registrar_entrada_inventario(admin_user_id_from_token):
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'No se recibieron datos JSON'}), 400
+
+    print(f"API /inventory/entry POST: Admin ID {admin_user_id_from_token} registrando entrada. Datos: {data}")
+
+    nombre_material = data.get('nombre_material') # CAMBIO: Buscar por nombre
+    cantidad_entrada = data.get('cantidad_entrada')
+    # precio_unitario_entrada = data.get('precio_unitario_entrada') # Opcional
+
+    if not nombre_material or cantidad_entrada is None: # CAMBIO: nombre_material es requerido
+        return jsonify({'error': 'Se requiere nombre_material y cantidad_entrada'}), 400
+
+    try:
+        cantidad_entrada = int(cantidad_entrada)
+        if cantidad_entrada <= 0:
+            return jsonify({'error': 'cantidad_entrada debe ser un número positivo'}), 400
+    except ValueError:
+        return jsonify({'error': 'cantidad_entrada debe ser un número entero'}), 400
+
+    conn = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        # CAMBIO: Verificar si el material existe por nombre y obtener su ID y stock
+        cursor.execute("SELECT id_material, cantidad FROM Materiales WHERE nombre = ?", (nombre_material,))
+        material_actual_data = cursor.fetchone()
+
+        if not material_actual_data:
+            conn.close() # Cerrar conexión si el material no se encuentra
+            return jsonify({'error': f'Material con nombre "{nombre_material}" no encontrado'}), 404
+        
+        id_material = material_actual_data[0]
+        stock_actual = material_actual_data[1]
+        
+        nuevo_stock = stock_actual + cantidad_entrada
+        fecha_actualizacion = datetime.datetime.now()
+
+        sql_update = """
+            UPDATE Materiales 
+            SET cantidad = ?, fecha_ultima_actualizacion = ?, id_usuario_ultima_actualizacion = ?
+            WHERE id_material = ? 
+        """
+        # Si se permite actualizar precio_unitario, se añadiría a este UPDATE y a los params
+        cursor.execute(sql_update, (nuevo_stock, fecha_actualizacion, admin_user_id_from_token, id_material))
+        conn.commit()
+
+        if cursor.rowcount == 0:
+            conn.close() 
+            return jsonify({'error': 'No se pudo actualizar el inventario del material'}), 500
+
+        print(f"API /inventory/entry POST: Entrada registrada para material '{nombre_material}' (ID: {id_material}). Nuevo stock: {nuevo_stock}")
+        return jsonify({
+            'message': 'Entrada de inventario registrada exitosamente',
+            'id_material': id_material,
+            'nombre_material': nombre_material,
+            'cantidad_entrada': cantidad_entrada,
+            'nuevo_stock': nuevo_stock
+        }), 200
+
+    except Exception as e:
+        if conn: conn.rollback()
+        print(f"Error en /inventory/entry: {str(e)}")
+        return jsonify({'error': f'Error interno del servidor al registrar entrada: {str(e)}'}), 500
+    finally:
+        if conn:
+            conn.close()
+            print("API /inventory/entry POST: Conexión a BD cerrada.")
+
+
+@app.route('/inventory/exit', methods=['POST'])
+@admin_required # O el rol apropiado
+def registrar_salida_inventario(admin_user_id_from_token):
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'No se recibieron datos JSON'}), 400
+
+    print(f"API /inventory/exit POST: Admin ID {admin_user_id_from_token} registrando salida. Datos: {data}")
+
+    nombre_material = data.get('nombre_material') # CAMBIO: Buscar por nombre
+    cantidad_salida = data.get('cantidad_salida')
+    # id_orden_trabajo = data.get('id_orden_trabajo') # Opcional
+
+    if not nombre_material or cantidad_salida is None: # CAMBIO: nombre_material es requerido
+        return jsonify({'error': 'Se requiere nombre_material y cantidad_salida'}), 400
+
+    try:
+        cantidad_salida = int(cantidad_salida)
+        if cantidad_salida <= 0:
+            return jsonify({'error': 'cantidad_salida debe ser un número positivo'}), 400
+    except ValueError:
+        return jsonify({'error': 'cantidad_salida debe ser un número entero'}), 400
+
+    conn = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        # CAMBIO: Verificar si el material existe por nombre y obtener su ID y stock
+        cursor.execute("SELECT id_material, cantidad FROM Materiales WHERE nombre = ?", (nombre_material,))
+        material_actual_data = cursor.fetchone()
+
+        if not material_actual_data:
+            conn.close()
+            return jsonify({'error': f'Material con nombre "{nombre_material}" no encontrado'}), 404
+        
+        id_material = material_actual_data[0]
+        stock_actual = material_actual_data[1]
+
+        if stock_actual < cantidad_salida:
+            conn.close()
+            print(f"API /inventory/exit POST: Stock insuficiente para material '{nombre_material}' (ID: {id_material}). Solicitado: {cantidad_salida}, Disponible: {stock_actual}")
+            return jsonify({
+                'error': 'Existencias insuficientes para registrar la salida',
+                'nombre_material': nombre_material,
+                'stock_actual': stock_actual,
+                'cantidad_solicitada': cantidad_salida
+            }), 400
+        
+        nuevo_stock = stock_actual - cantidad_salida
+        fecha_actualizacion = datetime.datetime.now()
+
+        sql_update = """
+            UPDATE Materiales 
+            SET cantidad = ?, fecha_ultima_actualizacion = ?, id_usuario_ultima_actualizacion = ?
+            WHERE id_material = ? 
+        """
+        cursor.execute(sql_update, (nuevo_stock, fecha_actualizacion, admin_user_id_from_token, id_material))
+        
+        # Lógica opcional para DetalleOrdenMateriales si es necesario
+        # if id_orden_trabajo:
+        #     # ... (código para insertar en DetalleOrdenMateriales) ...
+
+        conn.commit()
+
+        if cursor.rowcount == 0:
+            conn.close()
+            return jsonify({'error': 'No se pudo actualizar el inventario del material'}), 500
+
+        print(f"API /inventory/exit POST: Salida registrada para material '{nombre_material}' (ID: {id_material}). Nuevo stock: {nuevo_stock}")
+        return jsonify({
+            'message': 'Salida de inventario registrada exitosamente',
+            'id_material': id_material, 
+            'nombre_material': nombre_material,
+            'cantidad_salida': cantidad_salida,
+            'nuevo_stock': nuevo_stock
+        }), 200
+
+    except Exception as e:
+        if conn: conn.rollback()
+        print(f"Error en /inventory/exit: {str(e)}")
+        return jsonify({'error': f'Error interno del servidor al registrar salida: {str(e)}'}), 500
+    finally:
+        if conn:
+            conn.close()
+            print("API /inventory/exit POST: Conexión a BD cerrada.")
+
+            
+
 
 # Ruta de prueba básica
 @app.route('/')

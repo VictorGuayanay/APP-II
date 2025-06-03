@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <title>Añadir Nuevo Material - Carrocería Alvarado</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" type="text/css" href="vendor/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="fonts/font-awesome-4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" type="text/css" href="css/main.css">
+    <style>
+        /* Reutilizamos los estilos de admin.html para la estructura general */
+        body { display: flex; min-height: 100vh; flex-direction: column; background-color: #f1f1f1; }
+        .admin-wrapper { display: flex; width: 100%; align-items: stretch; flex-grow: 1; }
+        #sidebar { min-width: 250px; max-width: 250px; background: #23282d; color: #fff; transition: all 0.3s; }
+        #sidebar.active { margin-left: -250px; }
+        #sidebar .sidebar-header { padding: 20px; background: #191e23; text-align: center; font-size: 1.5em; }
+        #sidebar ul.components { padding: 20px 0; }
+        #sidebar ul li a { padding: 10px 20px; font-size: 1.1em; display: block; color: #adb5bd; text-decoration: none; }
+        #sidebar ul li a:hover { color: #fff; background: #343a40; }
+        #sidebar ul li.active > a, #sidebar ul li ul li.active > a, a[aria-expanded="true"] { color: #fff; background: #0073aa; }
+        #sidebar ul ul a { font-size: 0.95em !important; padding-left: 30px !important; background: #23282d; }
+        #content { width: 100%; padding: 0; min-height: 100vh; transition: all 0.3s; background-color: #f1f1f1; display: flex; flex-direction: column; }
+        .top-navbar { background-color: #fff; border-bottom: 1px solid #ddd; padding: 0.75rem 1.25rem; display: flex; justify-content: space-between; align-items: center; width: 100%; }
+        .top-navbar .user-info { display: flex; align-items: center; }
+        .top-navbar .user-info span { margin-right: 15px; }
+        .top-navbar .user-info a { color: #0073aa; text-decoration: none; }
+        .content-area { padding: 20px; flex-grow: 1; }
+        .card-header-title { font-size: 1.5rem; font-weight: 400; margin-bottom: 1rem; color: #23282d; }
+    </style>
+</head>
+<body>
+
+<div class="admin-wrapper">
+    <nav id="sidebar">
+        <div class="sidebar-header">
+            <h3>Carrocería Alvarado</h3>
+        </div>
+        <ul class="list-unstyled components">
+            <p class="ms-3">Administración</p>
+            <li>
+                <a href="#dashboardSubmenu" data-bs-toggle="collapse" aria-expanded="false" class="dropdown-toggle">
+                    <i class="fa fa-tachometer"></i> Dashboard
+                </a>
+                <ul class="collapse list-unstyled" id="dashboardSubmenu">
+                    <li><a href="#">Visión General</a></li>
+                </ul>
+            </li>
+            <li> 
+                <a href="admin.html"> 
+                    <i class="fa fa-users"></i> Gestión de Usuarios
+                </a>
+            </li>
+            <li class="active"> 
+                <a href="#inventarioSubmenu" data-bs-toggle="collapse" aria-expanded="true" class="dropdown-toggle">
+                    <i class="fa fa-archive"></i> Inventario
+                </a>
+                <ul class="collapse list-unstyled show" id="inventarioSubmenu"> 
+                    <li><a href="ver_inventario.html">Ver Inventario</a></li>
+                    <li class="active"><a href="anadir_material.html">Añadir Material</a></li> 
+                    <li><a href="entradas_salidas_inventario.html">Entradas/Salidas</a></li> 
+                </ul>
+            </li>
+            <li><a href="#"><i class="fa fa-briefcase"></i> Órdenes de Trabajo</a></li>
+            <li><a href="#"><i class="fa fa-bar-chart"></i> Reportes</a></li>
+            <li><a href="admin_config.html"><i class="fa fa-cog"></i> Configuración</a></li> 
+        </ul>
+    </nav>
+
+    <div id="content">
+        <nav class="navbar navbar-expand-lg navbar-light top-navbar">
+            <div class="container-fluid">
+                <button type="button" id="sidebarCollapse" class="btn btn-info" style="background-color: #0073aa; border-color: #0073aa;">
+                    <i class="fa fa-align-left"></i>
+                    <span>Menú</span>
+                </button>
+                <div class="user-info">
+                    <span>Hola, <strong id="currentUserName">Usuario</strong>!</span>
+                    <a href="#" id="logoutButton" class="ms-3">Cerrar Sesión</a>
+                </div>
+            </div>
+        </nav>
+
+        <div class="content-area container-fluid pt-4">
+            <h2 class="card-header-title">Añadir Nuevo Material al Inventario</h2>
+            
+            <div class="card">
+                <div class="card-header">
+                    Detalles del Nuevo Material
+                </div>
+                <div class="card-body">
+                    <form id="formAnadirMaterial">
+                        <div class="mb-3">
+                            <label for="materialNombre" class="form-label">Nombre del Material <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="materialNombre" placeholder="Ej: Tornillo Phillips 1/4" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="materialDescripcion" class="form-label">Descripción (Opcional)</label>
+                            <textarea class="form-control" id="materialDescripcion" rows="3" placeholder="Ej: De acero inoxidable, para metal, caja de 100 unidades"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="materialPrecioUnitario" class="form-label">Precio Unitario <span class="text-danger">*</span></label>
+                            <input type="number" step="0.01" min="0" class="form-control" id="materialPrecioUnitario" placeholder="Ej: 0.15" required>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-success">Guardar Nuevo Material</button>
+                        <div id="mensajeAnadirMaterial" class="mt-3"></div>
+                    </form>
+                </div>
+            </div>
+        </div> </div> </div> <script src="vendor/jquery/jquery-3.2.1.min.js"></script>
+<script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+
+<script>
+$(document).ready(function () {
+    $('#sidebarCollapse').on('click', function () {
+        $('#sidebar').toggleClass('active');
+    });
+
+    // --- Protección de Página y Datos de Usuario ---
+    const token = localStorage.getItem('token');
+    const userRol = localStorage.getItem('userRol');
+    const loggedInUsername = localStorage.getItem('loggedInUsername');
+
+    const rolesPermitidos = ['Administrador', 'Supervisor', 'Encargado de Inventario']; // Ajusta roles según necesidad
+
+    if (!token || !userRol || !rolesPermitidos.includes(userRol)) {
+        console.log("anadir_material.html - Acceso denegado o no autenticado. Redirigiendo a login.");
+        window.location.href = 'index.html';
+        return; 
+    }
+
+    if (loggedInUsername) {
+        $('#currentUserName').text(loggedInUsername);
+    }
+
+    $('#logoutButton').on('click', function(e) {
+        e.preventDefault();
+        localStorage.removeItem('token');
+        localStorage.removeItem('userRol');
+        localStorage.removeItem('loggedInUsername');
+        window.location.href = 'index.html';
+    });
+
+    // --- Lógica para Formulario de Añadir Material ---
+    $('#formAnadirMaterial').on('submit', function(event) {
+        event.preventDefault();
+        const mensajeDiv = $('#mensajeAnadirMaterial');
+        mensajeDiv.text('Procesando...').removeClass('alert-success alert-danger alert-info').addClass('alert-info show');
+
+        const nombreMaterial = $('#materialNombre').val().trim();
+        const descripcionMaterial = $('#materialDescripcion').val().trim();
+        const precioUnitarioMaterial = $('#materialPrecioUnitario').val();
+
+        if (!nombreMaterial || !precioUnitarioMaterial) {
+            mensajeDiv.text('El nombre y el precio unitario son campos obligatorios.').removeClass('alert-info').addClass('alert-danger');
+            return;
+        }
+        
+        let precioFloat;
+        try {
+            precioFloat = parseFloat(precioUnitarioMaterial);
+            if (isNaN(precioFloat) || precioFloat < 0) {
+                mensajeDiv.text('El precio unitario debe ser un número válido y no negativo.').removeClass('alert-info').addClass('alert-danger');
+                return;
+            }
+        } catch (e) {
+            mensajeDiv.text('El precio unitario ingresado no es un número válido.').removeClass('alert-info').addClass('alert-danger');
+            return;
+        }
+
+
+        const nuevoMaterialData = {
+            nombre: nombreMaterial,
+            descripcion: descripcionMaterial, 
+            precio_unitario: precioFloat
+        };
+
+        console.log("Enviando datos de nuevo material:", nuevoMaterialData);
+
+        $.ajax({
+            url: 'http://127.0.0.1:5000/materiales', 
+            method: 'POST',
+            headers: {
+                'Authorization': 'Bearer ' + token,
+                'Content-Type': 'application/json'
+            },
+            data: JSON.stringify(nuevoMaterialData),
+            success: function(response) {
+                console.log("Respuesta de crear material:", response);
+                mensajeDiv.text(response.message || "Material añadido exitosamente.").removeClass('alert-info alert-danger').addClass('alert-success');
+                $('#formAnadirMaterial')[0].reset(); 
+            },
+            error: function(xhr) {
+                console.error("Error al añadir material:", xhr.responseText);
+                let errorMsg = "Error al añadir el nuevo material.";
+                if (xhr.responseJSON && xhr.responseJSON.error) {
+                    errorMsg = xhr.responseJSON.error;
+                }
+                mensajeDiv.text(errorMsg).removeClass('alert-info alert-success').addClass('alert-danger');
+                
+                if (xhr.status === 401 || xhr.status === 403) {
+                    alert("Su sesión ha expirado o no tiene permisos. Será redirigido al login.");
+                    localStorage.removeItem('token');localStorage.removeItem('userRol');localStorage.removeItem('loggedInUsername');
+                    window.location.href = 'index.html';
+                }
+            }
+        });
+    });
+});
+</script>
+
+</body>
+</html>
