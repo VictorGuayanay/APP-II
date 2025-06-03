@@ -1010,7 +1010,67 @@ def registrar_salida_inventario(admin_user_id_from_token):
             conn.close()
             print("API /inventory/exit POST: Conexión a BD cerrada.")
 
-            
+
+
+@app.route('/materiales/<int:id_material>', methods=['DELETE'])
+@admin_required # O el rol apropiado para gestión de inventario
+def eliminar_material(admin_user_id_from_token, id_material):
+    print(f"API DELETE /materiales/{id_material}: Solicitud de admin ID {admin_user_id_from_token}")
+    
+    conn = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        # Paso 1: Verificar si el material existe y si tiene stock
+        cursor.execute("SELECT nombre, cantidad FROM Materiales WHERE id_material = ?", (id_material,))
+        material = cursor.fetchone()
+
+        if not material:
+            print(f"API DELETE /materiales/{id_material}: Material no encontrado.")
+            return jsonify({'error': 'Material no encontrado'}), 404
+
+        nombre_material = material[0]
+        stock_actual = material[1]
+
+        # VERIFICACIÓN IMPORTANTE: No permitir eliminar si hay stock.
+        if stock_actual > 0:
+            print(f"API DELETE /materiales/{id_material}: Intento de eliminar material '{nombre_material}' con stock ({stock_actual}). Denegado.")
+            return jsonify({'error': f'No se puede eliminar el material "{nombre_material}" porque aún tiene {stock_actual} unidades en stock. Primero ajuste el stock a cero.'}), 409 # 409 Conflict
+
+        # (Opcional: Verificar aquí si el material tiene dependencias en DetalleOrdenMateriales u otras tablas)
+        # Ejemplo:
+        # cursor.execute("SELECT COUNT(*) FROM DetalleOrdenMateriales WHERE id_material = ?", (id_material,))
+        # if cursor.fetchone()[0] > 0:
+        #     # if conn: conn.close() # Considerar cerrar aquí si no se usa finally en este sub-bloque
+        #     return jsonify({'error': 'Este material está referenciado en órdenes de trabajo y no puede ser eliminado.'}), 409
+
+
+        # Paso 2: Si las verificaciones pasan, proceder a eliminar
+        cursor.execute("DELETE FROM Materiales WHERE id_material = ?", (id_material,))
+        conn.commit()
+
+        if cursor.rowcount == 0:
+            # Esto es improbable si la verificación de existencia pasó, pero es un control.
+            print(f"API DELETE /materiales/{id_material}: No se eliminó ninguna fila (material no encontrado después de la verificación inicial o ya eliminado).")
+            return jsonify({'error': 'No se pudo eliminar el material o ya no existía.'}), 404 
+        
+        print(f"API DELETE /materiales/{id_material}: Material '{nombre_material}' (ID: {id_material}) eliminado exitosamente.")
+        return jsonify({'message': f'Material "{nombre_material}" (ID: {id_material}) eliminado exitosamente.'}), 200
+
+    except pyodbc.IntegrityError as ie: 
+        if conn: conn.rollback()
+        print(f"Error de Integridad en DELETE /materiales/{id_material}: {str(ie)}")
+        # Este error es común si hay claves foráneas apuntando a este material y no están configuradas para ON DELETE SET NULL o CASCADE
+        return jsonify({'error': f'Error de integridad: No se puede eliminar el material porque está referenciado en otros registros (ej. órdenes de trabajo). Detalles: {str(ie)}'}), 409
+    except Exception as e:
+        if conn: conn.rollback()
+        print(f"Error en DELETE /materiales/{id_material}: {str(e)}")
+        return jsonify({'error': f'Error interno del servidor al eliminar material: {str(e)}'}), 500
+    finally:
+        if conn:
+            conn.close()
+            print(f"API DELETE /materiales/{id_material}: Conexión a BD cerrada desde el bloque finally.")
 
 
 # Ruta de prueba básica
