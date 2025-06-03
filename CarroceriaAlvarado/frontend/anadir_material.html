@@ -172,7 +172,7 @@ $(document).ready(function () {
             },
             error: function(xhr) {
                 console.error("Error al añadir material:", xhr.responseText);
-                let errorMsg = "Error al añadir el nuevo material.";
+                let errorMsg = "Error al añadir el nuevo material, Material ya existe";
                 if (xhr.responseJSON && xhr.responseJSON.error) {
                     errorMsg = xhr.responseJSON.error;
                 }

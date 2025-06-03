@@ -314,7 +314,7 @@ $(document).ready(function () {
             },
             error: function(xhr) {
                 console.error("Error en salida:", xhr.responseText);
-                let errorMsg = "Error al registrar la salida.";
+                let errorMsg = "Error al registrar la salida, Stock insuficiente.";
                 if (xhr.responseJSON) {
                     errorMsg = xhr.responseJSON.error;
                     if (xhr.responseJSON.stock_actual !== undefined) { 
