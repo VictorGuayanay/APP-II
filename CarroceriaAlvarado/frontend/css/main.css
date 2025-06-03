@@ -25,6 +25,16 @@
   src: url('../fonts/poppins/Poppins-SemiBold.ttf'); 
 }
 
+/*////////////////////////////////////////////////////////////////////////////
+/* En tu archivo css/main.css o en un <style> dentro de ver_inventario.html */
+.stock-bajo {
+    background-color: #fff3cd; /* Amarillo claro, similar a table-warning */
+    color: #664d03;
+}
+.stock-critico {
+    background-color: #f8d7da; /* Rojo claro, similar a table-danger */
+    color: #842029;
+}
 
 
 

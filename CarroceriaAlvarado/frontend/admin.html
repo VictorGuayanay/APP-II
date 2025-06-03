@@ -155,12 +155,10 @@
                             <option value="Empleado">Empleado</option>
                             <option value="Supervisor">Supervisor</option>
                             <option value="Administrador">Administrador</option>
-                            {/* Puedes añadir más roles aquí si los tienes definidos en tu sistema */}
+
                         </select>
                     </div>
-                    
-                    {/* No incluimos la edición de contraseña aquí para mantenerlo simple.
-                         La actualización de contraseña generalmente sigue un flujo diferente y más seguro. */}
+                
                     
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
@@ -191,6 +189,12 @@
                         <label for="settingMaxLoginAttempts" class="form-label">Máximos Intentos de Login Fallidos</label>
                         <input type="number" class="form-control" id="settingMaxLoginAttempts" min="1" required>
                         <div class="form-text">Número de intentos antes de bloquear la cuenta o tomar otra acción.</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="settingGlobalLowStockThreshold" class="form-label">Umbral Global de Stock Bajo</label>
+                        <input type="number" class="form-control" id="settingGlobalLowStockThreshold" min="0" required>
+                        <div class="form-text">Cantidad mínima de stock. Materiales con stock igual o inferior a este valor se resaltarán. (Ej: 5, 10). Un valor de 0 puede usarse si no se desea resaltado o solo para stock cero.</div>
                     </div>
                     
                     <div class="modal-footer">
@@ -549,51 +553,118 @@ $(document).ready(function () {
     $('#settingsModal').on('show.bs.modal', function () {
         console.log("Abriendo modal de configuraciones. Cargando valores actuales...");
         const token = localStorage.getItem('token');
+        
+        // La protección de página general ya debería haber manejado la ausencia de token,
+        // pero una verificación adicional aquí es buena práctica.
         if (!token) {
-            // Esto no debería pasar si la protección de página funciona, pero es un chequeo.
             alert("Error de autenticación. Por favor, inicie sesión de nuevo.");
-            // Cerrar el modal si se intenta abrir sin token (aunque el link ni debería funcionar)
-            var settingsModalInstance = bootstrap.Modal.getInstance(document.getElementById('settingsModal'));
-            if (settingsModalInstance) { settingsModalInstance.hide(); }
-            window.location.href = 'index.html';
+            // Intenta obtener la instancia del modal para cerrarlo si es posible y se intenta abrir
+            var settingsModalEl = document.getElementById('settingsModal');
+            if (settingsModalEl) {
+                var settingsModalInstance = bootstrap.Modal.getInstance(settingsModalEl);
+                // bootstrap.Modal.getInstance puede devolver null si el modal no está inicializado
+                if (settingsModalInstance) { 
+                    settingsModalInstance.hide(); 
+                }
+            }
+            window.location.href = 'index.html'; // Redirigir a login
             return;
         }
 
-        $('#settingsMessage').text('').removeClass('alert alert-success alert-danger'); // Limpiar mensajes
+        // Limpiar mensajes previos en el modal
+        const mensajeDivModal = $('#settingsMessage'); // Asegúrate que este div exista en tu modal
+        if (mensajeDivModal.length) {
+            mensajeDivModal.text('').removeClass('alert alert-success alert-danger alert-info');
+        }
+
 
         $.ajax({
             url: 'http://127.0.0.1:5000/configuraciones', // Endpoint GET para obtener configuraciones
             method: 'GET',
             headers: { 'Authorization': 'Bearer ' + token },
             success: function(config) {
-                console.log("Configuraciones actuales recibidas:", config);
-                $('#settingResetTokenExpiry').val(config.reset_token_expiry_minutes);
-                $('#settingMaxLoginAttempts').val(config.max_failed_login_attempts);
+                console.log("Configuraciones actuales recibidas del backend:", config);
+                if (config) { // Verificar que config no sea null o undefined
+                    // Poblar campos existentes
+                    $('#settingResetTokenExpiry').val(config.reset_token_expiry_minutes);
+                    $('#settingMaxLoginAttempts').val(config.max_failed_login_attempts);
+                    
+                    // NUEVO: Poblar el campo de umbral global de stock bajo
+                    // Asegúrate que el ID del input en el HTML del modal sea 'settingGlobalLowStockThreshold'
+                    $('#settingGlobalLowStockThreshold').val(config.global_low_stock_threshold);
+                } else {
+                    console.error("Error: No se recibieron datos de configuración válidos del backend.");
+                    if (mensajeDivModal.length) {
+                        mensajeDivModal.text('Error al cargar configuraciones: datos no válidos desde el servidor.').addClass('alert alert-danger');
+                    }
+                }
             },
             error: function(xhr) {
-                console.error("Error al cargar configuraciones:", xhr.responseText);
-                $('#settingsMessage').text(xhr.responseJSON?.error || 'Error al cargar configuraciones.').addClass('alert alert-danger');
+                console.error("Error al cargar configuraciones:", xhr.status, xhr.responseText);
+                if (mensajeDivModal.length) {
+                    mensajeDivModal.text(xhr.responseJSON?.error || 'Error al cargar configuraciones. Intente de nuevo más tarde.').addClass('alert alert-danger');
+                }
+                if (xhr.status === 401 || xhr.status === 403) { // Manejo de error de autenticación/autorización
+                    alert("Su sesión ha expirado o no tiene permisos. Será redirigido al login.");
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('userRol');
+                    localStorage.removeItem('loggedInUsername');
+                    window.location.href = 'index.html';
+                }
             }
         });
     });
+
+
+
 
     // Manejador para guardar las configuraciones
     $('#settingsForm').on('submit', function(event) {
         event.preventDefault();
         const token = localStorage.getItem('token');
-        if (!token) { /* ... manejo de token faltante ... */ return; }
+        
+        // Verificar token al momento de guardar también
+        if (!token) {
+            alert("Error de autenticación. Por favor, inicie sesión de nuevo antes de guardar.");
+            window.location.href = 'index.html';
+            return; 
+        }
 
+        // Recoger todos los valores, incluyendo el nuevo umbral de stock bajo
         const newSettings = {
             reset_token_expiry_minutes: parseInt($('#settingResetTokenExpiry').val(), 10),
-            max_failed_login_attempts: parseInt($('#settingMaxLoginAttempts').val(), 10)
+            max_failed_login_attempts: parseInt($('#settingMaxLoginAttempts').val(), 10),
+            global_low_stock_threshold: parseInt($('#settingGlobalLowStockThreshold').val(), 10) // NUEVO campo
         };
 
         console.log("Guardando nuevas configuraciones:", newSettings);
-        $('#settingsMessage').text('').removeClass('alert alert-success alert-danger');
+        const mensajeDivModal = $('#settingsMessage'); // Referencia al div de mensajes del modal
+        if (mensajeDivModal.length) {
+            mensajeDivModal.text('Guardando configuraciones...').removeClass('alert-success alert-danger alert-info').addClass('alert alert-info show');
+        }
 
+
+        // Validación simple en el frontend para los nuevos valores
         if (isNaN(newSettings.reset_token_expiry_minutes) || newSettings.reset_token_expiry_minutes <= 0 ||
-            isNaN(newSettings.max_failed_login_attempts) || newSettings.max_failed_login_attempts <= 0) {
-            $('#settingsMessage').text('Por favor, ingrese valores numéricos válidos y positivos.').addClass('alert alert-danger');
+            isNaN(newSettings.max_failed_login_attempts) || newSettings.max_failed_login_attempts <= 0 ||
+            isNaN(newSettings.global_low_stock_threshold) || newSettings.global_low_stock_threshold < 0) { // El umbral puede ser 0
+            
+            let validationErrorMsg = "Por favor, ingrese valores numéricos válidos. ";
+            if (isNaN(newSettings.reset_token_expiry_minutes) || newSettings.reset_token_expiry_minutes <= 0) {
+                validationErrorMsg += "La duración del token debe ser un número positivo. ";
+            }
+            if (isNaN(newSettings.max_failed_login_attempts) || newSettings.max_failed_login_attempts <= 0) {
+                validationErrorMsg += "Los intentos de login deben ser un número positivo. ";
+            }
+            if (isNaN(newSettings.global_low_stock_threshold) || newSettings.global_low_stock_threshold < 0) {
+                validationErrorMsg += "El umbral de stock bajo debe ser un número no negativo (0 o mayor).";
+            }
+            
+            if (mensajeDivModal.length) {
+                mensajeDivModal.text(validationErrorMsg).removeClass('alert-info').addClass('alert alert-danger');
+            } else {
+                alert(validationErrorMsg); // Fallback si el div de mensajes no existe
+            }
             return;
         }
 
@@ -607,16 +678,35 @@ $(document).ready(function () {
             data: JSON.stringify(newSettings),
             success: function(response) {
                 console.log("Respuesta de guardar configuraciones:", response);
-                $('#settingsMessage').text(response.message || "Configuraciones guardadas exitosamente.").addClass('alert alert-success');
-                // Opcional: cerrar el modal después de un tiempo o dejarlo abierto
+                if (mensajeDivModal.length) {
+                    mensajeDivModal.text(response.message || "Configuraciones guardadas exitosamente.").removeClass('alert-info alert-danger').addClass('alert alert-success');
+                } else {
+                    alert(response.message || "Configuraciones guardadas exitosamente.");
+                }
+                // Opcional: cerrar el modal automáticamente después de un tiempo
                 // setTimeout(function() {
-                //     var settingsModalInstance = bootstrap.Modal.getInstance(document.getElementById('settingsModal'));
-                //     if (settingsModalInstance) { settingsModalInstance.hide(); }
+                //     var settingsModalEl = document.getElementById('settingsModal');
+                //     if (settingsModalEl) {
+                //         var settingsModalInstance = bootstrap.Modal.getInstance(settingsModalEl);
+                //         if (settingsModalInstance) { settingsModalInstance.hide(); }
+                //     }
                 // }, 2000);
             },
             error: function(xhr) {
-                console.error("Error al guardar configuraciones:", xhr.responseText);
-                $('#settingsMessage').text(xhr.responseJSON?.error || 'Error al guardar configuraciones.').addClass('alert alert-danger');
+                console.error("Error al guardar configuraciones:", xhr.status, xhr.responseText);
+                const errorText = xhr.responseJSON?.error || 'Error al guardar configuraciones. Intente de nuevo más tarde.';
+                if (mensajeDivModal.length) {
+                    mensajeDivModal.text(errorText).removeClass('alert-info alert-success').addClass('alert alert-danger');
+                } else {
+                    alert(errorText);
+                }
+                if (xhr.status === 401 || xhr.status === 403) { // Manejo de error de autenticación/autorización
+                    alert("Su sesión ha expirado o no tiene permisos. Será redirigido al login.");
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('userRol');
+                    localStorage.removeItem('loggedInUsername');
+                    window.location.href = 'index.html';
+                }
             }
         });
     });

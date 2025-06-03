@@ -20,7 +20,8 @@ print(f"APP INIT: app.config['SECRET_KEY'] establecida como: '{app.config.get('S
 # Valores por defecto basados en tu código actual o en valores comunes.
 APP_CONFIG = {
     "reset_token_expiry_minutes": 15, # Duración actual en send_reset_email
-    "max_failed_login_attempts": 5    # Un valor común
+    "max_failed_login_attempts": 5,    # Un valor común
+    "global_low_stock_threshold": 10 # Valor para limite de stock bajo
 }
 
 
@@ -683,15 +684,15 @@ def get_usuario_por_id(admin_user_id_from_token, user_id):
 
 #configuraciones
 @app.route('/configuraciones', methods=['GET'])
-@admin_required # Solo administradores
-def get_configuraciones(admin_user_id_from_token):
-    print(f"API GET /configuraciones: Solicitud de Admin ID {admin_user_id_from_token}")
-    # Devolver una copia para evitar modificar el original directamente si se pasa por referencia
+@admin_required 
+def get_configuraciones(admin_user_id_from_token): # El nombre del argumento debe coincidir con lo que pasa el decorador
+    print(f"API GET /configuraciones: Solicitud de Admin ID {admin_user_id_from_token}. Config actual: {APP_CONFIG}")
+    # Devolver una copia para evitar modificar el original directamente si se pasa por referencia en algunos contextos Python
     return jsonify(APP_CONFIG.copy()), 200
 
 @app.route('/configuraciones', methods=['PUT'])
-@admin_required # Solo administradores
-def update_configuraciones(admin_user_id_from_token):
+@admin_required 
+def update_configuraciones(admin_user_id_from_token): # El nombre del argumento debe coincidir
     global APP_CONFIG # Necesario para modificar la variable global
     
     data = request.get_json()
@@ -700,36 +701,53 @@ def update_configuraciones(admin_user_id_from_token):
 
     print(f"API PUT /configuraciones: Admin ID {admin_user_id_from_token} actualizando. Datos recibidos: {data}")
 
-    new_expiry = data.get('reset_token_expiry_minutes')
-    new_attempts = data.get('max_failed_login_attempts')
-
     updated_fields = []
+    # Guardar una copia de la configuración actual para poder revertir en caso de error
+    original_config_copy = APP_CONFIG.copy() 
 
-    if new_expiry is not None:
-        try:
-            new_expiry_int = int(new_expiry)
+    try:
+        new_expiry = data.get('reset_token_expiry_minutes')
+        new_attempts = data.get('max_failed_login_attempts')
+        new_low_stock_threshold = data.get('global_low_stock_threshold') # NUEVO campo
+
+        if new_expiry is not None:
+            new_expiry_int = int(new_expiry) # Puede lanzar ValueError
             if new_expiry_int <= 0:
-                return jsonify({'error': 'reset_token_expiry_minutes debe ser un entero positivo.'}), 400
+                # Para ser más específico, este error lo capturará el ValueError general del try-except
+                raise ValueError("reset_token_expiry_minutes debe ser un entero positivo.")
             APP_CONFIG['reset_token_expiry_minutes'] = new_expiry_int
             updated_fields.append('Duración del token de reseteo')
-        except ValueError:
-            return jsonify({'error': 'reset_token_expiry_minutes debe ser un número entero.'}), 400
-
-    if new_attempts is not None:
-        try:
-            new_attempts_int = int(new_attempts)
+        
+        if new_attempts is not None:
+            new_attempts_int = int(new_attempts) # Puede lanzar ValueError
             if new_attempts_int <= 0:
-                return jsonify({'error': 'max_failed_login_attempts debe ser un entero positivo.'}), 400
+                raise ValueError("max_failed_login_attempts debe ser un entero positivo.")
             APP_CONFIG['max_failed_login_attempts'] = new_attempts_int
             updated_fields.append('Máximos intentos de login')
-        except ValueError:
-            return jsonify({'error': 'max_failed_login_attempts debe ser un número entero.'}), 400
-            
-    if not updated_fields:
-        return jsonify({'error': 'No se proporcionaron campos válidos para actualizar.'}), 400
 
-    print(f"API PUT /configuraciones: Nuevas configuraciones aplicadas: {APP_CONFIG}")
-    return jsonify({'message': f'Configuraciones ({", ".join(updated_fields)}) actualizadas exitosamente.'}), 200
+        # NUEVO: Manejar la actualización del umbral global de stock bajo
+        if new_low_stock_threshold is not None:
+            new_low_stock_threshold_int = int(new_low_stock_threshold) # Puede lanzar ValueError
+            if new_low_stock_threshold_int < 0: # Permitimos 0, si no se quiere resaltado o si stock 0 ya es "bajo"
+                raise ValueError("global_low_stock_threshold debe ser un entero no negativo.")
+            APP_CONFIG['global_low_stock_threshold'] = new_low_stock_threshold_int
+            updated_fields.append('Umbral global de stock bajo')
+            
+        if not updated_fields:
+            # Si no se envió ninguno de los campos esperados en el JSON
+            return jsonify({'error': 'No se proporcionaron campos válidos para actualizar (reset_token_expiry_minutes, max_failed_login_attempts, global_low_stock_threshold).'}), 400
+
+        print(f"API PUT /configuraciones: Nuevas configuraciones aplicadas: {APP_CONFIG}")
+        return jsonify({'message': f'Configuraciones ({", ".join(updated_fields)}) actualizadas exitosamente.'}), 200
+        
+    except ValueError as ve: # Captura errores de conversión int() o de las validaciones lógicas que usan raise ValueError
+        APP_CONFIG = original_config_copy # Revertir a la config original si algo falla durante la actualización
+        print(f"API PUT /configuraciones: Error de valor en los datos - {str(ve)}")
+        return jsonify({'error': str(ve)}), 400
+    except Exception as e:
+        APP_CONFIG = original_config_copy # Revertir en caso de otros errores inesperados
+        print(f"API PUT /configuraciones: Error inesperado - {str(e)}")
+        return jsonify({'error': f'Error interno del servidor al actualizar configuraciones: {str(e)}'}), 500
 
 
 @app.route('/materiales', methods=['GET'])
