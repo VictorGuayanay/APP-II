@@ -1386,6 +1386,128 @@ def get_dashboard_overview(decoded_user_rol, decoded_user_id):
             print("API GET /dashboard/overview: Conexión a BD cerrada.")
 
 
+@app.route('/clientes', methods=['POST'])
+@admin_required # Solo usuarios autorizados (admins) pueden registrar nuevos clientes
+def registrar_cliente(admin_user_id_from_token):
+    print(f"API POST /clientes: Solicitud de admin ID {admin_user_id_from_token} para registrar nuevo cliente.")
+    
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'No se recibieron datos JSON'}), 400
+
+    # Obtener datos del frontend
+    nombre = data.get('nombre')
+    cedula = data.get('cedula')
+    telefono = data.get('telefono')
+    email = data.get('email')
+
+    # Validación de datos de entrada
+    if not all([nombre, cedula, telefono, email]):
+        return jsonify({'error': 'Faltan campos requeridos (nombre, cedula, telefono, email).'}), 400
+
+    if '@' not in email or '.' not in email:
+        return jsonify({'error': 'El formato del correo electrónico es inválido.'}), 400
+
+    conn = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        # Verificar si la cédula o el email ya existen para evitar duplicados
+        cursor.execute("SELECT id_cliente FROM Clientes WHERE cedula = ? OR email = ?", (cedula, email))
+        if cursor.fetchone():
+            return jsonify({'error': 'La cédula o el correo electrónico ya están registrados para otro cliente.'}), 409 # Conflict
+
+        # Preparar el INSERT a la tabla Clientes. El estado por defecto es 1 (activo).
+        sql_insert = "INSERT INTO Clientes (nombre, cedula, telefono, email) VALUES (?, ?, ?, ?)"
+        params = (nombre, cedula, telefono, email)
+        
+        cursor.execute(sql_insert, params)
+        
+        # Obtener el ID del cliente recién creado
+        cursor.execute("SELECT @@IDENTITY AS id;")
+        nuevo_cliente_id = cursor.fetchone()[0]
+        
+        conn.commit()
+        
+        print(f"API POST /clientes: Cliente creado con ID: {nuevo_cliente_id}")
+        return jsonify({
+            'message': 'Cliente registrado exitosamente.',
+            'id_cliente_creado': nuevo_cliente_id
+        }), 201 # 201 Created
+
+    except Exception as e:
+        if conn: conn.rollback()
+        print(f"Error en POST /clientes: {str(e)}")
+        return jsonify({'error': f'Error interno del servidor al registrar el cliente: {str(e)}'}), 500
+    finally:
+        if conn:
+            conn.close()
+            print("API POST /clientes: Conexión a BD cerrada.")
+
+
+@app.route('/empleados', methods=['POST'])
+@admin_required # Solo usuarios autorizados (admins) pueden registrar nuevos empleados
+def registrar_empleado(admin_user_id_from_token):
+    print(f"API POST /empleados: Solicitud de admin ID {admin_user_id_from_token} para registrar nuevo empleado.")
+    
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'No se recibieron datos JSON'}), 400
+
+    # Obtener datos del frontend
+    nombre = data.get('nombre')
+    cedula = data.get('cedula')
+    rol = data.get('rol')
+    telefono = data.get('telefono')
+    fecha_contratacion_str = data.get('fecha_contratacion')
+
+    # Validación de datos de entrada
+    if not all([nombre, cedula, rol, telefono, fecha_contratacion_str]):
+        return jsonify({'error': 'Faltan campos requeridos (nombre, cedula, rol, telefono, fecha_contratacion).'}), 400
+
+    # Validación y conversión de la fecha
+    try:
+        fecha_contratacion = datetime.date.fromisoformat(fecha_contratacion_str)
+    except (ValueError, TypeError):
+        return jsonify({'error': 'El formato de fecha_contratacion es inválido. Use AAAA-MM-DD.'}), 400
+
+    conn = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        # Verificar si la cédula ya existe para evitar duplicados
+        cursor.execute("SELECT id_empleado FROM Empleados WHERE cedula = ?", (cedula,))
+        if cursor.fetchone():
+            return jsonify({'error': 'La cédula ya está registrada para otro empleado.'}), 409 # Conflict
+
+        # Preparar el INSERT a la tabla Empleados. El estado por defecto es 1 (activo).
+        sql_insert = "INSERT INTO Empleados (nombre, cedula, rol, telefono, fecha_contratacion) VALUES (?, ?, ?, ?, ?)"
+        params = (nombre, cedula, rol, telefono, fecha_contratacion)
+        
+        cursor.execute(sql_insert, params)
+        
+        # Obtener el ID del empleado recién creado
+        cursor.execute("SELECT @@IDENTITY AS id;")
+        nuevo_empleado_id = cursor.fetchone()[0]
+        
+        conn.commit()
+        
+        print(f"API POST /empleados: Empleado creado con ID: {nuevo_empleado_id}")
+        return jsonify({
+            'message': 'Empleado registrado exitosamente.',
+            'id_empleado_creado': nuevo_empleado_id
+        }), 201 # 201 Created
+
+    except Exception as e:
+        if conn: conn.rollback()
+        print(f"Error en POST /empleados: {str(e)}")
+        return jsonify({'error': f'Error interno del servidor al registrar el empleado: {str(e)}'}), 500
+    finally:
+        if conn:
+            conn.close()
+            print("API POST /empleados: Conexión a BD cerrada.")
 
 
 
