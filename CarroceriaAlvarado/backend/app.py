@@ -1091,6 +1091,170 @@ def eliminar_material(admin_user_id_from_token, id_material):
             print(f"API DELETE /materiales/{id_material}: Conexión a BD cerrada desde el bloque finally.")
 
 
+
+@app.route('/empleados', methods=['GET'])
+@token_required # Asumimos que cualquier usuario autenticado puede necesitar ver la lista de empleados
+def get_todos_los_empleados(decoded_user_rol, decoded_user_id):
+    print(f"API GET /empleados: Solicitud recibida por usuario ID {decoded_user_id} con rol {decoded_user_rol}")
+    
+    conn = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Seleccionar solo empleados activos para asignarlos a nuevas órdenes
+        # Se seleccionan los campos que el frontend necesita para el combobox (ID y nombre)
+        sql_query = "SELECT id_empleado, nombre, rol FROM Empleados WHERE estado = 1 ORDER BY nombre ASC"
+        cursor.execute(sql_query)
+        
+        columns = [column[0] for column in cursor.description]
+        empleados = [dict(zip(columns, row)) for row in cursor.fetchall()]
+            
+        print(f"API GET /empleados: Devolviendo {len(empleados)} empleados activos.")
+        return jsonify(empleados), 200
+
+    except Exception as e:
+        print(f"Error en GET /empleados: {str(e)}")
+        return jsonify({'error': f'Error interno del servidor al obtener empleados: {str(e)}'}), 500
+    finally:
+        if conn:
+            conn.close()
+            print("API GET /empleados: Conexión a BD cerrada desde el bloque finally.")
+
+
+@app.route('/clientes', methods=['GET'])
+@token_required # Asumimos que cualquier usuario autenticado puede necesitar ver la lista de clientes
+def get_todos_los_clientes(decoded_user_rol, decoded_user_id):
+    print(f"API GET /clientes: Solicitud recibida por usuario ID {decoded_user_id} con rol {decoded_user_rol}")
+    
+    conn = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Seleccionar solo clientes activos
+        # Se seleccionan los campos que el frontend necesita (ID y nombre)
+        sql_query = "SELECT id_cliente, nombre FROM Clientes WHERE estado = 1 ORDER BY nombre ASC"
+        cursor.execute(sql_query)
+        
+        columns = [column[0] for column in cursor.description]
+        clientes = [dict(zip(columns, row)) for row in cursor.fetchall()]
+            
+        print(f"API GET /clientes: Devolviendo {len(clientes)} clientes activos.")
+        return jsonify(clientes), 200
+
+    except Exception as e:
+        print(f"Error en GET /clientes: {str(e)}")
+        return jsonify({'error': f'Error interno del servidor al obtener clientes: {str(e)}'}), 500
+    finally:
+        if conn:
+            conn.close()
+            print("API GET /clientes: Conexión a BD cerrada desde el bloque finally.")
+
+
+
+@app.route('/ordenes-trabajo', methods=['POST'])
+@admin_required # Solo usuarios autorizados pueden crear órdenes de trabajo
+def crear_orden_trabajo(admin_user_id_from_token):
+    print(f"API POST /ordenes-trabajo: Solicitud de admin ID {admin_user_id_from_token} para crear nueva orden.")
+    
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'No se recibieron datos JSON'}), 400
+
+    # --- Obtención de datos del frontend ---
+    id_empleado = data.get('id_empleado')
+    id_cliente = data.get('id_cliente')
+    fecha_inicio_str = data.get('fecha_inicio')
+    descripcion = data.get('descripcion')
+    # Se obtiene la fecha de finalización (puede ser opcional)
+    fecha_fin_str = data.get('fecha_fin') 
+
+    # --- Validación de datos de entrada ---
+    if not all([id_empleado, id_cliente, fecha_inicio_str, descripcion]):
+        return jsonify({'error': 'Faltan campos requeridos (id_empleado, id_cliente, fecha_inicio, descripcion).'}), 400
+
+    # --- Validación y conversión de fechas ---
+    try:
+        fecha_inicio = datetime.date.fromisoformat(fecha_inicio_str)
+        # Opcional: No permitir crear órdenes con fecha pasada
+        if fecha_inicio < datetime.date.today():
+            return jsonify({'error': 'La fecha de inicio no puede ser en el pasado.'}), 400
+        
+        # Validar fecha_fin solo si se proporciona
+        fecha_fin = None # Valor por defecto es NULL
+        if fecha_fin_str: # Si el frontend envía una fecha_fin
+            fecha_fin = datetime.date.fromisoformat(fecha_fin_str)
+            # Validar que la fecha de fin no sea anterior a la de inicio
+            if fecha_fin < fecha_inicio:
+                return jsonify({'error': 'La fecha de finalización no puede ser anterior a la fecha de inicio.'}), 400
+
+    except (ValueError, TypeError):
+        return jsonify({'error': 'El formato de fecha es inválido. Use AAAA-MM-DD.'}), 400
+
+    conn = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        # Opcional pero recomendado: Verificar que el id_empleado y id_cliente existan
+        cursor.execute("SELECT COUNT(*) FROM Empleados WHERE id_empleado = ?", (id_empleado,))
+        if cursor.fetchone()[0] == 0:
+            return jsonify({'error': f'El empleado con ID {id_empleado} no existe.'}), 404
+        
+        cursor.execute("SELECT COUNT(*) FROM Clientes WHERE id_cliente = ?", (id_cliente,))
+        if cursor.fetchone()[0] == 0:
+            return jsonify({'error': f'El cliente con ID {id_cliente} no existe.'}), 404
+        
+        # --- Preparar el INSERT a la tabla OrdenesTrabajo ---
+        # Se añade la columna fecha_fin a la sentencia INSERT
+        sql_insert = """
+            INSERT INTO OrdenesTrabajo (id_empleado, id_cliente, fecha_inicio, fecha_fin, descripcion, id_usuario_creador, estado, fecha_ultima_actualizacion, id_usuario_ultima_actualizacion)
+            VALUES (?, ?, ?, ?, ?, ?, ?, GETDATE(), ?)
+        """
+        params = (
+            id_empleado, 
+            id_cliente, 
+            fecha_inicio, 
+            fecha_fin, # Se añade el valor de fecha_fin
+            descripcion, 
+            admin_user_id_from_token, # id_usuario_creador
+            'Pendiente', # estado inicial
+            admin_user_id_from_token # id_usuario_ultima_actualizacion
+        )
+        
+        cursor.execute(sql_insert, params)
+        
+        # Obtener el ID de la orden recién creada para devolverlo
+        cursor.execute("SELECT @@IDENTITY AS id;")
+        nueva_orden_id = cursor.fetchone()[0]
+        
+        conn.commit()
+        
+        print(f"API POST /ordenes-trabajo: Orden de trabajo creada con ID: {nueva_orden_id}")
+        return jsonify({
+            'message': 'Orden de trabajo creada exitosamente.',
+            'id_orden_creada': nueva_orden_id
+        }), 201 # 201 Created
+
+    except Exception as e:
+        if conn: conn.rollback()
+        print(f"Error en POST /ordenes-trabajo: {str(e)}")
+        return jsonify({'error': f'Error interno del servidor al crear la orden de trabajo: {str(e)}'}), 500
+    finally:
+        if conn:
+            conn.close()
+            print("API POST /ordenes-trabajo: Conexión a BD cerrada.")
+
+
+
+
+
+
+
+
+
+
 # Ruta de prueba básica
 @app.route('/')
 def hello():

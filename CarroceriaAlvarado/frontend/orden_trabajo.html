@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <title>Crear Orden de Trabajo - Carrocería Alvarado</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" type="text/css" href="vendor/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="fonts/font-awesome-4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" type="text/css" href="css/main.css">
+</head>
+<body>
+
+<div class="admin-wrapper">
+    <nav id="sidebar">
+        <div class="sidebar-header">
+            <h3>Carrocería Alvarado</h3>
+        </div>
+        <ul class="list-unstyled components">
+            <p class="ms-3">Administración</p>
+            <li><a href="admin.html"><i class="fa fa-users"></i> Gestión de Usuarios</a></li>
+            <li>
+                <a href="#inventarioSubmenu" data-bs-toggle="collapse" aria-expanded="false" class="dropdown-toggle">
+                    <i class="fa fa-archive"></i> Inventario
+                </a>
+                <ul class="collapse list-unstyled" id="inventarioSubmenu">
+                    <li><a href="ver_inventario.html">Ver Inventario</a></li>
+                    <li><a href="anadir_material.html">Añadir Material</a></li>
+                    <li><a href="entradas_salidas_inventario.html">Entradas/Salidas</a></li>
+                </ul>
+            </li>
+            <li class="active"><a href="orden_trabajo.html"><i class="fa fa-briefcase"></i> Órdenes de Trabajo</a></li>
+            <li><a href="#"><i class="fa fa-bar-chart"></i> Reportes</a></li>
+            <li><a href="admin_config.html"><i class="fa fa-cog"></i> Configuración</a></li>
+        </ul>
+    </nav>
+
+    <div id="content">
+        <nav class="navbar navbar-expand-lg navbar-light top-navbar">
+            <div class="container-fluid">
+                <button type="button" id="sidebarCollapse" class="btn btn-info" style="background-color: #0073aa; border-color: #0073aa;">
+                    <i class="fa fa-align-left"></i>
+                    <span>Menú</span>
+                </button>
+                <div class="user-info">
+                    <span>Hola, <strong id="currentUserName">Usuario</strong>!</span>
+                    <a href="#" id="logoutButton" class="ms-3">Cerrar Sesión</a>
+                </div>
+            </div>
+        </nav>
+
+        <div class="content-area container-fluid pt-4">
+            <h2 class="card-header-title">Crear Nueva Orden de Trabajo</h2>
+            
+            <div class="card">
+                <div class="card-header">
+                    Detalles de la Orden
+                </div>
+                <div class="card-body">
+                    <form id="formCrearOrden">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="selectCliente" class="form-label">Cliente <span class="text-danger">*</span></label>
+                                <select class="form-select" id="selectCliente" required>
+                                    <option value="">Cargando clientes...</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="selectEmpleado" class="form-label">Empleado Asignado <span class="text-danger">*</span></label>
+                                <select class="form-select" id="selectEmpleado" required>
+                                    <option value="">Cargando empleados...</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="fechaInicio" class="form-label">Fecha de Inicio <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" id="fechaInicio" required>
+                        </div>
+                         <div class="mb-3">
+                            <label for="fechaFin" class="form-label">Fecha de Finalización <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" id="fechaFin" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="descripcionOrden" class="form-label">Descripción del Trabajo <span class="text-danger">*</span></label>
+                            <textarea class="form-control" id="descripcionOrden" rows="4" placeholder="Ej: Reparación de parachoques delantero y pintura general." required></textarea>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary">Crear Orden de Trabajo</button>
+                        <div id="mensajeCrearOrden" class="mt-3"></div>
+                    </form>
+                </div>
+            </div>
+        </div> </div> </div> <script src="vendor/jquery/jquery-3.2.1.min.js"></script>
+<script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+
+<script>
+// Función para poblar los selectores (combobox)
+function cargarSelects() {
+    console.log("Cargando datos para selectores de Clientes y Empleados...");
+    const token = localStorage.getItem('token');
+    const $selectCliente = $('#selectCliente');
+    const $selectEmpleado = $('#selectEmpleado');
+
+    if (!token) {
+        console.error("No hay token para cargar datos de selectores.");
+        return;
+    }
+
+    // Cargar Clientes
+    $.ajax({
+        url: 'http://127.0.0.1:5000/clientes',
+        method: 'GET',
+        headers: { 'Authorization': 'Bearer ' + token },
+        success: function(clientes) {
+            $selectCliente.empty().append('<option value="">Seleccione un cliente...</option>');
+            if (clientes && clientes.length > 0) {
+                clientes.forEach(function(cliente) {
+                    $selectCliente.append(`<option value="${cliente.id_cliente}">${cliente.nombre}</option>`);
+                });
+            } else {
+                $selectCliente.append('<option value="">No hay clientes disponibles</option>');
+            }
+        },
+        error: function(xhr) {
+            console.error("Error al cargar clientes:", xhr.responseText);
+            $selectCliente.empty().append('<option value="">Error al cargar clientes</option>');
+        }
+    });
+
+    // Cargar Empleados
+    $.ajax({
+        url: 'http://127.0.0.1:5000/empleados',
+        method: 'GET',
+        headers: { 'Authorization': 'Bearer ' + token },
+        success: function(empleados) {
+            $selectEmpleado.empty().append('<option value="">Seleccione un empleado...</option>');
+            if (empleados && empleados.length > 0) {
+                empleados.forEach(function(empleado) {
+                    $selectEmpleado.append(`<option value="${empleado.id_empleado}">${empleado.nombre} (${empleado.rol})</option>`);
+                });
+            } else {
+                $selectEmpleado.append('<option value="">No hay empleados disponibles</option>');
+            }
+        },
+        error: function(xhr) {
+            console.error("Error al cargar empleados:", xhr.responseText);
+            $selectEmpleado.empty().append('<option value="">Error al cargar empleados</option>');
+        }
+    });
+}
+
+$(document).ready(function () {
+    // --- Inicialización y Protección de Página ---
+    $('#sidebarCollapse').on('click', function () {
+        $('#sidebar').toggleClass('active');
+    });
+
+    const token = localStorage.getItem('token');
+    const userRol = localStorage.getItem('userRol');
+    const loggedInUsername = localStorage.getItem('loggedInUsername');
+    
+    // Roles que pueden crear órdenes de trabajo
+    const rolesPermitidos = ['Administrador', 'Supervisor']; 
+
+    if (!token || !userRol || !rolesPermitidos.includes(userRol)) {
+        console.log("orden_trabajo.html - Acceso denegado o no autenticado. Redirigiendo a login.");
+        window.location.href = 'index.html';
+        return; 
+    }
+
+    if (loggedInUsername) {
+        $('#currentUserName').text(loggedInUsername);
+    }
+
+    $('#logoutButton').on('click', function(e) {
+        e.preventDefault();
+        localStorage.removeItem('token');
+        localStorage.removeItem('userRol');
+        localStorage.removeItem('loggedInUsername');
+        window.location.href = 'index.html';
+    });
+
+    // Llamar a la función para cargar los datos en los combobox
+    cargarSelects();
+
+    // --- Lógica para el Formulario de Crear Orden ---
+    $('#formCrearOrden').on('submit', function(event) {
+        event.preventDefault();
+        const mensajeDiv = $('#mensajeCrearOrden');
+        mensajeDiv.text('Procesando...').removeClass('alert-success alert-danger').addClass('alert alert-info show');
+
+        const ordenData = {
+            id_cliente: $('#selectCliente').val(),
+            id_empleado: $('#selectEmpleado').val(),
+            fecha_inicio: $('#fechaInicio').val(),
+            fecha_fin: $('#fechaFin').val() || null,
+            descripcion: $('#descripcionOrden').val().trim()
+        };
+
+        // Validación de datos
+        if (!ordenData.id_cliente || !ordenData.id_empleado || !ordenData.fecha_inicio || !ordenData.descripcion) {
+            mensajeDiv.text('Todos los campos son obligatorios.').removeClass('alert-info').addClass('alert alert-danger');
+            return;
+        }
+
+        console.log("Enviando datos de nueva orden de trabajo:", ordenData);
+
+        $.ajax({
+            url: 'http://127.0.0.1:5000/ordenes-trabajo',
+            method: 'POST',
+            headers: {
+                'Authorization': 'Bearer ' + token,
+                'Content-Type': 'application/json'
+            },
+            data: JSON.stringify(ordenData),
+            success: function(response) {
+                console.log("Respuesta de crear orden:", response);
+                const msg = (response.message || "Orden creada con éxito.") + ` ID de Orden: ${response.id_orden_creada}`;
+                mensajeDiv.text(msg).removeClass('alert-info alert-danger').addClass('alert alert-success');
+                $('#formCrearOrden')[0].reset(); // Limpiar formulario
+            },
+            error: function(xhr) {
+                console.error("Error al crear orden de trabajo:", xhr.responseText);
+                mensajeDiv.text(xhr.responseJSON?.error || "Error al crear la orden de trabajo.").removeClass('alert-info alert-success').addClass('alert alert-danger');
+                 if (xhr.status === 401 || xhr.status === 403) {
+                    alert("Su sesión ha expirado o no tiene permisos. Será redirigido al login.");
+                    window.location.href = 'index.html';
+                }
+            }
+        });
+    });
+});
+</script>
+</body>
+</html>
