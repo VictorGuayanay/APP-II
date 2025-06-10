@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <title>Visión General - Carrocería Alvarado</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" type="text/css" href="vendor/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="fonts/font-awesome-4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" type="text/css" href="css/main.css">
+    
+</head>
+<body>
+
+<div class="admin-wrapper">
+    <nav id="sidebar">
+        <div class="sidebar-header">
+            <h3>Carrocería Alvarado</h3>
+        </div>
+        <ul class="list-unstyled components">
+            <p class="ms-3">Administración</p>
+            <li class="active">
+                <a href="#dashboardSubmenu" data-bs-toggle="collapse" aria-expanded="true" class="dropdown-toggle">
+                    <i class="fa fa-tachometer"></i> Dashboard
+                </a>
+                <ul class="collapse list-unstyled show" id="dashboardSubmenu">
+                    <li class="active"><a href="vision_general.html">Visión General</a></li>
+                </ul>
+            </li>
+            <li><a href="admin.html"><i class="fa fa-users"></i> Gestión de Usuarios</a></li>
+            <li>
+                <a href="#inventarioSubmenu" data-bs-toggle="collapse" aria-expanded="false" class="dropdown-toggle">
+                    <i class="fa fa-archive"></i> Inventario
+                </a>
+                <ul class="collapse list-unstyled" id="inventarioSubmenu">
+                    <li><a href="ver_inventario.html">Ver Inventario</a></li>
+                    <li><a href="anadir_material.html">Añadir Material</a></li>
+                    <li><a href="entradas_salidas_inventario.html">Entradas/Salidas</a></li>
+                </ul>
+            </li>
+            <li><a href="orden_trabajo.html"><i class="fa fa-briefcase"></i> Órdenes de Trabajo</a></li>
+            <li><a href="#"><i class="fa fa-bar-chart"></i> Reportes</a></li>
+            <li><a href="#" data-bs-toggle="modal" data-bs-target="#settingsModal"><i class="fa fa-cog"></i> Configuración</a></li>
+        </ul>
+    </nav>
+
+    <div id="content">
+        <nav class="navbar navbar-expand-lg navbar-light top-navbar">
+            <div class="container-fluid">
+                <button type="button" id="sidebarCollapse" class="btn btn-info" style="background-color: #0073aa; border-color: #0073aa;">
+                    <i class="fa fa-align-left"></i>
+                    <span>Menú</span>
+                </button>
+                <div class="user-info">
+                    <div class="dropdown me-3">
+                        <a href="#" class="nav-link text-secondary" id="notificationBell" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fa fa-bell" style="font-size: 1.2rem;"></i>
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" id="notificationCount" style="display: none;">0</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="notificationBell" id="notificationList" style="min-width: 300px; max-height: 400px; overflow-y: auto;">
+                            <li><a class="dropdown-item" href="#">Cargando...</a></li>
+                        </ul>
+                    </div>
+                    <span>Hola, <strong id="currentUserName">Usuario</strong>!</span>
+                    <a href="#" id="logoutButton" class="ms-3">Cerrar Sesión</a>
+                </div>
+            </div>
+        </nav>
+
+        <div class="content-area container-fluid pt-4">
+            <h2 class="card-header-title">Visión General</h2>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card dashboard-card">
+                        <div class="card-header">
+                            <h5 class="card-title"><i class="fa fa-warning text-warning"></i> Alertas de Inventario (Stock Bajo)</h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="stock-alert-list">
+                                <p class="text-center">Cargando...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="card dashboard-card">
+                        <div class="card-header">
+                            <h5 class="card-title"><i class="fa fa-briefcase text-info"></i> Órdenes de Trabajo Recientes</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Cliente</th>
+                                            <th>Descripción</th>
+                                            <th>Estado</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="work-order-table">
+                                        <tr><td colspan="4" class="text-center">Cargando...</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div> </div> </div> <script src="vendor/jquery/jquery-3.2.1.min.js"></script>
+<script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+<script>
+// Función para cargar los datos del dashboard
+function cargarVisionGeneral() {
+    console.log("Cargando datos para la Visión General...");
+    const token = localStorage.getItem('token');
+    const $stockAlertList = $('#stock-alert-list');
+    const $workOrderTable = $('#work-order-table');
+
+    if (!token) { /* La protección de página ya debería haber actuado */ return; }
+
+    $.ajax({
+        url: 'http://127.0.0.1:5000/dashboard/overview',
+        method: 'GET',
+        headers: { 'Authorization': 'Bearer ' + token },
+        success: function(data) {
+            console.log("Datos del dashboard recibidos:", data);
+            
+            // Poblar lista de stock bajo
+            $stockAlertList.empty();
+            if (data.materiales_stock_bajo && data.materiales_stock_bajo.length > 0) {
+                const listGroup = $('<ul class="list-group list-group-flush"></ul>');
+                data.materiales_stock_bajo.forEach(function(material) {
+                    listGroup.append(`<li class="list-group-item d-flex justify-content-between align-items-center">
+                                        ${material.nombre}
+                                        <span class="badge bg-danger rounded-pill">${material.cantidad}</span>
+                                     </li>`);
+                });
+                $stockAlertList.append(listGroup);
+            } else {
+                $stockAlertList.append('<p class="text-muted">No hay alertas de stock bajo actualmente.</p>');
+            }
+
+            // Poblar tabla de órdenes de trabajo recientes
+            $workOrderTable.empty();
+            if (data.ordenes_recientes && data.ordenes_recientes.length > 0) {
+                data.ordenes_recientes.forEach(function(orden) {
+                    $workOrderTable.append(`<tr>
+                                               <td>${orden.id_orden}</td>
+                                               <td>${orden.nombre_cliente}</td>
+                                               <td>${orden.descripcion.substring(0, 30)}...</td>
+                                               <td><span class="badge bg-info">${orden.estado}</span></td>
+                                           </tr>`);
+                });
+            } else {
+                $workOrderTable.append('<tr><td colspan="4" class="text-center text-muted">No hay órdenes de trabajo activas o recientes.</td></tr>');
+            }
+        },
+        error: function(xhr) {
+            console.error("Error al cargar datos del dashboard:", xhr.responseText);
+            $stockAlertList.html('<p class="text-danger">Error al cargar datos de inventario.</p>');
+            $workOrderTable.html('<tr><td colspan="4" class="text-center text-danger">Error al cargar órdenes de trabajo.</td></tr>');
+            if (xhr.status === 401 || xhr.status === 403) {
+                 window.location.href = 'index.html'; // Redirigir si falla la autenticación/autorización
+            }
+        }
+    });
+}
+
+// Script principal de la página
+$(document).ready(function () {
+    // Lógica estándar: sidebar, protección, nombre de usuario, logout
+    $('#sidebarCollapse').on('click', function () {
+        $('#sidebar').toggleClass('active');
+    });
+
+    const token = localStorage.getItem('token');
+    const userRol = localStorage.getItem('userRol');
+    const loggedInUsername = localStorage.getItem('loggedInUsername');
+
+    if (!token) {
+        window.location.href = 'index.html';
+        return; 
+    }
+
+    if (loggedInUsername) {
+        $('#currentUserName').text(loggedInUsername);
+    }
+
+    $('#logoutButton').on('click', function(e) {
+        e.preventDefault();
+        localStorage.clear(); // Limpiar todo el localStorage al cerrar sesión
+        window.location.href = 'index.html';
+    });
+
+    // Cargar los datos del dashboard y las notificaciones
+    cargarVisionGeneral();
+    // Si tu lógica de notificaciones está en otro archivo, asegúrate de llamarla también
+    // cargarNotificaciones(); 
+});
+</script>
+
+</body>
+</html>

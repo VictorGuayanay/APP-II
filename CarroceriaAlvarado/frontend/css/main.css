@@ -57,7 +57,31 @@
 
 
 /*//////////////////////////////////////////////////////////////////
-[ RESTYLE TAG ]*/
+/*NOTIFICACION*/
+/* Dentro de la etiqueta &lt;style&gt; en el &lt;head&gt; de tus archivos HTML */
+.dropdown-menu#notificationList .dropdown-item {
+    white-space: normal; /* Permite que el texto largo de la notificación se ajuste en varias líneas */
+    font-size: 0.9rem;
+    padding: 0.5rem 1rem;
+    border-bottom: 1px solid #eee;
+}
+
+.dropdown-menu\#notificationList .dropdown-item:last-child {
+border-bottom: none;
+}
+
+.dropdown-menu\#notificationList .dropdown-item i {
+margin-right: 10px; /
+}
+
+/*////////////////////////////////////////////////////////////////*/
+
+
+
+
+
+
+/*[ RESTYLE TAG ]*/
 
 * {
 	margin: 0px; 

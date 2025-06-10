@@ -22,7 +22,7 @@
                     <i class="fa fa-tachometer"></i> Dashboard
                 </a>
                 <ul class="collapse list-unstyled" id="dashboardSubmenu">
-                    <li><a href="#">Visión General</a></li>
+                    <li><a href="vision_general.html">Visión General</a></li>
                 </ul>
             </li>
             <li class="active"> 
@@ -54,12 +54,25 @@
                     <i class="fa fa-align-left"></i>
                     <span>Menú</span>
                 </button>
-                <!--<div class="user-info"> <span>Hola, <strong id="adminUsername">Usuario</strong>!</span>
-                    <a href="#" id="logoutButtonAdmin" class="ms-3">Cerrar Sesión</a>
-                </div>-->
-                <div>
-                    <a href="#" id="logoutButtonAdmin" class="ms-3">Cerrar Sesión</a>
+
+
+                <div class="user-info">
+                    <div class="dropdown me-3">
+                        <a href="#" class="nav-link text-secondary" id="notificationBell" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fa fa-bell" style="font-size: 1.2rem;"></i>
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" id="notificationCount" style="display: none;">
+                            0
+                            </span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="notificationBell" id="notificationList" style="min-width: 300px; max-height: 400px; overflow-y: auto;">
+                            <li><a class="dropdown-item" href="#">Cargando notificaciones...</a></li>
+                        </ul>
+                    </div>
+                    <span>Hola, <strong id="currentUserName"></strong>Bienvenid@!</span>
+                    <a href="#" id="logoutButton" class="ms-3">Cerrar Sesión</a>
                 </div>
+
+
             </div>
         </nav>
 
@@ -373,6 +386,76 @@ function desbloquearUsuarioPorAdmin(userId) {
     });
 }
 
+
+function cargarNotificaciones() {
+    console.log("cargarNotificaciones() - Iniciando carga de notificaciones...");
+    const token = localStorage.getItem('token');
+    const $notificationCount = $('#notificationCount'); // El span para el contador
+    const $notificationList = $('#notificationList');   // La lista <ul> para los mensajes
+
+    // Verificación de token antes de la llamada
+    if (!token) {
+        console.error("cargarNotificaciones() - No hay token. No se puede llamar a la API.");
+        // No es necesario redirigir aquí, ya que la protección de página principal debería haber actuado.
+        // Simplemente no se cargarán las notificaciones.
+        return;
+    }
+
+    $.ajax({
+        url: 'http://127.0.0.1:5000/notificaciones',
+        method: 'GET',
+        headers: {
+            'Authorization': 'Bearer ' + token
+        },
+        success: function(notificaciones) {
+            console.log("cargarNotificaciones() - Notificaciones recibidas:", notificaciones);
+            $notificationList.empty(); // Limpiar la lista actual
+
+            if (notificaciones && Array.isArray(notificaciones) && notificaciones.length > 0) {
+                // Hay notificaciones, actualizar contador y mostrarlo
+                $notificationCount.text(notificaciones.length).show();
+
+                // Poblar la lista desplegable
+                notificaciones.forEach(function(notif) {
+                    let iconClass = 'fa-info-circle'; // Icono por defecto
+                    if (notif.tipo === 'stock_bajo') {
+                        iconClass = 'fa-warning text-warning'; // Icono de advertencia para stock bajo
+                    } else if (notif.tipo === 'orden_vencimiento') {
+                        iconClass = 'fa-calendar text-danger'; // Icono de calendario para órdenes por vencer
+                    }
+
+                    const notificacionHtml = `
+                        <li>
+                            <a class="dropdown-item" href="#">
+                                <i class="fa ${iconClass}"></i> ${notif.mensaje}
+                            </a>
+                        </li>
+                    `;
+                    $notificationList.append(notificacionHtml);
+                });
+
+            } else {
+                // No hay notificaciones
+                console.log("cargarNotificaciones() - No hay notificaciones nuevas.");
+                $notificationCount.hide(); // Ocultar el contador
+                $notificationList.append('<li><span class="dropdown-item-text">No hay notificaciones nuevas.</span></li>');
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error("cargarNotificaciones() - Error al cargar notificaciones. Status:", xhr.status, "Response:", xhr.responseText);
+            $notificationCount.hide();
+            $notificationList.empty().append('<li><span class="dropdown-item-text text-danger">Error al cargar notificaciones.</span></li>');
+            // No redirigimos aquí para no interrumpir al usuario, a menos que sea un error de autenticación
+            if (xhr.status === 401) { // Unauthorized
+                // Podría ser útil recargar la página para que la protección de página lo envíe al login
+                window.location.reload();
+            }
+        }
+    });
+}
+
+
+
 // Código principal que se ejecuta cuando el DOM está listo
 $(document).ready(function () { 
     // Funcionalidad para mostrar/ocultar el sidebar
@@ -409,6 +492,10 @@ $(document).ready(function () {
         console.log("admin.html - loggedInUsername no encontrado/inválido en localStorage. Se muestra 'Usuario'."); 
         // El HTML ya tiene "Usuario" como fallback en el strong tag, así que no es estrictamente necesario un .text() aquí si es fallback. [cite: 26]
     } 
+
+    if (localStorage.getItem('token')) {
+        cargarNotificaciones();
+    }
 
     console.log("admin.html - Acceso de administrador concedido. Cargando usuarios..."); 
     loadUsers(); // Cargar la lista de usuarios al iniciar la página si el usuario es admin [cite: 28]
@@ -736,6 +823,7 @@ $(document).ready(function () {
         }
     });
 
+    
 });
 </script>
 </body>

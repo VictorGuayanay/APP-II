@@ -198,16 +198,71 @@ $(document).ready(function() {
         });
     }
     
-    // Botón de Logout genérico (opcional, si tienes un botón con este ID en varias páginas)
-    // Si tienes botones de logout con IDs específicos en admin.html y users.html, este puede no ser necesario.
-    // Asegúrate de que si usas este, también elimine 'loggedInUsername'.
-    /*
-    $('#logoutButton').on('click', function() { 
-        console.log("Botón de logout genérico clickeado");
-        localStorage.removeItem('token');
-        localStorage.removeItem('userRol');
-        localStorage.removeItem('loggedInUsername'); // Importante limpiar el username también
-        window.location.href = 'index.html';
-    });
-    */
+    function cargarNotificaciones() {
+        console.log("cargarNotificaciones() - Iniciando carga de notificaciones...");
+        const token = localStorage.getItem('token');
+        const $notificationCount = $('#notificationCount'); // El span para el contador
+        const $notificationList = $('#notificationList');   // La lista <ul> para los mensajes
+
+        // Verificación de token antes de la llamada
+        if (!token) {
+            console.error("cargarNotificaciones() - No hay token. No se puede llamar a la API.");
+            // No es necesario redirigir aquí, ya que la protección de página principal debería haber actuado.
+            // Simplemente no se cargarán las notificaciones.
+            return;
+        }
+
+        $.ajax({
+            url: 'http://127.0.0.1:5000/notificaciones',
+            method: 'GET',
+            headers: {
+                'Authorization': 'Bearer ' + token
+            },
+            success: function(notificaciones) {
+                console.log("cargarNotificaciones() - Notificaciones recibidas:", notificaciones);
+                $notificationList.empty(); // Limpiar la lista actual
+
+                if (notificaciones && Array.isArray(notificaciones) && notificaciones.length > 0) {
+                    // Hay notificaciones, actualizar contador y mostrarlo
+                    $notificationCount.text(notificaciones.length).show();
+
+                    // Poblar la lista desplegable
+                    notificaciones.forEach(function(notif) {
+                        let iconClass = 'fa-info-circle'; // Icono por defecto
+                        if (notif.tipo === 'stock_bajo') {
+                            iconClass = 'fa-warning text-warning'; // Icono de advertencia para stock bajo
+                        } else if (notif.tipo === 'orden_vencimiento') {
+                            iconClass = 'fa-calendar text-danger'; // Icono de calendario para órdenes por vencer
+                        }
+
+                        const notificacionHtml = `
+                            <li>
+                                <a class="dropdown-item" href="#">
+                                    <i class="fa ${iconClass}"></i> ${notif.mensaje}
+                                </a>
+                            </li>
+                        `;
+                        $notificationList.append(notificacionHtml);
+                    });
+
+                } else {
+                    // No hay notificaciones
+                    console.log("cargarNotificaciones() - No hay notificaciones nuevas.");
+                    $notificationCount.hide(); // Ocultar el contador
+                    $notificationList.append('<li><span class="dropdown-item-text">No hay notificaciones nuevas.</span></li>');
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error("cargarNotificaciones() - Error al cargar notificaciones. Status:", xhr.status, "Response:", xhr.responseText);
+                $notificationCount.hide();
+                $notificationList.empty().append('<li><span class="dropdown-item-text text-danger">Error al cargar notificaciones.</span></li>');
+                // No redirigimos aquí para no interrumpir al usuario, a menos que sea un error de autenticación
+                if (xhr.status === 401) { // Unauthorized
+                    // Podría ser útil recargar la página para que la protección de página lo envíe al login
+                    window.location.reload();
+                }
+            }
+        });
+    }
+
 });

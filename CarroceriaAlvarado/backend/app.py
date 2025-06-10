@@ -1247,9 +1247,143 @@ def crear_orden_trabajo(admin_user_id_from_token):
             print("API POST /ordenes-trabajo: Conexión a BD cerrada.")
 
 
+@app.route('/notificaciones', methods=['GET'])
+@token_required # Cualquier usuario autenticado puede ver las notificaciones
+def get_notificaciones(decoded_user_rol, decoded_user_id):
+    print(f"API GET /notificaciones: Solicitud recibida por usuario ID {decoded_user_id} con rol {decoded_user_rol}")
+    
+    notificaciones = []
+    conn = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        # --- Lógica 1: Notificaciones de Stock Bajo ---
+        umbral_stock_bajo = APP_CONFIG.get('global_low_stock_threshold', 10) # Usar valor de config con fallback
+        print(f"API GET /notificaciones: Verificando stock bajo con umbral de {umbral_stock_bajo}.")
+
+        sql_stock_bajo = "SELECT id_material, nombre, cantidad FROM Materiales WHERE cantidad <= ?"
+        cursor.execute(sql_stock_bajo, umbral_stock_bajo)
+        
+        for material in cursor.fetchall():
+            id_material, nombre, cantidad = material
+            mensaje = f"Alerta de stock: '{nombre}' solo tiene {cantidad} unidades restantes."
+            notificacion_stock = {
+                "tipo": "stock_bajo",
+                "mensaje": mensaje,
+                "id_recurso": id_material,
+                "recurso_tipo": "material"
+            }
+            notificaciones.append(notificacion_stock)
+
+        # --- Lógica 2: Notificaciones de Órdenes Próximas a Vencer ---
+        dias_aviso_vencimiento = 7 # Definimos que "próxima a vencer" es en 7 días o menos
+        fecha_hoy = datetime.date.today()
+        fecha_limite = fecha_hoy + datetime.timedelta(days=dias_aviso_vencimiento)
+        print(f"API GET /notificaciones: Verificando órdenes que vencen antes de {fecha_limite}.")
+
+        # Unimos OrdenesTrabajo con Clientes para obtener el nombre del cliente para el mensaje
+        sql_ordenes_vencer = """
+            SELECT ot.id_orden, ot.descripcion, ot.fecha_fin, c.nombre as nombre_cliente
+            FROM OrdenesTrabajo ot
+            JOIN Clientes c ON ot.id_cliente = c.id_cliente
+            WHERE ot.fecha_fin IS NOT NULL 
+              AND ot.fecha_fin >= ? 
+              AND ot.fecha_fin <= ?
+              AND ot.estado NOT IN ('Completado', 'Cancelado', 'Finalizado')
+            ORDER BY ot.fecha_fin ASC
+        """
+        cursor.execute(sql_ordenes_vencer, fecha_hoy, fecha_limite)
+        
+        for orden in cursor.fetchall():
+            id_orden, descripcion, fecha_fin, nombre_cliente = orden
+            dias_restantes = (fecha_fin - fecha_hoy).days
+            
+            if dias_restantes == 0:
+                mensaje_vencimiento = f"¡Hoy vence! Orden #{id_orden} para '{nombre_cliente}'."
+            elif dias_restantes == 1:
+                mensaje_vencimiento = f"Vence mañana: Orden #{id_orden} para '{nombre_cliente}'."
+            else:
+                mensaje_vencimiento = f"Vence en {dias_restantes} días: Orden #{id_orden} para '{nombre_cliente}'."
+            
+            notificacion_orden = {
+                "tipo": "orden_vencimiento",
+                "mensaje": mensaje_vencimiento,
+                "id_recurso": id_orden,
+                "recurso_tipo": "orden_trabajo"
+            }
+            notificaciones.append(notificacion_orden)
+
+        print(f"API GET /notificaciones: Se encontraron {len(notificaciones)} notificaciones en total.")
+        return jsonify(notificaciones), 200
+
+    except Exception as e:
+        print(f"Error en GET /notificaciones: {str(e)}")
+        # No devolver el error detallado al cliente por seguridad
+        return jsonify({'error': 'Error interno del servidor al generar notificaciones.'}), 500
+    finally:
+        if conn:
+            conn.close()
+            print("API GET /notificaciones: Conexión a BD cerrada.")
 
 
+@app.route('/dashboard/overview', methods=['GET'])
+@token_required # Cualquier usuario autenticado puede ver el dashboard
+def get_dashboard_overview(decoded_user_rol, decoded_user_id):
+    print(f"API GET /dashboard/overview: Solicitud recibida por usuario ID {decoded_user_id} con rol {decoded_user_rol}")
+    
+    overview_data = {}
+    conn = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
 
+        # --- 1. Obtener Materiales con Stock Bajo ---
+        umbral_stock_bajo = APP_CONFIG.get('global_low_stock_threshold', 10) # Usar valor de config con fallback
+        
+        sql_stock_bajo = """
+            SELECT TOP 5 id_material, nombre, cantidad 
+            FROM Materiales 
+            WHERE cantidad <= ? 
+            ORDER BY cantidad ASC
+        """
+        cursor.execute(sql_stock_bajo, umbral_stock_bajo)
+        
+        columns_stock = [column[0] for column in cursor.description]
+        materiales_stock_bajo = [dict(zip(columns_stock, row)) for row in cursor.fetchall()]
+        overview_data['materiales_stock_bajo'] = materiales_stock_bajo
+
+        # --- 2. Obtener Órdenes de Trabajo Recientes o Activas ---
+        # Por ejemplo, las últimas 5 órdenes que no estén "Completado" o "Cancelado"
+        sql_ordenes = """
+            SELECT TOP 5 ot.id_orden, ot.descripcion, ot.estado, ot.fecha_inicio, c.nombre as nombre_cliente
+            FROM OrdenesTrabajo ot
+            JOIN Clientes c ON ot.id_cliente = c.id_cliente
+            WHERE ot.estado NOT IN ('Completado', 'Cancelado', 'Finalizado')
+            ORDER BY ot.fecha_inicio DESC
+        """
+        cursor.execute(sql_ordenes)
+
+        columns_ordenes = [column[0] for column in cursor.description]
+        ordenes_recientes = []
+        for row in cursor.fetchall():
+            orden_dict = dict(zip(columns_ordenes, row))
+            if orden_dict.get('fecha_inicio'):
+                orden_dict['fecha_inicio'] = orden_dict['fecha_inicio'].isoformat()
+            ordenes_recientes.append(orden_dict)
+        
+        overview_data['ordenes_recientes'] = ordenes_recientes
+
+        print(f"API GET /dashboard/overview: Devolviendo {len(materiales_stock_bajo)} alertas de stock y {len(ordenes_recientes)} órdenes recientes.")
+        return jsonify(overview_data), 200
+
+    except Exception as e:
+        print(f"Error en GET /dashboard/overview: {str(e)}")
+        return jsonify({'error': 'Error interno del servidor al obtener datos para el dashboard.'}), 500
+    finally:
+        if conn:
+            conn.close()
+            print("API GET /dashboard/overview: Conexión a BD cerrada.")
 
 
 
