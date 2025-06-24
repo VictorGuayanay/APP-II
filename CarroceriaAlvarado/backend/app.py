@@ -1153,124 +1153,117 @@ def get_todos_los_clientes(decoded_user_rol, decoded_user_id):
 
 
 @app.route('/ordenes-trabajo', methods=['POST'])
-@admin_required # Solo usuarios autorizados pueden crear órdenes de trabajo
+@admin_required
 def crear_orden_trabajo(admin_user_id_from_token):
-    print(f"API POST /ordenes-trabajo: Solicitud de admin ID {admin_user_id_from_token} para crear nueva orden.")
+    print(f"API POST /ordenes-trabajo (lógica multi-empleado): Solicitud de admin ID {admin_user_id_from_token}")
     
     data = request.get_json()
     if not data:
         return jsonify({'error': 'No se recibieron datos JSON'}), 400
 
-    # --- Obtención de datos del frontend (MODIFICADO) ---
-    tipo_trabajo = data.get('tipo_trabajo') # Se recibe tipo_trabajo en lugar de id_empleado
+    tipo_trabajo = data.get('tipo_trabajo')
     id_cliente = data.get('id_cliente')
     fecha_inicio_str = data.get('fecha_inicio')
-    fecha_fin_str = data.get('fecha_fin') 
+    fecha_fin_str = data.get('fecha_fin')
     descripcion = data.get('descripcion')
 
-    # --- Validación de datos de entrada (MODIFICADO) ---
     if not all([tipo_trabajo, id_cliente, fecha_inicio_str, descripcion]):
         return jsonify({'error': 'Faltan campos requeridos (tipo_trabajo, id_cliente, fecha_inicio, descripcion).'}), 400
 
-    # --- Lógica de Mapeo de Tipo de Trabajo a Rol de Empleado ---
-    # Este diccionario mapea la opción del frontend al rol en la base de datos.
-    mapeo_rol = {
-        'Pintura': '%Pintor%',
-        'Electrico': '%Electricista%',
-        'Enderezada': '%Enderezador%',
-        'Tapiceria': '%Tapicero%',
-        'Mecanica': '%Mecánico%'
-    }
-    
-    rol_buscado = mapeo_rol.get(tipo_trabajo)
-    if not rol_buscado:
-        return jsonify({'error': f'El tipo de trabajo "{tipo_trabajo}" no es válido o no tiene un rol asociado.'}), 400
-
-    # --- Validación de fechas (sin cambios) ---
+    # --- Validación y Cálculo de Duración ---
     try:
         fecha_inicio = datetime.date.fromisoformat(fecha_inicio_str)
-        if fecha_inicio < datetime.date.today():
-            return jsonify({'error': 'La fecha de inicio no puede ser en el pasado.'}), 400
+        fecha_fin = datetime.date.fromisoformat(fecha_fin_str) if fecha_fin_str else None
         
-        fecha_fin = None
-        if fecha_fin_str: 
-            fecha_fin = datetime.date.fromisoformat(fecha_fin_str)
+        recursos_recomendados = 0
+        if fecha_fin and fecha_inicio:
             if fecha_fin < fecha_inicio:
-                return jsonify({'error': 'La fecha de finalización no puede ser anterior a la fecha de inicio.'}), 400
+                return jsonify({'error': 'La fecha de finalización no puede ser anterior a la de inicio.'}), 400
+            duracion_dias = (fecha_fin - fecha_inicio).days + 1
+            # Lógica de cálculo de recursos
+            if duracion_dias <= 5: recursos_recomendados = 1
+            elif duracion_dias <= 15: recursos_recomendados = 2
+            else: recursos_recomendados = 3
+        else:
+            # Si no hay fecha de fin, asignamos 1 por defecto
+            recursos_recomendados = 1
     except (ValueError, TypeError):
         return jsonify({'error': 'El formato de fecha es inválido. Use AAAA-MM-DD.'}), 400
+
+    # --- Lógica de Mapeo de Rol ---
+    mapeo_rol = {
+        'Pintura': '%Pintor%', 'Electrico': '%Electricista%', 'Enderezada': '%Enderezador%',
+        'Tapiceria': '%Tapicero%', 'Mecanica': '%Mecánico%'
+    }
+    rol_buscado = mapeo_rol.get(tipo_trabajo)
+    if not rol_buscado:
+        return jsonify({'error': f'Tipo de trabajo "{tipo_trabajo}" inválido.'}), 400
 
     conn = None
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
 
-        # --- Búsqueda Automática de Empleado (NUEVA LÓGICA) ---
-        # Busca un empleado activo que coincida con el rol y que tenga menos órdenes activas asignadas.
-        sql_buscar_empleado = """
-            SELECT TOP 1 e.id_empleado
+        # Iniciar transacción explícitamente para controlar todo el proceso
+        conn.autocommit = False 
+
+        # --- Búsqueda de Empleados Disponibles ---
+        sql_buscar_empleados = """
+            SELECT TOP (?) e.id_empleado
             FROM Empleados e
             LEFT JOIN (
                 SELECT id_empleado, COUNT(*) as ordenes_activas
-                FROM OrdenesTrabajo
-                WHERE estado NOT IN ('Completado', 'Cancelado', 'Finalizado')
+                FROM OrdenesTrabajo ot
+                JOIN AsignacionesOrdenEmpleado aoe ON ot.id_orden = aoe.id_orden
+                WHERE ot.estado NOT IN ('Completado', 'Cancelado', 'Finalizado')
                 GROUP BY id_empleado
-            ) ot ON e.id_empleado = ot.id_empleado
+            ) ot_activas ON e.id_empleado = ot_activas.id_empleado
             WHERE e.estado = 1 AND e.rol LIKE ?
-            ORDER BY ISNULL(ot.ordenes_activas, 0) ASC
+            ORDER BY ISNULL(ot_activas.ordenes_activas, 0) ASC
         """
-        cursor.execute(sql_buscar_empleado, rol_buscado)
-        empleado_encontrado = cursor.fetchone()
+        cursor.execute(sql_buscar_empleados, recursos_recomendados, rol_buscado)
+        empleados_encontrados = cursor.fetchall()
 
-        if not empleado_encontrado:
-            return jsonify({'error': f'No hay empleados disponibles para el tipo de trabajo: {tipo_trabajo}.'}), 404
+        if len(empleados_encontrados) < recursos_recomendados:
+            conn.rollback() # Revertir si no hay suficientes empleados
+            return jsonify({'error': f'No se encontraron suficientes empleados ({len(empleados_encontrados)} de {recursos_recomendados}) para el tipo de trabajo: {tipo_trabajo}.'}), 404
 
-        id_empleado_asignado = empleado_encontrado[0]
-        print(f"Empleado asignado automáticamente: ID {id_empleado_asignado}")
-        
-        # Verificar que el id_cliente exista
-        cursor.execute("SELECT COUNT(*) FROM Clientes WHERE id_cliente = ?", (id_cliente,))
-        if cursor.fetchone()[0] == 0:
-            return jsonify({'error': f'El cliente con ID {id_cliente} no existe.'}), 404
-        
-        # --- Preparar el INSERT a la tabla OrdenesTrabajo (MODIFICADO) ---
-        sql_insert = """
-            INSERT INTO OrdenesTrabajo (id_empleado, id_cliente, fecha_inicio, fecha_fin, descripcion, id_usuario_creador, estado, fecha_ultima_actualizacion, id_usuario_ultima_actualizacion)
-            VALUES (?, ?, ?, ?, ?, ?, ?, GETDATE(), ?)
+        # --- Creación de la Orden de Trabajo (sin id_empleado) ---
+        sql_insert_orden = """
+            INSERT INTO OrdenesTrabajo (id_cliente, fecha_inicio, fecha_fin, descripcion, id_usuario_creador, estado, fecha_ultima_actualizacion, id_usuario_ultima_actualizacion)
+            VALUES (?, ?, ?, ?, ?, ?, GETDATE(), ?)
         """
-        params = (
-            id_empleado_asignado, # Se usa el ID del empleado encontrado
-            id_cliente, 
-            fecha_inicio, 
-            fecha_fin,
-            descripcion, 
-            admin_user_id_from_token,
-            'Asignado', # Se puede cambiar el estado inicial a 'Asignado'
-            admin_user_id_from_token
-        )
-        
-        cursor.execute(sql_insert, params)
+        params_orden = (id_cliente, fecha_inicio, fecha_fin, descripcion, admin_user_id_from_token, 'Asignado', admin_user_id_from_token)
+        cursor.execute(sql_insert_orden, params_orden)
         cursor.execute("SELECT @@IDENTITY AS id;")
         nueva_orden_id = cursor.fetchone()[0]
+
+        # --- Inserción en la nueva tabla de asignaciones ---
+        ids_empleados_asignados = []
+        for empleado_row in empleados_encontrados:
+            id_empleado = empleado_row[0]
+            sql_insert_asignacion = "INSERT INTO AsignacionesOrdenEmpleado (id_orden, id_empleado) VALUES (?, ?)"
+            cursor.execute(sql_insert_asignacion, (nueva_orden_id, id_empleado))
+            ids_empleados_asignados.append(id_empleado)
+
+        conn.commit() # Confirmar todos los cambios (creación de orden y asignaciones)
         
-        conn.commit()
-        
-        print(f"API POST /ordenes-trabajo: Orden de trabajo creada con ID: {nueva_orden_id}")
+        print(f"Orden de trabajo creada con ID: {nueva_orden_id} y asignada a empleados: {ids_empleados_asignados}")
         return jsonify({
-            'message': f'Orden de trabajo creada y asignada automáticamente al empleado ID {id_empleado_asignado}.',
+            'message': f'Orden de trabajo creada y asignada automáticamente a {len(ids_empleados_asignados)} empleado(s).',
             'id_orden_creada': nueva_orden_id,
-            'id_empleado_asignado': id_empleado_asignado
+            'ids_empleados_asignados': ids_empleados_asignados
         }), 201
 
     except Exception as e:
         if conn: conn.rollback()
         print(f"Error en POST /ordenes-trabajo: {str(e)}")
-        return jsonify({'error': f'Error interno del servidor al crear la orden de trabajo: {str(e)}'}), 500
+        return jsonify({'error': f'Error interno del servidor al crear la orden: {str(e)}'}), 500
     finally:
         if conn:
+            conn.autocommit = True # Restaurar autocommit
             conn.close()
-            print("API POST /ordenes-trabajo: Conexión a BD cerrada.")
-
+            
 
 @app.route('/ordenes-trabajo/<int:id_orden>/calcular-recursos', methods=['GET'])
 @token_required # Cualquier usuario autenticado puede realizar el cálculo
@@ -1332,57 +1325,52 @@ def calcular_recursos_orden(decoded_user_rol, decoded_user_id, id_orden):
             print("API GET /ordenes-trabajo/<id>/calcular-recursos: Conexión a BD cerrada.")
 
 @app.route('/ordenes-trabajo', methods=['GET'])
-@token_required # Cualquier usuario logueado puede ver las órdenes
+@token_required
 def get_todas_las_ordenes(decoded_user_rol, decoded_user_id):
-    print(f"API GET /ordenes-trabajo: Solicitud de usuario ID {decoded_user_id}")
+    print(f"API GET /ordenes-trabajo (lógica multi-empleado): Solicitud de usuario ID {decoded_user_id}")
     
     conn = None
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
         
-        # Unimos las tablas para obtener los nombres del cliente y empleado
-        sql_query = """
-            SELECT 
-                ot.id_orden, 
-                ot.descripcion, 
-                ot.estado, 
-                ot.fecha_inicio, 
-                ot.fecha_fin, 
-                c.nombre as nombre_cliente, 
-                e.nombre as nombre_empleado
-            FROM 
-                OrdenesTrabajo ot
-            JOIN 
-                Clientes c ON ot.id_cliente = c.id_cliente
-            JOIN 
-                Empleados e ON ot.id_empleado = e.id_empleado
-            ORDER BY 
-                ot.fecha_inicio DESC
+        # 1. Obtener todas las órdenes con el nombre del cliente
+        sql_ordenes = """
+            SELECT ot.id_orden, ot.descripcion, ot.estado, ot.fecha_inicio, ot.fecha_fin, c.nombre as nombre_cliente
+            FROM OrdenesTrabajo ot
+            JOIN Clientes c ON ot.id_cliente = c.id_cliente
+            ORDER BY ot.fecha_inicio DESC
         """
-        cursor.execute(sql_query)
-
+        cursor.execute(sql_ordenes)
+        
         columns = [column[0] for column in cursor.description]
-        ordenes = []
-        for row in cursor.fetchall():
-            orden_dict = dict(zip(columns, row))
-            # Convertir fechas a string para que sean serializables en JSON
-            if orden_dict.get('fecha_inicio'):
-                orden_dict['fecha_inicio'] = orden_dict['fecha_inicio'].isoformat()
-            if orden_dict.get('fecha_fin'):
-                orden_dict['fecha_fin'] = orden_dict['fecha_fin'].isoformat()
-            ordenes.append(orden_dict)
+        ordenes = [dict(zip(columns, row)) for row in cursor.fetchall()]
+        
+        # 2. Para cada orden, obtener la lista de empleados asignados
+        for orden in ordenes:
+            sql_empleados = """
+                SELECT e.nombre
+                FROM Empleados e
+                JOIN AsignacionesOrdenEmpleado a ON e.id_empleado = a.id_empleado
+                WHERE a.id_orden = ?
+            """
+            cursor.execute(sql_empleados, orden['id_orden'])
+            # Crear una lista de nombres de empleados
+            nombres_empleados = [row[0] for row in cursor.fetchall()]
+            orden['empleados_asignados'] = nombres_empleados # Añadir la lista al objeto de la orden
             
-        print(f"API GET /ordenes-trabajo: Devolviendo {len(ordenes)} órdenes de trabajo.")
+            # Formatear fechas
+            if orden.get('fecha_inicio'): orden['fecha_inicio'] = orden['fecha_inicio'].isoformat()
+            if orden.get('fecha_fin'): orden['fecha_fin'] = orden['fecha_fin'].isoformat()
+
         return jsonify(ordenes), 200
 
     except Exception as e:
         print(f"Error en GET /ordenes-trabajo: {str(e)}")
-        return jsonify({'error': 'Error interno del servidor al obtener las órdenes de trabajo.'}), 500
+        return jsonify({'error': 'Error interno del servidor al obtener las órdenes.'}), 500
     finally:
         if conn:
             conn.close()
-            print("API GET /ordenes-trabajo: Conexión a BD cerrada.")
 
 
 @app.route('/ordenes-trabajo/<int:id_orden>', methods=['GET'])
@@ -1390,7 +1378,7 @@ def get_todas_las_ordenes(decoded_user_rol, decoded_user_id):
 def get_detalles_orden(decoded_user_rol, decoded_user_id, id_orden):
     """
     Obtiene los detalles completos de una orden de trabajo específica,
-    incluyendo la lista de materiales ya asignados.
+    incluyendo la lista de empleados y materiales ya asignados.
     """
     print(f"API GET /ordenes-trabajo/{id_orden}: Solicitud de detalles por usuario ID {decoded_user_id}")
     
@@ -1399,14 +1387,13 @@ def get_detalles_orden(decoded_user_rol, decoded_user_id, id_orden):
         conn = get_db_connection()
         cursor = conn.cursor()
 
-        # --- 1. Obtener datos principales de la orden ---
+        # --- 1. Obtener datos principales de la orden (sin el join a Empleados) ---
         sql_orden = """
             SELECT 
                 ot.id_orden, ot.descripcion, ot.estado, ot.fecha_inicio, ot.fecha_fin, 
-                c.nombre as nombre_cliente, e.nombre as nombre_empleado
+                c.nombre as nombre_cliente, c.id_cliente
             FROM OrdenesTrabajo ot
             JOIN Clientes c ON ot.id_cliente = c.id_cliente
-            JOIN Empleados e ON ot.id_empleado = e.id_empleado
             WHERE ot.id_orden = ?
         """
         cursor.execute(sql_orden, id_orden)
@@ -1417,12 +1404,28 @@ def get_detalles_orden(decoded_user_rol, decoded_user_id, id_orden):
 
         columns = [column[0] for column in cursor.description]
         orden_json = dict(zip(columns, orden_data))
+        
+        # Formatear fechas para que sean compatibles con JSON
         if orden_json.get('fecha_inicio'):
             orden_json['fecha_inicio'] = orden_json['fecha_inicio'].isoformat()
         if orden_json.get('fecha_fin'):
             orden_json['fecha_fin'] = orden_json['fecha_fin'].isoformat()
 
-        # --- 2. Obtener materiales asignados a esa orden ---
+        # --- 2. Obtener la LISTA de empleados asignados desde la nueva tabla ---
+        sql_empleados = """
+            SELECT e.id_empleado, e.nombre, e.rol as cargo_empleado
+            FROM Empleados e
+            JOIN AsignacionesOrdenEmpleado a ON e.id_empleado = a.id_empleado
+            WHERE a.id_orden = ?
+        """
+        cursor.execute(sql_empleados, id_orden)
+        columns_empleados = [column[0] for column in cursor.description]
+        empleados_asignados = [dict(zip(columns_empleados, row)) for row in cursor.fetchall()]
+        
+        # Añadir la lista de empleados al objeto de la orden
+        orden_json['empleados_asignados'] = empleados_asignados
+
+        # --- 3. Obtener materiales asignados a esa orden (como ya lo teníamos planeado) ---
         sql_materiales = """
             SELECT 
                 d.id_detalle, d.id_material, m.nombre as nombre_material, 
@@ -1435,12 +1438,18 @@ def get_detalles_orden(decoded_user_rol, decoded_user_id, id_orden):
         cursor.execute(sql_materiales, id_orden)
         
         columns_materiales = [column[0] for column in cursor.description]
-        materiales_asignados = [dict(zip(columns_materiales, row)) for row in cursor.fetchall()]
+        materiales_asignados = []
+        for row in cursor.fetchall():
+            material_dict = dict(zip(columns_materiales, row))
+            # Convertir Decimal a float para que sea compatible con JSON
+            if material_dict.get('costo_total'):
+                material_dict['costo_total'] = float(material_dict['costo_total'])
+            materiales_asignados.append(material_dict)
 
         # Añadir la lista de materiales al objeto de la orden
         orden_json['materiales_asignados'] = materiales_asignados
         
-        print(f"API GET /ordenes-trabajo/{id_orden}: Devolviendo detalles y {len(materiales_asignados)} materiales.")
+        print(f"API GET /ordenes-trabajo/{id_orden}: Devolviendo detalles, {len(empleados_asignados)} empleado(s) y {len(materiales_asignados)} material(es).")
         return jsonify(orden_json), 200
 
     except Exception as e:
@@ -1533,62 +1542,64 @@ def anadir_material_a_orden(admin_user_id_from_token, id_orden):
             conn.close()
 
 
-@app.route('/ordenes-trabajo/<int:id_orden>/reasignar-empleado', methods=['PUT'])
-@admin_required # Solo usuarios autorizados pueden reasignar
-def reasignar_empleado_orden(admin_user_id_from_token, id_orden):
+@app.route('/ordenes-trabajo/<int:id_orden>/modificar-asignacion', methods=['PUT'])
+@admin_required
+def modificar_asignacion_empleado(admin_user_id_from_token, id_orden):
     """
-    Actualiza el empleado asignado a una orden de trabajo existente.
+    Modifica una asignación existente, reemplazando un empleado antiguo por uno nuevo en una orden.
     """
-    print(f"API PUT /ordenes-trabajo/{id_orden}/reasignar-empleado: Solicitud de admin ID {admin_user_id_from_token}")
+    print(f"API PUT /ordenes-trabajo/{id_orden}/modificar-asignacion: Solicitud de admin ID {admin_user_id_from_token}")
     
     data = request.get_json()
-    if not data or 'id_nuevo_empleado' not in data:
-        return jsonify({'error': 'No se recibieron datos JSON o falta el campo "id_nuevo_empleado".'}), 400
+    if not data or 'id_empleado_antiguo' not in data or 'id_empleado_nuevo' not in data:
+        return jsonify({'error': 'Se requiere id_empleado_antiguo y id_empleado_nuevo.'}), 400
 
-    id_nuevo_empleado = data.get('id_nuevo_empleado')
+    id_empleado_antiguo = data.get('id_empleado_antiguo')
+    id_empleado_nuevo = data.get('id_empleado_nuevo')
+
+    if id_empleado_antiguo == id_empleado_nuevo:
+        return jsonify({'error': 'El nuevo empleado no puede ser el mismo que el empleado actual.'}), 400
 
     conn = None
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
 
-        # 1. Verificar que la orden de trabajo exista
-        cursor.execute("SELECT COUNT(*) FROM OrdenesTrabajo WHERE id_orden = ?", (id_orden,))
+        # 1. Verificar que el nuevo empleado exista y esté activo
+        cursor.execute("SELECT COUNT(*) FROM Empleados WHERE id_empleado = ? AND estado = 1", (id_empleado_nuevo,))
         if cursor.fetchone()[0] == 0:
-            return jsonify({'error': f'La orden de trabajo con ID {id_orden} no existe.'}), 404
+            return jsonify({'error': f'El nuevo empleado (ID: {id_empleado_nuevo}) no existe o está inactivo.'}), 404
 
-        # 2. Verificar que el nuevo empleado exista y esté activo
-        cursor.execute("SELECT COUNT(*) FROM Empleados WHERE id_empleado = ? AND estado = 1", (id_nuevo_empleado,))
-        if cursor.fetchone()[0] == 0:
-            return jsonify({'error': f'El empleado con ID {id_nuevo_empleado} no existe o está inactivo.'}), 404
+        # 2. Verificar que no estemos asignando un empleado que ya está en esa orden
+        cursor.execute("SELECT COUNT(*) FROM AsignacionesOrdenEmpleado WHERE id_orden = ? AND id_empleado = ?", (id_orden, id_empleado_nuevo))
+        if cursor.fetchone()[0] > 0:
+            return jsonify({'error': 'El nuevo empleado ya está asignado a esta orden de trabajo.'}), 409 # Conflict
 
-        # 3. Actualizar la orden de trabajo con el nuevo id_empleado
-        fecha_actualizacion = datetime.datetime.now()
+        # 3. Actualizar la tabla de asignaciones
         sql_update = """
-            UPDATE OrdenesTrabajo 
-            SET id_empleado = ?, 
-                id_usuario_ultima_actualizacion = ?,
-                fecha_ultima_actualizacion = ?
-            WHERE id_orden = ?
+            UPDATE AsignacionesOrdenEmpleado
+            SET id_empleado = ? 
+            WHERE id_orden = ? AND id_empleado = ?
         """
-        params = (id_nuevo_empleado, admin_user_id_from_token, fecha_actualizacion, id_orden)
+        params = (id_empleado_nuevo, id_orden, id_empleado_antiguo)
         cursor.execute(sql_update, params)
         conn.commit()
 
         if cursor.rowcount == 0:
-            # Esto es improbable si la verificación de la orden pasó, pero es un control
-            return jsonify({'error': 'No se pudo reasignar el empleado a la orden de trabajo.'}), 500
+            # Esto significa que el empleado "antiguo" no estaba asignado a esa orden.
+            return jsonify({'error': 'No se encontró la asignación original para modificar.'}), 404
         
-        print(f"API PUT /ordenes-trabajo/{id_orden}/reasignar-empleado: Empleado reasignado a ID {id_nuevo_empleado}")
-        return jsonify({'message': f'La orden de trabajo #{id_orden} ha sido reasignada al empleado ID #{id_nuevo_empleado} exitosamente.'}), 200
+        print(f"API PUT /ordenes-trabajo/{id_orden}/modificar-asignacion: Empleado {id_empleado_antiguo} reemplazado por {id_empleado_nuevo}")
+        return jsonify({'message': f'Asignación en la orden #{id_orden} actualizada correctamente.'}), 200
 
     except Exception as e:
         if conn: conn.rollback()
-        print(f"Error en PUT /ordenes-trabajo/{id_orden}/reasignar-empleado: {str(e)}")
-        return jsonify({'error': f'Error interno del servidor al reasignar el empleado: {str(e)}'}), 500
+        print(f"Error en PUT /ordenes-trabajo/{id_orden}/modificar-asignacion: {str(e)}")
+        return jsonify({'error': f'Error interno del servidor al modificar la asignación: {str(e)}'}), 500
     finally:
         if conn:
             conn.close()
+
 
 
 

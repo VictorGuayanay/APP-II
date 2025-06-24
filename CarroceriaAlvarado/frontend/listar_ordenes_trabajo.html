@@ -126,8 +126,9 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
 
 <script>
+
 function loadOrdenesDeTrabajo() {
-    console.log("Cargando órdenes de trabajo...");
+    console.log("Cargando órdenes de trabajo (lógica multi-empleado)...");
     const token = localStorage.getItem('token');
     const $tableBody = $('#ordenesTableBody');
     $tableBody.html('<tr><td colspan="7" class="text-center">Cargando...</td></tr>');
@@ -143,20 +144,27 @@ function loadOrdenesDeTrabajo() {
                     const fechaInicio = orden.fecha_inicio ? new Date(orden.fecha_inicio).toLocaleDateString('es-EC') : 'N/A';
                     const fechaFin = orden.fecha_fin ? new Date(orden.fecha_fin).toLocaleDateString('es-EC') : 'N/A';
                     
+                    // --- INICIO DE LA MODIFICACIÓN ---
+                    // Convertir la lista de empleados en un string separado por comas
+                    let empleadosAsignadosStr = "Sin asignar";
+                    if (orden.empleados_asignados && orden.empleados_asignados.length > 0) {
+                        empleadosAsignadosStr = orden.empleados_asignados.join(', ');
+                    }
+                    // --- FIN DE LA MODIFICACIÓN ---
+
+                    const botonCalcular = `<button class="btn btn-info btn-sm btn-calcular-recursos me-1" data-id="${orden.id_orden}" title="Calcular Recursos"><i class="fa fa-calculator"></i></button>`;
+                    const botonDetalles = `<a href="detalle_orden.html?id=${orden.id_orden}" class="btn btn-primary btn-sm" title="Ver Detalles"><i class="fa fa-eye"></i></a>`;
+
                     const fila = `
                         <tr>
                             <td>${orden.id_orden}</td>
                             <td>${orden.nombre_cliente}</td>
                             <td>${orden.descripcion}</td>
-                            <td>${orden.nombre_empleado}</td>
-                            <td>${fechaInicio} - ${fechaFin}</td>
+                            <td>${empleadosAsignadosStr}</td> <td>${fechaInicio} - ${fechaFin}</td>
                             <td><span class="badge bg-primary">${orden.estado}</span></td>
                             <td>
-                                <button class="btn btn-info btn-sm btn-calcular-recursos" data-id="${orden.id_orden}" title="Calcular Recursos">
-                                    <i class="fa fa-calculator"></i>
-                                </button>
-                                <a href="detalle_orden.html?id=${orden.id_orden}" class="btn btn-primary btn-sm" title="Ver Detalles"><i class="fa fa-eye"></i></a>
-                                <!-- Aquí podrías añadir más botones, como "Ver Detalles" o "Editar" -->
+                                ${botonCalcular}
+                                ${botonDetalles}
                             </td>
                         </tr>
                     `;
