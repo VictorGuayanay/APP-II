@@ -17,32 +17,35 @@
         </div>
         <ul class="list-unstyled components">
             <p class="ms-3">Administración</p>
-            <!--<li>
+            <li>
                 <a href="#dashboardSubmenu" data-bs-toggle="collapse" aria-expanded="false" class="dropdown-toggle">
                     <i class="fa fa-tachometer"></i> Dashboard
                 </a>
                 <ul class="collapse list-unstyled" id="dashboardSubmenu">
-                    <li><a href="#">Visión General</a></li>
+                    <li><a href="vision_general.html">Visión General</a></li>
                 </ul>
-            </li>-->
+            </li>
             <li> 
-                <a href="admin.html"> 
+                <a href="admin.html">
                     <i class="fa fa-users"></i> Panel Principal
                 </a>
             </li>
-            <li class="active"> 
-                <a href="#inventarioSubmenu" data-bs-toggle="collapse" aria-expanded="true" class="dropdown-toggle">
+
+            <li class="has-submenu">
+                <a href="#" class="dropdown-toggle" onclick="toggleSubmenu(event)">
                     <i class="fa fa-archive"></i> Inventario
                 </a>
-                <ul class="collapse list-unstyled show" id="inventarioSubmenu"> 
+                <ul class="submenu list-unstyled">
                     <li><a href="ver_inventario.html">Ver Inventario</a></li>
-                    <li class="active"><a href="anadir_material.html">Añadir Material</a></li> 
-                    <li><a href="entradas_salidas_inventario.html">Entradas/Salidas</a></li> 
+                    <li><a href="anadir_material.html">Añadir Material</a></li>
+                    <li><a href="entradas_salidas_inventario.html">Entradas/Salidas</a></li>
                 </ul>
             </li>
+
             <li><a href="ingresar_empleado.html"><i class="fa fa-address-card"></i> Ingreso Empleados</a></li>
             <li><a href="ingresar_cliente.html"><i class="fa fa-user-plus"></i> Ingreso Clientes</a></li>
             <li><a href="orden_trabajo.html"><i class="fa fa-briefcase"></i> Órdenes de Trabajo</a></li>
+            <li><a href="listar_ordenes_trabajo.html"><i class="fa fa-briefcase"></i> Listar Órdenes de Trabajo</a></li>
             <li><a href="#"><i class="fa fa-bar-chart"></i> Reportes</a></li>
             <li><a href="#" data-bs-toggle="modal" data-bs-target="#settingsModal" ><i class="fa fa-cog"></i> Configuración</a></li>
         </ul>
@@ -94,9 +97,12 @@
 
 <script>
 $(document).ready(function () {
-    $('#sidebarCollapse').on('click', function () {
-        $('#sidebar').toggleClass('active');
-    });
+    // Funcionalidad para mostrar/ocultar el sidebar
+    function toggleSubmenu(event) {
+        event.preventDefault(); // Evita que el enlace recargue la página
+        const submenu = event.target.nextElementSibling;
+        submenu.style.display = submenu.style.display === 'block' ? 'none' : 'block';
+    }
 
     // --- Protección de Página y Datos de Usuario ---
     const token = localStorage.getItem('token');
@@ -160,6 +166,7 @@ $(document).ready(function () {
         console.log("Enviando datos de nuevo material:", nuevoMaterialData);
 
         $.ajax({
+            
             url: 'http://127.0.0.1:5000/materiales', 
             method: 'POST',
             headers: {

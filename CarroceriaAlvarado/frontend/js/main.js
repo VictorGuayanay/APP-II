@@ -265,4 +265,74 @@ $(document).ready(function() {
         });
     }
 
+    function cargarRecursosEstimados(idOrden) {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+
+        $.ajax({
+            url: `http://127.0.0.1:5000/ordenes-trabajo/${idOrden}/recursos-estimados`,
+            method: 'GET',
+            headers: { 'Authorization': 'Bearer ' + token },
+            success: function(response) {
+                $('#recursosEstimados').removeClass('hidden');
+                $('#personalEstimado').text(response.personal_estimado);
+                $('#horasEstimadas').text(response.horas_estimadas);
+                $('#descOrden').text(response.descripcion);
+            },
+            error: function(xhr, status, error) {
+                console.error('Error al cargar recursos estimados:', error);
+            }
+        });
+    }
+
+    // Llamada después de crear una orden
+    $('#ordenForm').on('submit', function(event) {
+        event.preventDefault();
+
+        const id_empleado = $('#empleado').val();
+        const id_cliente = $('#cliente').val();
+        const fecha_inicio = $('#fechaInicio').val();
+        const fecha_fin = $('#fechaFin').val();
+        const descripcion = $('#descripcion').val();
+
+        if (!id_empleado || !id_cliente || !fecha_inicio || !descripcion) {
+            alert('Por favor, complete todos los campos requeridos.');
+            return;
+        }
+
+        const token = localStorage.getItem('token');
+        if (!token) {
+            alert('Debe iniciar sesión para crear una orden.');
+            return;
+        }
+
+        $.ajax({
+            url: 'http://127.0.0.1:5000/ordenes-trabajo',
+            method: 'POST',
+            contentType: 'application/json',
+            headers: { 'Authorization': 'Bearer ' + token },
+            data: JSON.stringify({
+                id_empleado, id_cliente, fecha_inicio, fecha_fin, descripcion
+            }),
+            success: function(response) {
+                alert('Orden creada exitosamente.');
+                if (response.id_orden_creada) {
+                    cargarRecursosEstimados(response.id_orden_creada);
+                }
+            },
+            error: function(xhr, status, error) {
+                alert('Error al crear la orden: ' + (xhr.responseJSON?.error || error));
+            }
+        });
+    });
+
+    // Cargar recursos si se accede con una orden existente (puedes pasar id_orden como parámetro URL)
+    const urlParams = new URLSearchParams(window.location.search);
+    const idOrden = urlParams.get('id_orden');
+    if (idOrden) {
+        cargarRecursosEstimados(idOrden);
+    }
+
+
+
 });

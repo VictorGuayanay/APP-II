@@ -12,19 +12,39 @@
 
 <div class="admin-wrapper">
     <!-- Sidebar -->
-    <nav id="sidebar">
+   <nav id="sidebar">
         <div class="sidebar-header">
             <h3>Carrocería Alvarado</h3>
         </div>
         <ul class="list-unstyled components">
             <p class="ms-3">Administración</p>
-            <!-- Aquí puedes replicar la estructura de tu sidebar -->
-            <li><a href="admin.html"><i class="fa fa-users"></i> Gestión de Usuarios</a></li>
-            <li><a href="ver_inventario.html"><i class="fa fa-archive"></i> Inventario</a></li>
+            <li>
+                <a href="#dashboardSubmenu" data-bs-toggle="collapse" aria-expanded="false" class="dropdown-toggle">
+                    <i class="fa fa-tachometer"></i> Dashboard
+                </a>
+                <ul class="collapse list-unstyled" id="dashboardSubmenu">
+                    <li><a href="vision_general.html">Visión General</a></li>
+                </ul>
+            </li>
+            <li> 
+                <a href="admin.html">
+                    <i class="fa fa-users"></i> Panel Principal
+                </a>
+            </li>
+            <li>
+                <a href="#inventarioSubmenu" data-bs-toggle="collapse" aria-expanded="false" class="dropdown-toggle">
+                    <i class="fa fa-archive"></i> Inventario
+                </a>
+                <ul class="collapse list-unstyled" id="inventarioSubmenu">
+                    <li><a href="ver_inventario.html">Ver Inventario</a></li>
+                    <li><a href="anadir_material.html">Añadir Material</a></li>
+                    <li><a href="#">Entradas/Salidas</a></li>
+                </ul>
+            </li>
+            <li class="active"><a href="ingresar_empleado.html"><i class="fa fa-address-card"></i> Ingreso Empleados</a></li>
+            <li><a href="ingresar_cliente.html"><i class="fa fa-user-plus"></i> Ingreso Clientes</a></li>
             <li><a href="orden_trabajo.html"><i class="fa fa-briefcase"></i> Órdenes de Trabajo</a></li>
-            <li><a href="ingresar_cliente.html"><i class="fa fa-user-plus"></i> Ingresar Cliente</a></li>
-            <li class="active"><a href="ingresar_empleado.html"><i class="fa fa-address-card"></i> Ingresar Empleado</a></li>
-            <li><a href="orden_trabajo.html"><i class="fa fa-briefcase"></i> Órdenes de Trabajo</a></li>
+            <li><a href="listar_ordenes_trabajo.html"><i class="fa fa-briefcase"></i> Listar Órdenes de Trabajo</a></li>
             <li><a href="#"><i class="fa fa-bar-chart"></i> Reportes</a></li>
             <li><a href="#" data-bs-toggle="modal" data-bs-target="#settingsModal" ><i class="fa fa-cog"></i> Configuración</a></li>
         </ul>
@@ -58,9 +78,19 @@
                             <label for="empleadoCedula" class="form-label">Cédula <span class="text-danger">*</span></label>
                             <input type="text" class="form-control" id="empleadoCedula" maxlength="10" pattern="[0-9]{1,10}" title="Solo números, máximo 10 dígitos" required>
                         </div>
-                         <div class="mb-3">
+                        <div class="mb-3">
                             <label for="empleadoRol" class="form-label">Rol / Cargo <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="empleadoRol" placeholder="Ej: Mecánico, Pintor, Asistente" required>
+                            <select id="empleadoRol" class="form-control w-full p-2 border rounded" required>
+                                <option value="">Seleccione un cargo</option>
+                                <option value="electricista">Electricista</option>
+                                <option value="pintor">Pintor</option>
+                                <option value="tapicero">Tapicero</option>
+                                <option value="soldador">Soldador</option>
+                                <option value="enderezador">Enderezador</option>
+                                <option value="mecanico">Mecánico</option>
+                                <option value="laminador">Laminador</option>
+                                <option value="ensamblador">Ensamblador</option>
+                            </select>
                         </div>
                         <div class="mb-3">
                             <label for="empleadoTelefono" class="form-label">Teléfono <span class="text-danger">*</span></label>
