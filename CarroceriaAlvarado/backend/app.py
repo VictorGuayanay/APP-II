@@ -485,7 +485,6 @@ def get_all_usuarios(admin_user_id_from_token):
             conn.close()
             print("API /usuarios GET: Conexión a BD cerrada desde el bloque finally.")
 
-            
 @app.route('/usuarios/<int:user_id>/desbloquear', methods=['PUT']) # O podrías usar POST
 @admin_required # Solo administradores pueden desbloquear
 def desbloquear_usuario(admin_user_id_from_token, user_id):
@@ -527,11 +526,6 @@ def desbloquear_usuario(admin_user_id_from_token, user_id):
         if conn:
             conn.close()
             print(f"API /usuarios/{user_id}/desbloquear PUT: Conexión a BD cerrada desde el bloque finally.")
-
-
-
-            
-
 
 @app.route('/usuarios/<int:user_id>/estado', methods=['PUT'])
 @admin_required
@@ -576,7 +570,6 @@ def cambiar_estado_usuario(admin_user_id_from_token, user_id):
     except Exception as e:
         print(f"Error general en /usuarios/{user_id}/estado PUT: {str(e)}")
         return jsonify({'error': f'Error interno del servidor: {str(e)}'}), 500
-
 
 @app.route('/usuarios/<int:user_id>', methods=['PUT'])
 @admin_required
@@ -653,7 +646,6 @@ def actualizar_usuario(admin_user_id_from_token, user_id):
         print(f"Error general en /usuarios/{user_id} PUT (actualizar datos): {str(e)}")
         return jsonify({'error': f'Error interno del servidor: {str(e)}'}), 500
 
-
 @app.route('/usuarios/<int:user_id>', methods=['GET'])
 @admin_required
 def get_usuario_por_id(admin_user_id_from_token, user_id):
@@ -682,7 +674,9 @@ def get_usuario_por_id(admin_user_id_from_token, user_id):
     finally:
         if conn: conn.close()
 
-#configuraciones
+
+
+# --- ENDPOINTS DE CONFIGURACIONES ---
 @app.route('/configuraciones', methods=['GET'])
 @admin_required 
 def get_configuraciones(admin_user_id_from_token): # El nombre del argumento debe coincidir con lo que pasa el decorador
@@ -750,6 +744,9 @@ def update_configuraciones(admin_user_id_from_token): # El nombre del argumento 
         return jsonify({'error': f'Error interno del servidor al actualizar configuraciones: {str(e)}'}), 500
 
 
+
+# --- ENDPOINTS DE MATERIALES/INVENTARIO---
+
 @app.route('/materiales', methods=['GET'])
 @token_required # O @admin_required si solo los admins pueden ver la lista completa
 def get_todos_los_materiales(decoded_user_rol, decoded_user_id): # Argumentos del decorador @token_required
@@ -796,10 +793,10 @@ def get_todos_los_materiales(decoded_user_rol, decoded_user_id): # Argumentos de
             conn.close()
             print("API GET /materiales: Conexión a BD cerrada desde el bloque finally.")
             
-            
 @app.route('/materiales', methods=['POST']) # ¡ASEGÚRATE QUE methods=['POST'] ESTÉ AQUÍ!
 @admin_required # O el decorador de rol que hayas decidido para esta acción
 def crear_nuevo_material(admin_user_id_from_token): # El argumento depende del decorador
+    
     data = request.get_json()
     if not data:
         return jsonify({'error': 'No se recibieron datos JSON'}), 400
@@ -865,8 +862,6 @@ def crear_nuevo_material(admin_user_id_from_token): # El argumento depende del d
         if conn:
             conn.close()
             print("API POST /materiales: Conexión a BD cerrada.")
-
-
 @app.route('/inventory/entry', methods=['POST'])
 @admin_required # O el rol apropiado para gestión de inventario
 def registrar_entrada_inventario(admin_user_id_from_token):
@@ -939,7 +934,6 @@ def registrar_entrada_inventario(admin_user_id_from_token):
         if conn:
             conn.close()
             print("API /inventory/entry POST: Conexión a BD cerrada.")
-
 
 @app.route('/inventory/exit', methods=['POST'])
 @admin_required # O el rol apropiado
@@ -1028,8 +1022,6 @@ def registrar_salida_inventario(admin_user_id_from_token):
             conn.close()
             print("API /inventory/exit POST: Conexión a BD cerrada.")
 
-
-
 @app.route('/materiales/<int:id_material>', methods=['DELETE'])
 @admin_required # O el rol apropiado para gestión de inventario
 def eliminar_material(admin_user_id_from_token, id_material):
@@ -1091,7 +1083,7 @@ def eliminar_material(admin_user_id_from_token, id_material):
             print(f"API DELETE /materiales/{id_material}: Conexión a BD cerrada desde el bloque finally.")
 
 
-
+# --- ENDPOINTS DE GESTION DE EMPLEADOS---
 @app.route('/empleados', methods=['GET'])
 @token_required # Asumimos que cualquier usuario autenticado puede necesitar ver la lista de empleados
 def get_todos_los_empleados(decoded_user_rol, decoded_user_id):
@@ -1121,7 +1113,71 @@ def get_todos_los_empleados(decoded_user_rol, decoded_user_id):
             conn.close()
             print("API GET /empleados: Conexión a BD cerrada desde el bloque finally.")
 
+@app.route('/empleados', methods=['POST'])
+@admin_required # Solo usuarios autorizados (admins) pueden registrar nuevos empleados
+def registrar_empleado(admin_user_id_from_token):
+    print(f"API POST /empleados: Solicitud de admin ID {admin_user_id_from_token} para registrar nuevo empleado.")
+    
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'No se recibieron datos JSON'}), 400
 
+    # Obtener datos del frontend
+    nombre = data.get('nombre')
+    cedula = data.get('cedula')
+    rol = data.get('rol')
+    telefono = data.get('telefono')
+    fecha_contratacion_str = data.get('fecha_contratacion')
+
+    # Validación de datos de entrada
+    if not all([nombre, cedula, rol, telefono, fecha_contratacion_str]):
+        return jsonify({'error': 'Faltan campos requeridos (nombre, cedula, rol, telefono, fecha_contratacion).'}), 400
+
+    # Validación y conversión de la fecha
+    try:
+        fecha_contratacion = datetime.date.fromisoformat(fecha_contratacion_str)
+    except (ValueError, TypeError):
+        return jsonify({'error': 'El formato de fecha_contratacion es inválido. Use AAAA-MM-DD.'}), 400
+
+    conn = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        # Verificar si la cédula ya existe para evitar duplicados
+        cursor.execute("SELECT id_empleado FROM Empleados WHERE cedula = ?", (cedula,))
+        if cursor.fetchone():
+            return jsonify({'error': 'La cédula ya está registrada para otro empleado.'}), 409 # Conflict
+
+        # Preparar el INSERT a la tabla Empleados. El estado por defecto es 1 (activo).
+        sql_insert = "INSERT INTO Empleados (nombre, cedula, rol, telefono, fecha_contratacion) VALUES (?, ?, ?, ?, ?)"
+        params = (nombre, cedula, rol, telefono, fecha_contratacion)
+        
+        cursor.execute(sql_insert, params)
+        
+        # Obtener el ID del empleado recién creado
+        cursor.execute("SELECT @@IDENTITY AS id;")
+        nuevo_empleado_id = cursor.fetchone()[0]
+        
+        conn.commit()
+        
+        print(f"API POST /empleados: Empleado creado con ID: {nuevo_empleado_id}")
+        return jsonify({
+            'message': 'Empleado registrado exitosamente.',
+            'id_empleado_creado': nuevo_empleado_id
+        }), 201 # 201 Created
+
+    except Exception as e:
+        if conn: conn.rollback()
+        print(f"Error en POST /empleados: {str(e)}")
+        return jsonify({'error': f'Error interno del servidor al registrar el empleado: {str(e)}'}), 500
+    finally:
+        if conn:
+            conn.close()
+            print("API POST /empleados: Conexión a BD cerrada.")
+
+
+# --- ENDPOINTS DE GESTION DE CLIENTES---
 @app.route('/clientes', methods=['GET'])
 @token_required # Asumimos que cualquier usuario autenticado puede necesitar ver la lista de clientes
 def get_todos_los_clientes(decoded_user_rol, decoded_user_id):
@@ -1151,108 +1207,168 @@ def get_todos_los_clientes(decoded_user_rol, decoded_user_id):
             conn.close()
             print("API GET /clientes: Conexión a BD cerrada desde el bloque finally.")
 
-
-@app.route('/ordenes-trabajo', methods=['POST'])
-@admin_required
-def crear_orden_trabajo(admin_user_id_from_token):
-    print(f"API POST /ordenes-trabajo (lógica multi-empleado): Solicitud de admin ID {admin_user_id_from_token}")
+@app.route('/clientes', methods=['POST'])
+@admin_required # Solo usuarios autorizados (admins) pueden registrar nuevos clientes
+def registrar_cliente(admin_user_id_from_token):
+    print(f"API POST /clientes: Solicitud de admin ID {admin_user_id_from_token} para registrar nuevo cliente.")
     
     data = request.get_json()
     if not data:
         return jsonify({'error': 'No se recibieron datos JSON'}), 400
 
-    tipo_trabajo = data.get('tipo_trabajo')
-    id_cliente = data.get('id_cliente')
-    fecha_inicio_str = data.get('fecha_inicio')
-    fecha_fin_str = data.get('fecha_fin')
-    descripcion = data.get('descripcion')
+    # Obtener datos del frontend
+    nombre = data.get('nombre')
+    cedula = data.get('cedula')
+    telefono = data.get('telefono')
+    email = data.get('email')
 
-    if not all([tipo_trabajo, id_cliente, fecha_inicio_str, descripcion]):
-        return jsonify({'error': 'Faltan campos requeridos (tipo_trabajo, id_cliente, fecha_inicio, descripcion).'}), 400
+    # Validación de datos de entrada
+    if not all([nombre, cedula, telefono, email]):
+        return jsonify({'error': 'Faltan campos requeridos (nombre, cedula, telefono, email).'}), 400
 
-    # --- Validación y Cálculo de Duración ---
-    try:
-        fecha_inicio = datetime.date.fromisoformat(fecha_inicio_str)
-        fecha_fin = datetime.date.fromisoformat(fecha_fin_str) if fecha_fin_str else None
-        
-        recursos_recomendados = 0
-        if fecha_fin and fecha_inicio:
-            if fecha_fin < fecha_inicio:
-                return jsonify({'error': 'La fecha de finalización no puede ser anterior a la de inicio.'}), 400
-            duracion_dias = (fecha_fin - fecha_inicio).days + 1
-            # Lógica de cálculo de recursos
-            if duracion_dias <= 5: recursos_recomendados = 1
-            elif duracion_dias <= 15: recursos_recomendados = 2
-            else: recursos_recomendados = 3
-        else:
-            # Si no hay fecha de fin, asignamos 1 por defecto
-            recursos_recomendados = 1
-    except (ValueError, TypeError):
-        return jsonify({'error': 'El formato de fecha es inválido. Use AAAA-MM-DD.'}), 400
-
-    # --- Lógica de Mapeo de Rol ---
-    mapeo_rol = {
-        'Pintura': '%Pintor%', 'Electrico': '%Electricista%', 'Enderezada': '%Enderezador%',
-        'Tapiceria': '%Tapicero%', 'Mecanica': '%Mecánico%'
-    }
-    rol_buscado = mapeo_rol.get(tipo_trabajo)
-    if not rol_buscado:
-        return jsonify({'error': f'Tipo de trabajo "{tipo_trabajo}" inválido.'}), 400
+    if '@' not in email or '.' not in email:
+        return jsonify({'error': 'El formato del correo electrónico es inválido.'}), 400
 
     conn = None
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
 
-        # Iniciar transacción explícitamente para controlar todo el proceso
-        conn.autocommit = False 
+        # Verificar si la cédula o el email ya existen para evitar duplicados
+        cursor.execute("SELECT id_cliente FROM Clientes WHERE cedula = ? OR email = ?", (cedula, email))
+        if cursor.fetchone():
+            return jsonify({'error': 'La cédula o el correo electrónico ya están registrados para otro cliente.'}), 409 # Conflict
 
-        # --- Búsqueda de Empleados Disponibles ---
-        sql_buscar_empleados = """
-            SELECT TOP (?) e.id_empleado
-            FROM Empleados e
-            LEFT JOIN (
-                SELECT id_empleado, COUNT(*) as ordenes_activas
-                FROM OrdenesTrabajo ot
-                JOIN AsignacionesOrdenEmpleado aoe ON ot.id_orden = aoe.id_orden
-                WHERE ot.estado NOT IN ('Completado', 'Cancelado', 'Finalizado')
-                GROUP BY id_empleado
-            ) ot_activas ON e.id_empleado = ot_activas.id_empleado
-            WHERE e.estado = 1 AND e.rol LIKE ?
-            ORDER BY ISNULL(ot_activas.ordenes_activas, 0) ASC
-        """
-        cursor.execute(sql_buscar_empleados, recursos_recomendados, rol_buscado)
-        empleados_encontrados = cursor.fetchall()
+        # Preparar el INSERT a la tabla Clientes. El estado por defecto es 1 (activo).
+        sql_insert = "INSERT INTO Clientes (nombre, cedula, telefono, email) VALUES (?, ?, ?, ?)"
+        params = (nombre, cedula, telefono, email)
+        
+        cursor.execute(sql_insert, params)
+        
+        # Obtener el ID del cliente recién creado
+        cursor.execute("SELECT @@IDENTITY AS id;")
+        nuevo_cliente_id = cursor.fetchone()[0]
+        
+        conn.commit()
+        
+        print(f"API POST /clientes: Cliente creado con ID: {nuevo_cliente_id}")
+        return jsonify({
+            'message': 'Cliente registrado exitosamente.',
+            'id_cliente_creado': nuevo_cliente_id
+        }), 201 # 201 Created
 
-        if len(empleados_encontrados) < recursos_recomendados:
-            conn.rollback() # Revertir si no hay suficientes empleados
-            return jsonify({'error': f'No se encontraron suficientes empleados ({len(empleados_encontrados)} de {recursos_recomendados}) para el tipo de trabajo: {tipo_trabajo}.'}), 404
+    except Exception as e:
+        if conn: conn.rollback()
+        print(f"Error en POST /clientes: {str(e)}")
+        return jsonify({'error': f'Error interno del servidor al registrar el cliente: {str(e)}'}), 500
+    finally:
+        if conn:
+            conn.close()
+            print("API POST /clientes: Conexión a BD cerrada.")
 
-        # --- Creación de la Orden de Trabajo (sin id_empleado) ---
-        sql_insert_orden = """
-            INSERT INTO OrdenesTrabajo (id_cliente, fecha_inicio, fecha_fin, descripcion, id_usuario_creador, estado, fecha_ultima_actualizacion, id_usuario_ultima_actualizacion)
-            VALUES (?, ?, ?, ?, ?, ?, GETDATE(), ?)
-        """
+
+
+# --- ENDPOINTS DE ORDENES DE TRABAJO---
+@app.route('/ordenes-trabajo', methods=['POST'])
+@admin_required
+def crear_orden_trabajo(admin_user_id_from_token):
+    print(f"API POST /ordenes-trabajo (lógica híbrida): Solicitud de admin ID {admin_user_id_from_token}")
+    
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'No se recibieron datos JSON'}), 400
+
+    # --- Obtención de datos del frontend ---
+    id_cliente = data.get('id_cliente')
+    fecha_inicio_str = data.get('fecha_inicio')
+    fecha_fin_str = data.get('fecha_fin')
+    descripcion = data.get('descripcion')
+    
+    # --- DATOS PARA DECIDIR EL TIPO DE ASIGNACIÓN ---
+    tipo_trabajo = data.get('tipo_trabajo') 
+    manual_employee_ids = data.get('manual_employee_ids') # Lista de IDs para asignación manual
+
+    if not all([id_cliente, fecha_inicio_str, descripcion]):
+        return jsonify({'error': 'Faltan campos requeridos (cliente, fecha_inicio, descripcion).'}), 400
+    
+    if not tipo_trabajo and not manual_employee_ids:
+        return jsonify({'error': 'Debe proporcionar un "tipo_trabajo" para asignación automática o una lista de empleados para asignación manual.'}), 400
+
+    # --- Validación de fechas ---
+    try:
+        fecha_inicio = datetime.date.fromisoformat(fecha_inicio_str)
+        fecha_fin = datetime.date.fromisoformat(fecha_fin_str) if fecha_fin_str else None
+        if fecha_fin and fecha_inicio and fecha_fin < fecha_inicio:
+            return jsonify({'error': 'La fecha de finalización no puede ser anterior a la de inicio.'}), 400
+    except (ValueError, TypeError):
+        return jsonify({'error': 'El formato de fecha es inválido. Use AAAA-MM-DD.'}), 400
+
+    conn = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        conn.autocommit = False # Iniciar transacción
+
+        ids_empleados_a_asignar = []
+
+        if manual_employee_ids:
+            # --- FLUJO DE ASIGNACIÓN MANUAL ---
+            print("Procesando asignación manual...")
+            if not isinstance(manual_employee_ids, list) or len(manual_employee_ids) == 0:
+                return jsonify({'error': 'La lista de empleados para asignación manual es inválida.'}), 400
+            # (Aquí podrías añadir una verificación para asegurar que los IDs de empleados existen y están activos)
+            ids_empleados_a_asignar = manual_employee_ids
+
+        else:
+            # --- FLUJO DE ASIGNACIÓN AUTOMÁTICA ---
+            print("Procesando asignación automática...")
+            recursos_recomendados = 1
+            if fecha_fin and fecha_inicio:
+                duracion_dias = (fecha_fin - fecha_inicio).days + 1
+                if duracion_dias <= 5: recursos_recomendados = 1
+                elif duracion_dias <= 15: recursos_recomendados = 2
+                else: recursos_recomendados = 3
+            
+            mapeo_rol = {'Pintura': '%Pintor%', 'Electrico': '%Electricista%', 'Enderezada': '%Enderezador%', 'Tapiceria': '%Tapicero%', 'Mecanica': '%Mecánico%'}
+            rol_buscado = mapeo_rol.get(tipo_trabajo)
+            if not rol_buscado:
+                return jsonify({'error': f'Tipo de trabajo "{tipo_trabajo}" inválido.'}), 400
+
+            sql_buscar_empleados = """
+                SELECT TOP (?) e.id_empleado FROM Empleados e
+                LEFT JOIN (SELECT id_empleado, COUNT(*) as ordenes_activas FROM AsignacionesOrdenEmpleado aoe JOIN OrdenesTrabajo ot ON aoe.id_orden = ot.id_orden WHERE ot.estado NOT IN ('Completado', 'Cancelado', 'Finalizado') GROUP BY id_empleado) ot_activas ON e.id_empleado = ot_activas.id_empleado
+                WHERE e.estado = 1 AND e.rol LIKE ?
+                ORDER BY ISNULL(ot_activas.ordenes_activas, 0) ASC
+            """
+            cursor.execute(sql_buscar_empleados, recursos_recomendados, rol_buscado)
+            empleados_encontrados = cursor.fetchall()
+
+            if len(empleados_encontrados) < recursos_recomendados:
+                conn.rollback()
+                return jsonify({
+                    'error': f'Asignación automática falló. No hay suficientes empleados disponibles para "{tipo_trabajo}".',
+                    'manual_assignment_required': True
+                }), 409 # 409 Conflict
+
+            ids_empleados_a_asignar = [row[0] for row in empleados_encontrados]
+
+        # --- Creación de la Orden y Asignaciones (común para ambos flujos) ---
+        sql_insert_orden = "INSERT INTO OrdenesTrabajo (id_cliente, fecha_inicio, fecha_fin, descripcion, id_usuario_creador, estado, fecha_ultima_actualizacion, id_usuario_ultima_actualizacion) VALUES (?, ?, ?, ?, ?, ?, GETDATE(), ?)"
         params_orden = (id_cliente, fecha_inicio, fecha_fin, descripcion, admin_user_id_from_token, 'Asignado', admin_user_id_from_token)
         cursor.execute(sql_insert_orden, params_orden)
         cursor.execute("SELECT @@IDENTITY AS id;")
         nueva_orden_id = cursor.fetchone()[0]
 
-        # --- Inserción en la nueva tabla de asignaciones ---
-        ids_empleados_asignados = []
-        for empleado_row in empleados_encontrados:
-            id_empleado = empleado_row[0]
-            sql_insert_asignacion = "INSERT INTO AsignacionesOrdenEmpleado (id_orden, id_empleado) VALUES (?, ?)"
-            cursor.execute(sql_insert_asignacion, (nueva_orden_id, id_empleado))
-            ids_empleados_asignados.append(id_empleado)
-
-        conn.commit() # Confirmar todos los cambios (creación de orden y asignaciones)
+        for id_empleado in ids_empleados_a_asignar:
+            cursor.execute("INSERT INTO AsignacionesOrdenEmpleado (id_orden, id_empleado) VALUES (?, ?)", (nueva_orden_id, id_empleado))
         
-        print(f"Orden de trabajo creada con ID: {nueva_orden_id} y asignada a empleados: {ids_empleados_asignados}")
+        conn.commit()
+        
+        print(f"Orden ID {nueva_orden_id} creada y asignada a empleados: {ids_empleados_a_asignar}")
         return jsonify({
-            'message': f'Orden de trabajo creada y asignada automáticamente a {len(ids_empleados_asignados)} empleado(s).',
+            'message': f'Orden de trabajo creada y asignada a {len(ids_empleados_a_asignar)} empleado(s).',
             'id_orden_creada': nueva_orden_id,
-            'ids_empleados_asignados': ids_empleados_asignados
+            'ids_empleados_asignados': ids_empleados_a_asignar
         }), 201
 
     except Exception as e:
@@ -1261,10 +1377,9 @@ def crear_orden_trabajo(admin_user_id_from_token):
         return jsonify({'error': f'Error interno del servidor al crear la orden: {str(e)}'}), 500
     finally:
         if conn:
-            conn.autocommit = True # Restaurar autocommit
+            conn.autocommit = True
             conn.close()
-            
-
+           
 @app.route('/ordenes-trabajo/<int:id_orden>/calcular-recursos', methods=['GET'])
 @token_required # Cualquier usuario autenticado puede realizar el cálculo
 def calcular_recursos_orden(decoded_user_rol, decoded_user_id, id_orden):
@@ -1371,7 +1486,6 @@ def get_todas_las_ordenes(decoded_user_rol, decoded_user_id):
     finally:
         if conn:
             conn.close()
-
 
 @app.route('/ordenes-trabajo/<int:id_orden>', methods=['GET'])
 @token_required # Cualquier usuario logueado puede ver los detalles de una orden
@@ -1541,7 +1655,6 @@ def anadir_material_a_orden(admin_user_id_from_token, id_orden):
         if conn:
             conn.close()
 
-
 @app.route('/ordenes-trabajo/<int:id_orden>/modificar-asignacion', methods=['PUT'])
 @admin_required
 def modificar_asignacion_empleado(admin_user_id_from_token, id_orden):
@@ -1601,8 +1714,7 @@ def modificar_asignacion_empleado(admin_user_id_from_token, id_orden):
             conn.close()
 
 
-
-
+# --- ENDPOINTS DE ORDENES DE NOTIFICACIONES---
 @app.route('/notificaciones', methods=['GET'])
 @token_required # Cualquier usuario autenticado puede ver las notificaciones
 def get_notificaciones(decoded_user_rol, decoded_user_id):
@@ -1683,6 +1795,7 @@ def get_notificaciones(decoded_user_rol, decoded_user_id):
             print("API GET /notificaciones: Conexión a BD cerrada.")
 
 
+# --- ENDPOINTS DE ORDENES DE DASHBOARD---
 @app.route('/dashboard/overview', methods=['GET'])
 @token_required # Cualquier usuario autenticado puede ver el dashboard
 def get_dashboard_overview(decoded_user_rol, decoded_user_id):
@@ -1742,129 +1855,96 @@ def get_dashboard_overview(decoded_user_rol, decoded_user_id):
             print("API GET /dashboard/overview: Conexión a BD cerrada.")
 
 
-@app.route('/clientes', methods=['POST'])
-@admin_required # Solo usuarios autorizados (admins) pueden registrar nuevos clientes
-def registrar_cliente(admin_user_id_from_token):
-    print(f"API POST /clientes: Solicitud de admin ID {admin_user_id_from_token} para registrar nuevo cliente.")
-    
-    data = request.get_json()
-    if not data:
-        return jsonify({'error': 'No se recibieron datos JSON'}), 400
+# --- INICIO DE NUEVO ENDPOINT PARA REPORTES ---
+@app.route('/reportes/uso-materiales', methods=['GET'])
+@admin_required
+def reporte_uso_materiales(admin_user_id_from_token):
+    print(f"API GET /reportes/uso-materiales: Solicitud de admin ID {admin_user_id_from_token}")
 
-    # Obtener datos del frontend
-    nombre = data.get('nombre')
-    cedula = data.get('cedula')
-    telefono = data.get('telefono')
-    email = data.get('email')
+    # --- Obtener parámetros de la URL ---
+    fecha_desde_str = request.args.get('fecha_desde')
+    fecha_hasta_str = request.args.get('fecha_hasta')
+    # NUEVO: Obtener filtros opcionales
+    id_material_filtro = request.args.get('id_material', type=int)
+    id_empleado_filtro = request.args.get('id_empleado', type=int)
 
-    # Validación de datos de entrada
-    if not all([nombre, cedula, telefono, email]):
-        return jsonify({'error': 'Faltan campos requeridos (nombre, cedula, telefono, email).'}), 400
-
-    if '@' not in email or '.' not in email:
-        return jsonify({'error': 'El formato del correo electrónico es inválido.'}), 400
-
-    conn = None
+    # --- Validación de fechas (obligatorias) ---
+    if not fecha_desde_str or not fecha_hasta_str:
+        return jsonify({'error': 'Los parámetros "fecha_desde" y "fecha_hasta" son requeridos.'}), 400
     try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
-
-        # Verificar si la cédula o el email ya existen para evitar duplicados
-        cursor.execute("SELECT id_cliente FROM Clientes WHERE cedula = ? OR email = ?", (cedula, email))
-        if cursor.fetchone():
-            return jsonify({'error': 'La cédula o el correo electrónico ya están registrados para otro cliente.'}), 409 # Conflict
-
-        # Preparar el INSERT a la tabla Clientes. El estado por defecto es 1 (activo).
-        sql_insert = "INSERT INTO Clientes (nombre, cedula, telefono, email) VALUES (?, ?, ?, ?)"
-        params = (nombre, cedula, telefono, email)
-        
-        cursor.execute(sql_insert, params)
-        
-        # Obtener el ID del cliente recién creado
-        cursor.execute("SELECT @@IDENTITY AS id;")
-        nuevo_cliente_id = cursor.fetchone()[0]
-        
-        conn.commit()
-        
-        print(f"API POST /clientes: Cliente creado con ID: {nuevo_cliente_id}")
-        return jsonify({
-            'message': 'Cliente registrado exitosamente.',
-            'id_cliente_creado': nuevo_cliente_id
-        }), 201 # 201 Created
-
-    except Exception as e:
-        if conn: conn.rollback()
-        print(f"Error en POST /clientes: {str(e)}")
-        return jsonify({'error': f'Error interno del servidor al registrar el cliente: {str(e)}'}), 500
-    finally:
-        if conn:
-            conn.close()
-            print("API POST /clientes: Conexión a BD cerrada.")
-
-
-@app.route('/empleados', methods=['POST'])
-@admin_required # Solo usuarios autorizados (admins) pueden registrar nuevos empleados
-def registrar_empleado(admin_user_id_from_token):
-    print(f"API POST /empleados: Solicitud de admin ID {admin_user_id_from_token} para registrar nuevo empleado.")
-    
-    data = request.get_json()
-    if not data:
-        return jsonify({'error': 'No se recibieron datos JSON'}), 400
-
-    # Obtener datos del frontend
-    nombre = data.get('nombre')
-    cedula = data.get('cedula')
-    rol = data.get('rol')
-    telefono = data.get('telefono')
-    fecha_contratacion_str = data.get('fecha_contratacion')
-
-    # Validación de datos de entrada
-    if not all([nombre, cedula, rol, telefono, fecha_contratacion_str]):
-        return jsonify({'error': 'Faltan campos requeridos (nombre, cedula, rol, telefono, fecha_contratacion).'}), 400
-
-    # Validación y conversión de la fecha
-    try:
-        fecha_contratacion = datetime.date.fromisoformat(fecha_contratacion_str)
+        fecha_desde = datetime.date.fromisoformat(fecha_desde_str)
+        fecha_hasta = datetime.date.fromisoformat(fecha_hasta_str)
+        if fecha_desde > fecha_hasta:
+             return jsonify({'error': 'La fecha "desde" no puede ser posterior a la fecha "hasta".'}), 400
     except (ValueError, TypeError):
-        return jsonify({'error': 'El formato de fecha_contratacion es inválido. Use AAAA-MM-DD.'}), 400
+        return jsonify({'error': 'El formato de fecha es inválido. Use AAAA-MM-DD.'}), 400
 
     conn = None
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
 
-        # Verificar si la cédula ya existe para evitar duplicados
-        cursor.execute("SELECT id_empleado FROM Empleados WHERE cedula = ?", (cedula,))
-        if cursor.fetchone():
-            return jsonify({'error': 'La cédula ya está registrada para otro empleado.'}), 409 # Conflict
+        # --- Construcción Dinámica de la Consulta SQL ---
+        params = [fecha_desde, fecha_hasta]
+        
+        # Base de la consulta
+        sql_base = """
+            SELECT 
+                d.id_detalle, ot.id_orden, ot.fecha_inicio, c.nombre AS nombre_cliente,
+                m.nombre AS nombre_material, d.cantidad_usada, m.precio_unitario, d.costo_total
+            FROM 
+                DetalleOrdenMateriales d
+            JOIN Materiales m ON d.id_material = m.id_material
+            JOIN OrdenesTrabajo ot ON d.id_orden = ot.id_orden
+            JOIN Clientes c ON ot.id_cliente = c.id_cliente
+        """
 
-        # Preparar el INSERT a la tabla Empleados. El estado por defecto es 1 (activo).
-        sql_insert = "INSERT INTO Empleados (nombre, cedula, rol, telefono, fecha_contratacion) VALUES (?, ?, ?, ?, ?)"
-        params = (nombre, cedula, rol, telefono, fecha_contratacion)
+        # Lista de condiciones WHERE
+        where_conditions = ["ot.fecha_inicio BETWEEN ? AND ?"]
+
+        # Añadir filtro por material si se proporcionó
+        if id_material_filtro:
+            where_conditions.append("d.id_material = ?")
+            params.append(id_material_filtro)
+            print(f"Reporte filtrado por id_material: {id_material_filtro}")
         
-        cursor.execute(sql_insert, params)
+        # Añadir filtro por empleado si se proporcionó
+        if id_empleado_filtro:
+            # Usamos una subconsulta para filtrar las órdenes donde el empleado está asignado
+            where_conditions.append("ot.id_orden IN (SELECT id_orden FROM AsignacionesOrdenEmpleado WHERE id_empleado = ?)")
+            params.append(id_empleado_filtro)
+            print(f"Reporte filtrado por id_empleado: {id_empleado_filtro}")
+
+        # Unir todas las condiciones
+        sql_reporte = f"{sql_base} WHERE {' AND '.join(where_conditions)} ORDER BY ot.fecha_inicio, ot.id_orden;"
         
-        # Obtener el ID del empleado recién creado
-        cursor.execute("SELECT @@IDENTITY AS id;")
-        nuevo_empleado_id = cursor.fetchone()[0]
+        print("SQL Query a ejecutar:", sql_reporte)
+        print("Parámetros:", tuple(params))
         
-        conn.commit()
+        cursor.execute(sql_reporte, tuple(params))
         
-        print(f"API POST /empleados: Empleado creado con ID: {nuevo_empleado_id}")
-        return jsonify({
-            'message': 'Empleado registrado exitosamente.',
-            'id_empleado_creado': nuevo_empleado_id
-        }), 201 # 201 Created
+        columns = [column[0] for column in cursor.description]
+        reporte_data = []
+        for row in cursor.fetchall():
+            reporte_dict = dict(zip(columns, row))
+            # Formatear datos para JSON
+            if reporte_dict.get('fecha_inicio'):
+                reporte_dict['fecha_inicio'] = reporte_dict['fecha_inicio'].isoformat()
+            if reporte_dict.get('precio_unitario'):
+                reporte_dict['precio_unitario'] = float(reporte_dict['precio_unitario'])
+            if reporte_dict.get('costo_total'):
+                reporte_dict['costo_total'] = float(reporte_dict['costo_total'])
+            reporte_data.append(reporte_dict)
+
+        print(f"API GET /reportes/uso-materiales: Devolviendo {len(reporte_data)} registros para el reporte.")
+        return jsonify(reporte_data), 200
 
     except Exception as e:
-        if conn: conn.rollback()
-        print(f"Error en POST /empleados: {str(e)}")
-        return jsonify({'error': f'Error interno del servidor al registrar el empleado: {str(e)}'}), 500
+        print(f"Error en GET /reportes/uso-materiales: {str(e)}")
+        return jsonify({'error': 'Error interno del servidor al generar el reporte.'}), 500
     finally:
         if conn:
             conn.close()
-            print("API POST /empleados: Conexión a BD cerrada.")
-
 
 
 # Ruta de prueba básica
