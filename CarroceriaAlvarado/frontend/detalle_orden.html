@@ -78,6 +78,8 @@
                             </thead>
                             <tbody id="materialesUsadosTableBody">
                                 </tbody>
+                            <tfoot id="materialesUsadosTableFoot">
+                            </tfoot>
                         </table>
                     </div>
                     <hr>
@@ -100,12 +102,30 @@
                         </div>
                         <div id="mensajeAnadirMaterial" class="mt-3"></div>
                     </form>
+
+                    <h5>Generar Comprobante de Pago</h5>
+                    <div id="comprobanteSection">
+                        <p>Presione el botón para generar el comprobante de pago basado en el costo total de los materiales utilizados.</p>
+                        <button class="btn btn-primary" id="btnAbrirModalComprobante" disabled>Generar Comprobante</button>
+                        <div id="mensajeComprobante" class="mt-3"></div>
+                    </div>
+
+                    <!--<h5>Finalizar Orden</h5>
+                    <div id="finalizarSection">
+                        <p>Presione el botón para generar el comprobante de pago basado en el costo total de los materiales utilizados.</p>
+                        <button class="btn btn-primary" id="btnAbrirModalFinalizar" disabled>Finalizar Orden de Trabajo</button>
+                        <div id="mensajeConfirmarMateriales" class="mt-3"></div>
+                    </div>-->
+
+                    <h5>Finalizar Orden</h5>
+                    <div id="accionesOrdenSection">
+                    </div>                    
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="modal fade" id="reasignarEmpleadoModal" tabindex="-1" aria-labelledby="reasignarModalLabel" aria-hidden="true">
+<div class="modal fade" id="reasignarEmpleadoModal" tabindex="-1" aria-labelledby="reasignarModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
@@ -131,6 +151,56 @@
     </div>
 </div>
 
+<div class="modal fade" id="generarComprobanteModal" tabindex="-1" aria-labelledby="comprobanteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="comprobanteModalLabel">Confirmar Generación de Comprobante</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Se generará un comprobante de pago para la <strong>Orden de Trabajo #<span id="comprobanteOrdenId"></span></strong>.</p>
+                <p>El monto total calculado de los materiales es: <strong id="comprobanteMontoTotal" class="fs-5"></strong></p>
+                <hr>
+                <div class="mb-3">
+                    <label for="selectMetodoPago" class="form-label">Seleccione el método de pago:</label>
+                    <select class="form-select" id="selectMetodoPago">
+                        <option value="Transferencia">Transferencia</option>
+                        <option value="Efectivo">Efectivo</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-success" id="confirmarGeneracionComprobanteButton">Confirmar y Generar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="confirmarMaterialesModal" tabindex="-1" aria-labelledby="confirmarMaterialesLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="confirmarMaterialesLabel">Confirmar Uso de Materiales y Finalizar Orden</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Por favor, verifique o corrija la cantidad final utilizada para cada material. El stock sobrante será devuelto al inventario.</p>
+                <form id="formConfirmarMateriales">
+                    <div id="listaMaterialesParaConfirmar">
+                        <!-- La lista de materiales con campos de entrada se generará aquí -->
+                    </div>
+                </form>
+                 <div id="mensajeConfirmarMateriales" class="mt-3"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="btnConfirmarFinalizarOrden">Confirmar y Finalizar Orden</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 </div>
 
@@ -138,10 +208,9 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
 
 <script>
-/**
- * Carga la lista de todos los empleados disponibles en el select del modal de re-asignación.
- * Opcionalmente, se le puede pasar el ID de un empleado para excluirlo de la lista.
- */
+    let costoTotalActualDeLaOrden = 0;
+    //let materialesActualesDeLaOrden = [];
+
 function cargarEmpleadosParaReasignar(idEmpleadoAExcluir) {
     const token = localStorage.getItem('token');
     const $selectNuevoEmpleado = $('#selectNuevoEmpleado');
@@ -197,14 +266,16 @@ function cargarMaterialesParaSelect() {
         }
     });
 }
-/**
- * Función principal para cargar todos los detalles de la orden, incluyendo la lista de empleados y materiales.
- */
+
+
 function cargarDetallesDeOrden(idOrden) {
     console.log("Cargando detalles para la orden ID:", idOrden);
     const token = localStorage.getItem('token');
     const $infoGeneralDiv = $('#infoGeneralOrden');
     const $materialesTableBody = $('#materialesUsadosTableBody');
+    const $materialesTableFoot = $('#materialesUsadosTableFoot');
+    const $comprobanteSection = $('#comprobanteSection');
+    const $accionesOrdenSection = $('#accionesOrdenSection');
 
     $infoGeneralDiv.html('<p>Cargando...</p>');
     $materialesTableBody.html('<tr><td colspan="5" class="text-center">Cargando...</td></tr>');
@@ -218,6 +289,14 @@ function cargarDetallesDeOrden(idOrden) {
             
             const fechaInicio = new Date(orden.fecha_inicio).toLocaleDateString('es-EC');
             const fechaFin = orden.fecha_fin ? new Date(orden.fecha_fin).toLocaleDateString('es-EC') : 'Pendiente';
+            const $materialesTableBody = $('#materialesUsadosTableBody');
+            const $materialesTableFoot = $('#materialesUsadosTableFoot');
+            
+            //const $finalizarSection = $('#finalizarSection'); 
+
+            $materialesTableBody.empty();
+            $materialesTableFoot.empty();
+            let costoTotalGeneral = 0;
 
             // --- INICIO DE LA MODIFICACIÓN PARA MOSTRAR EMPLEADOS ---
             let empleadosHtml = '<p class="mb-0"><strong>Empleado(s) Asignado(s):</strong></p>';
@@ -236,7 +315,6 @@ function cargarDetallesDeOrden(idOrden) {
             } else {
                 empleadosHtml += '<p class="text-muted">Ningún empleado asignado todavía.</p>';
             }
-            // --- FIN DE LA MODIFICACIÓN ---
 
             const infoHtml = `
                 <p><strong>Cliente:</strong> ${orden.nombre_cliente}</p>
@@ -250,18 +328,53 @@ function cargarDetallesDeOrden(idOrden) {
             `;
             $infoGeneralDiv.html(infoHtml);
 
-            // Poblar tabla de materiales usados (sin cambios)
+            // Poblar tabla de materiales usados
             $materialesTableBody.empty();
             if (orden.materiales_asignados && orden.materiales_asignados.length > 0) {
                 orden.materiales_asignados.forEach(function(detalle) {
-                    const costo = parseFloat(detalle.costo_total).toFixed(2);
-                    $materialesTableBody.append(`<tr>
-                        <td>${detalle.id_detalle}</td><td>${detalle.id_material}</td>
-                        <td>${detalle.nombre_material}</td><td>${detalle.cantidad_usada}</td><td>$${costo}</td>
-                    </tr>`);
+                    let costoNumerico = parseFloat(detalle.costo_total);
+                    if (!isNaN(costoNumerico)) { costoTotalActualDeLaOrden += costoNumerico; }
+                    const costoFormateado = !isNaN(costoNumerico) ? costoNumerico.toFixed(2) : 'Error';
+                    $materialesTableBody.append(`<tr><td>${detalle.id_detalle}</td><td>${detalle.nombre_material}</td><td>${detalle.cantidad_usada}</td><td>$${costoFormateado}</td></tr>`);
                 });
+                const filaTotalHtml = `<tr class="table-group-divider"><td colspan="3" class="text-end"><strong>Costo Total de Materiales:</strong></td><td><strong>$${costoTotalActualDeLaOrden.toFixed(2)}</strong></td></tr>`;
+                // Mostrar el total
+                $materialesTableFoot.append(filaTotalHtml);
+                // Habilitar botón de generar comprobante si el total es mayor a 0
+                $('#btnAbrirModalComprobante').prop('disabled', costoTotalGeneral <= 0);
+
             } else {
-                $materialesTableBody.append('<tr><td colspan="5" class="text-center">Aún no se han asignado materiales.</td></tr>');
+                $materialesTableBody.append('<tr><td colspan="4" class="text-center">Aún no se han asignado materiales.</td></tr>');
+                $('#btnAbrirModalComprobante').prop('disabled', true); // Deshabilitar si no hay materiales
+            }
+        
+            /*if (materialesActualesDeLaOrden.length > 0) {
+                materialesActualesDeLaOrden.forEach(function(detalle) {
+                    let costoNumerico = parseFloat(detalle.costo_total);
+                    if (!isNaN(costoNumerico)) { costoTotalGeneral += costoNumerico; }
+                    const costoFormateado = !isNaN(costoNumerico) ? costoNumerico.toFixed(2) : 'Error';
+                    $materialesTableBody.append(`<tr><td>${detalle.id_detalle}</td><td>${detalle.nombre_material}</td><td>${detalle.cantidad_usada}</td><td>$${costoFormateado}</td></tr>`);
+                });
+                const filaTotalHtml = `<tr class="table-group-divider"><td colspan="3" class="text-end"><strong>Costo Total:</strong></td><td><strong>$${costoTotalGeneral.toFixed(2)}</strong></td></tr>`;
+                $materialesTableFoot.append(filaTotalHtml);
+            } else {
+                $materialesTableBody.append('<tr><td colspan="4" class="text-center">No se han asignado materiales.</td></tr>');
+            }
+
+            // --- Lógica para mostrar/ocultar el botón "Finalizar Orden" ---
+            $accionesOrdenSection.empty(); 
+            if (orden.estado !== 'Finalizado' && orden.estado !== 'Cancelado') {
+                 $accionesOrdenSection.html('<p>Una vez que el trabajo esté completo, finalice la orden para ajustar el inventario y permitir la facturación.</p><button class="btn btn-danger" id="btnAbrirModalFinalizar">Finalizar Orden de Trabajo</button>');
+            } else {
+                 $accionesOrdenSection.html(`<p class="text-success fw-bold">Esta orden ya fue finalizada.</p>`);
+            }*/
+
+            $accionesOrdenSection.empty(); 
+            if (orden.estado !== 'Finalizado' && orden.estado !== 'Cancelado') {
+                 $accionesOrdenSection.html('<p>Una vez que el trabajo esté completo, finalice la orden para ajustar el inventario.</p><button class="btn btn-danger" id="btnAbrirModalFinalizar">Finalizar Orden</button>');
+            } else {
+                 const fechaFin = orden.fecha_fin ? new Date(orden.fecha_fin).toLocaleDateString('es-EC') : '';
+                 $accionesOrdenSection.html(`<p class="text-success fw-bold">Esta orden ya fue finalizada el ${fechaFin}.</p>`);
             }
         },
         error: function(xhr) {
@@ -272,7 +385,7 @@ function cargarDetallesDeOrden(idOrden) {
     });
 }
 
-// --- Código principal que se ejecuta cuando el DOM está listo ---
+
 $(document).ready(function() {
     // Lógica estándar
     $('#sidebarCollapse').on('click', function() { $('#sidebar').toggleClass('active'); });
@@ -284,7 +397,8 @@ $(document).ready(function() {
 
     // Obtener el ID de la orden de la URL
     const urlParams = new URLSearchParams(window.location.search);
-    const idOrden = urlParams.get('id');
+    //const idOrden = urlParams.get('id');
+    const idOrden = new URLSearchParams(window.location.search).get('id');
 
     if (!idOrden) {
         alert("No se especificó un ID de orden de trabajo.");
@@ -296,63 +410,7 @@ $(document).ready(function() {
     cargarDetallesDeOrden(idOrden); // Cargar datos iniciales
     cargarMaterialesParaSelect(); // Cargar materiales para el formulario de añadir material
 
-    // --- Lógica para la Re-asignación de Empleados ---
     let idEmpleadoParaReemplazar = null; // Variable para guardar el ID del empleado que se va a cambiar
-
-    // 1. Cuando se hace clic en un botón "Cambiar"
-    $(document).on('click', '.btn-cambiar-asignacion', function() {
-        idEmpleadoParaReemplazar = $(this).data('id-empleado-antiguo');
-        console.log(`Abriendo modal para reemplazar al empleado ID: ${idEmpleadoParaReemplazar}`);
-
-        // Cargar empleados en el modal, excluyendo al que se va a reemplazar
-        cargarEmpleadosParaReasignar(idEmpleadoParaReemplazar);
-
-        var reasignarModal = new bootstrap.Modal(document.getElementById('reasignarEmpleadoModal'));
-        reasignarModal.show();
-    });
-
-    // 2. Cuando se hace clic en el botón de confirmación del modal
-    $('#confirmarReasignacionButton').on('click', function() {
-        const idNuevoEmpleado = $('#selectNuevoEmpleado').val();
-        const mensajeDiv = $('#mensajeReasignar');
-
-        if (!idNuevoEmpleado) {
-            mensajeDiv.text('Por favor, seleccione un nuevo empleado.').addClass('alert alert-danger');
-            return;
-        }
-        if (!idEmpleadoParaReemplazar) {
-            mensajeDiv.text('Error: No se ha especificado el empleado a reemplazar.').addClass('alert alert-danger');
-            return;
-        }
-
-        console.log(`Confirmada reasignación. Orden: ${idOrden}, Empleado antiguo: ${idEmpleadoParaReemplazar}, Empleado nuevo: ${idNuevoEmpleado}`);
-        mensajeDiv.text('Procesando...').removeClass('alert-danger alert-success').addClass('alert alert-info');
-
-        $.ajax({
-            url: `http://127.0.0.1:5000/ordenes-trabajo/${idOrden}/modificar-asignacion`,
-            method: 'PUT',
-            headers: {
-                'Authorization': 'Bearer ' + token,
-                'Content-Type': 'application/json'
-            },
-            data: JSON.stringify({
-                id_empleado_antiguo: parseInt(idEmpleadoParaReemplazar),
-                id_empleado_nuevo: parseInt(idNuevoEmpleado)
-            }),
-            success: function(response) {
-                mensajeDiv.text(response.message || "Empleado reasignado con éxito.").removeClass('alert-info').addClass('alert alert-success');
-                setTimeout(function() {
-                    var modalInstance = bootstrap.Modal.getInstance(document.getElementById('reasignarEmpleadoModal'));
-                    if (modalInstance) { modalInstance.hide(); }
-                    cargarDetallesDeOrden(idOrden); // Refrescar la vista de detalles
-                }, 1500);
-            },
-            error: function(xhr) {
-                console.error("Error al reasignar empleado:", xhr.responseText);
-                mensajeDiv.text(xhr.responseJSON?.error || "Error al reasignar.").removeClass('alert-info').addClass('alert alert-danger');
-            }
-        });
-    });
 
     // Limpiar la variable cuando el modal de reasignación se cierre
     $('#reasignarEmpleadoModal').on('hidden.bs.modal', function () {
@@ -397,7 +455,145 @@ $(document).ready(function() {
             }
         });
     });
+
+
+    // 1. Abrir el modal de confirmación para el comprobante
+    $(document).on('click', '#btnAbrirModalComprobante', function() {
+        console.log("Abriendo modal para generar comprobante...");
+        // Obtener el total calculado de la tabla
+        const totalText = $('#materialesUsadosTableFoot strong').last().text(); 
+        const montoTotalFormateado = `$${costoTotalActualDeLaOrden.toFixed(2)}`;
+        $('#comprobanteOrdenId').text(idOrden);
+        $('#comprobanteMontoTotal').text(totalText || "$0.00");
+        $('#mensajeComprobante').text('').removeClass('alert'); 
+        
+        var comprobanteModal = new bootstrap.Modal(document.getElementById('generarComprobanteModal'));
+        comprobanteModal.show();
+    });
+
+    // 2. Confirmar y enviar la solicitud para generar el comprobante
+    $('#confirmarGeneracionComprobanteButton').on('click', function() {
+        const metodoPago = $('#selectMetodoPago').val();
+        const mensajeDiv = $('#mensajeComprobante');
+        const token = localStorage.getItem('token');
+
+        console.log(`Generando comprobante para orden ${idOrden} con método de pago: ${metodoPago}`);
+        mensajeDiv.text('Procesando...').removeClass('alert-danger alert-success').addClass('alert alert-info');
+
+        $.ajax({
+            url: `http://127.0.0.1:5000/comprobantes-pago`,
+            method: 'POST',
+            headers: {
+                'Authorization': 'Bearer ' + token,
+                'Content-Type': 'application/json'
+            },
+            data: JSON.stringify({
+                id_orden: parseInt(idOrden),
+                metodo_pago: metodoPago
+            }),
+            success: function(response) {
+                mensajeDiv.text(response.message || "Comprobante generado con éxito.").removeClass('alert-info').addClass('alert alert-success');
+                // Deshabilitar el botón principal para evitar duplicados
+                $('#btnAbrirModalComprobante').prop('disabled', true).text('Comprobante Ya Generado');
+
+                setTimeout(function() {
+                    var modalInstance = bootstrap.Modal.getInstance(document.getElementById('generarComprobanteModal'));
+                    if (modalInstance) { modalInstance.hide(); }
+                }, 2000);
+            },
+            error: function(xhr) {
+                console.error("Error al generar el comprobante:", xhr.responseText);
+                mensajeDiv.text(xhr.responseJSON?.error || "Error al generar el comprobante.").removeClass('alert-info').addClass('alert alert-danger');
+            }
+        });
+    });
+
+
+    //1. Abrir el modal para finalizar la orden de trabajo
+    $(document).on('click', '#btnAbrirModalFinalizar', function() {
+        console.log("Abriendo modal para confirmar y finalizar orden...");
+        const token = localStorage.getItem('token');
+        const $listaConfirmar = $('#listaMaterialesParaConfirmar');
+        $listaConfirmar.html('<p class="text-center">Obteniendo lista de materiales...</p>');
+
+        var confirmarModal = new bootstrap.Modal(document.getElementById('confirmarMaterialesModal'));
+        confirmarModal.show();
+
+        $.ajax({
+            url: `http://127.0.0.1:5000/ordenes-trabajo/${idOrden}`,
+            method: 'GET',
+            headers: { 'Authorization': 'Bearer ' + token },
+            success: function(orden) {
+                $listaConfirmar.empty();
+                if (orden.materiales_asignados && orden.materiales_asignados.length > 0) {
+                    orden.materiales_asignados.forEach(function(detalle) {
+                        const itemHtml = `
+                            <div class="row mb-2 align-items-center">
+                                <div class="col-6"><label class="form-label mb-0">${detalle.nombre_material}</label><small class="d-block text-muted">Asignados: ${detalle.cantidad_usada}</small></div>
+                                <div class="col-6"><input type="number" class="form-control form-control-sm cantidad-final-usada" value="${detalle.cantidad_usada}" min="0" max="${detalle.cantidad_usada}" data-id-detalle="${detalle.id_detalle}" required></div>
+                            </div>`;
+                        $listaConfirmar.append(itemHtml);
+                    });
+                } else {
+                    $listaConfirmar.html('<p>No hay materiales asignados a esta orden para confirmar. Puede finalizar la orden directamente para cerrarla.</p>');
+                }
+            },
+            error: function(xhr) {
+                console.error("Error al cargar materiales para el modal:", xhr.responseText);
+                $listaConfirmar.html('<p class="text-danger">Error al cargar la lista de materiales.</p>');
+            }
+        });
+    });
+
+    // 2. Confirmar y enviar la solicitud para finalizar la orden
+    $('#btnConfirmarFinalizarOrden').on('click', function() {
+        const mensajeDiv = $('#mensajeConfirmarMateriales');
+        const token = localStorage.getItem('token');
+        const materialesConfirmados = [];
+        let validacionOk = true;
+
+        $('.cantidad-final-usada').each(function() {
+            const idDetalle = $(this).data('id-detalle');
+            const cantidadFinal = parseInt($(this).val(), 10);
+            const cantidadMaxima = parseInt($(this).attr('max'), 10);
+
+            if (isNaN(cantidadFinal) || cantidadFinal < 0 || cantidadFinal > cantidadMaxima) {
+                mensajeDiv.text(`La cantidad para el material con detalle ID ${idDetalle} es inválida.`).addClass('alert alert-danger');
+                validacionOk = false;
+                return false; 
+            }
+            materialesConfirmados.push({
+                id_detalle: idDetalle,
+                cantidad_usada_final: cantidadFinal
+            });
+        });
+
+        if (!validacionOk) return;
+
+        mensajeDiv.text('Procesando finalización...').removeClass('alert-danger').addClass('alert alert-info');
+        console.log("Enviando datos de confirmación y finalización:", materialesConfirmados);
+
+        $.ajax({
+            url: `http://127.0.0.1:5000/ordenes-trabajo/${idOrden}/confirmar-uso-y-finalizar`,
+            method: 'PUT',
+            headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+            data: JSON.stringify(materialesConfirmados),
+            success: function(response) {
+                mensajeDiv.text(response.message || "Orden finalizada con éxito.").removeClass('alert-info').addClass('alert alert-success');
+                setTimeout(function() {
+                    var modalInstance = bootstrap.Modal.getInstance(document.getElementById('confirmarMaterialesModal'));
+                    if (modalInstance) { modalInstance.hide(); }
+                    cargarDetallesDeOrden(idOrden);
+                }, 2000);
+            },
+            error: function(xhr) {
+                mensajeDiv.text(xhr.responseJSON?.error || "Error al finalizar la orden.").removeClass('alert-info').addClass('alert alert-danger');
+            }
+        });
+    });
+
 });
+
 </script>
 
 </body>

@@ -1947,6 +1947,248 @@ def reporte_uso_materiales(admin_user_id_from_token):
             conn.close()
 
 
+# --- ENDPOINT PARA REGISTRO DE COMPROBANTES DE PAGO
+@app.route('/comprobantes-pago', methods=['POST'])
+@admin_required # O el rol apropiado, ej: Asistente Administrativo
+def registrar_comprobante_pago(admin_user_id_from_token):
+    print(f"API POST /comprobantes-pago: Solicitud de admin ID {admin_user_id_from_token}")
+    
+    data = request.get_json()
+    if not data or 'id_orden' not in data:
+        return jsonify({'error': 'Se requiere el "id_orden" para generar el comprobante.'}), 400
+
+    id_orden = data.get('id_orden')
+    
+    # El método de pago podría venir del frontend o tener un valor por defecto
+    metodo_pago = data.get('metodo_pago', 'No especificado')
+
+    conn = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        # 1. Verificar que la orden de trabajo exista
+        cursor.execute("SELECT COUNT(*) FROM OrdenesTrabajo WHERE id_orden = ?", (id_orden,))
+        if cursor.fetchone()[0] == 0:
+            return jsonify({'error': f'La orden de trabajo con ID {id_orden} no existe.'}), 404
+
+        # 2. Verificar si ya existe un comprobante para esta orden para evitar duplicados
+        cursor.execute("SELECT id_comprobante FROM ComprobantesPago WHERE id_orden = ?", (id_orden,))
+        if cursor.fetchone():
+            return jsonify({'error': f'Ya existe un comprobante de pago para la orden #{id_orden}.'}), 409 # Conflict
+
+        # 3. Calcular el monto total sumando los costos de los materiales asignados
+        sql_sum = "SELECT SUM(costo_total) FROM DetalleOrdenMateriales WHERE id_orden = ?"
+        cursor.execute(sql_sum, id_orden)
+        monto_total = cursor.fetchone()[0]
+
+        # Si no hay materiales, el monto podría ser None o 0.
+        if monto_total is None:
+            monto_total = 0.0
+
+        print(f"Monto total calculado para la orden #{id_orden}: {monto_total}")
+
+        # 4. Preparar el INSERT a la tabla ComprobantesPago
+        sql_insert = """
+            INSERT INTO ComprobantesPago 
+                (id_orden, monto, fecha_emision, metodo_pago, estado_pago, id_usuario_registrador, 
+                 fecha_ultima_actualizacion, id_usuario_ultima_actualizacion)
+            VALUES (?, ?, GETDATE(), ?, ?, ?, GETDATE(), ?)
+        """
+        params = (
+            id_orden, 
+            monto_total, 
+            metodo_pago, 
+            'Pagado', # Estado por defecto
+            admin_user_id_from_token,
+            admin_user_id_from_token
+        )
+        
+        cursor.execute(sql_insert, params)
+        
+        cursor.execute("SELECT @@IDENTITY AS id;")
+        nuevo_comprobante_id = cursor.fetchone()[0]
+        
+        conn.commit()
+        
+        print(f"API POST /comprobantes-pago: Comprobante creado con ID: {nuevo_comprobante_id}")
+        return jsonify({
+            'message': 'Comprobante de pago generado exitosamente.',
+            'id_comprobante_creado': nuevo_comprobante_id,
+            'monto_calculado': float(monto_total)
+        }), 201
+
+    except Exception as e:
+        if conn: conn.rollback()
+        print(f"Error en POST /comprobantes-pago: {str(e)}")
+        return jsonify({'error': f'Error interno del servidor al registrar el comprobante: {str(e)}'}), 500
+    finally:
+        if conn:
+            conn.close()
+
+@app.route('/comprobantes-pago', methods=['GET'])
+@token_required # Asumimos que cualquier usuario autenticado puede consultar
+def consultar_comprobantes_pago(decoded_user_rol, decoded_user_id):
+    print(f"API GET /comprobantes-pago: Solicitud de usuario ID {decoded_user_id} con rol {decoded_user_rol}")
+
+    # Obtener parámetros de fecha opcionales de la URL
+    fecha_desde_str = request.args.get('fecha_desde')
+    fecha_hasta_str = request.args.get('fecha_hasta')
+
+    conn = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        # Consulta base que une las tablas para obtener información completa
+        sql_base = """
+            SELECT 
+                cp.id_comprobante,
+                cp.id_orden,
+                cp.monto,
+                cp.fecha_emision,
+                cp.metodo_pago,
+                cp.estado_pago,
+                c.nombre AS nombre_cliente,
+                u.username AS nombre_usuario_registrador
+            FROM 
+                ComprobantesPago cp
+            JOIN 
+                OrdenesTrabajo ot ON cp.id_orden = ot.id_orden
+            JOIN 
+                Clientes c ON ot.id_cliente = c.id_cliente
+            JOIN 
+                Usuarios u ON cp.id_usuario_registrador = u.id_usuario
+        """
+        
+        where_conditions = []
+        params = []
+
+        # Añadir filtros de fecha si se proporcionan
+        if fecha_desde_str:
+            where_conditions.append("cp.fecha_emision >= ?")
+            params.append(datetime.date.fromisoformat(fecha_desde_str))
+        
+        if fecha_hasta_str:
+            where_conditions.append("cp.fecha_emision <= ?")
+            params.append(datetime.date.fromisoformat(fecha_hasta_str))
+
+        # Construir la consulta final
+        if where_conditions:
+            sql_query = f"{sql_base} WHERE {' AND '.join(where_conditions)} ORDER BY cp.fecha_emision DESC"
+        else:
+            sql_query = f"{sql_base} ORDER BY cp.fecha_emision DESC"
+
+        print("SQL Query a ejecutar:", sql_query)
+        print("Parámetros:", tuple(params))
+        
+        cursor.execute(sql_query, tuple(params))
+        
+        columns = [column[0] for column in cursor.description]
+        comprobantes = []
+        for row in cursor.fetchall():
+            comprobante_dict = dict(zip(columns, row))
+            # Formatear datos para que sean amigables en JSON
+            if comprobante_dict.get('fecha_emision'):
+                comprobante_dict['fecha_emision'] = comprobante_dict['fecha_emision'].isoformat()
+            if comprobante_dict.get('monto'):
+                comprobante_dict['monto'] = float(comprobante_dict['monto'])
+            comprobantes.append(comprobante_dict)
+
+        print(f"API GET /comprobantes-pago: Devolviendo {len(comprobantes)} comprobantes.")
+        return jsonify(comprobantes), 200
+
+    except (ValueError, TypeError):
+        return jsonify({'error': 'El formato de fecha es inválido. Use AAAA-MM-DD.'}), 400
+    except Exception as e:
+        print(f"Error en GET /comprobantes-pago: {str(e)}")
+        return jsonify({'error': 'Error interno del servidor al consultar los comprobantes.'}), 500
+    finally:
+        if conn:
+            conn.close()
+            print("API GET /comprobantes-pago: Conexión a BD cerrada.")
+         
+    
+    
+# --- FINALIZAR ORDEN DE TRABAJO
+@app.route('/ordenes-trabajo/<int:id_orden>/confirmar-uso-y-finalizar', methods=['PUT'])
+@admin_required
+def confirmar_y_finalizar_orden(admin_user_id_from_token, id_orden):
+    """
+    Confirma las cantidades finales de materiales usados, devuelve el sobrante al stock,
+    actualiza los costos y marca la orden como 'Finalizado'.
+    """
+    print(f"API PUT /ordenes-trabajo/{id_orden}/confirmar-uso-y-finalizar: Solicitud de admin ID {admin_user_id_from_token}")
+    
+    # El frontend enviará una lista de los materiales con sus cantidades finales
+    # Formato esperado: [{"id_detalle": <int>, "cantidad_usada_final": <int>}, ...]
+    materiales_confirmados = request.get_json()
+    if not isinstance(materiales_confirmados, list):
+        return jsonify({'error': 'Se esperaba una lista de materiales confirmados.'}), 400
+
+    conn = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        conn.autocommit = False # Iniciar transacción
+
+        for material in materiales_confirmados:
+            id_detalle = material.get('id_detalle')
+            cantidad_usada_final = material.get('cantidad_usada_final')
+
+            if id_detalle is None or cantidad_usada_final is None or int(cantidad_usada_final) < 0:
+                raise ValueError("Datos de material inválidos. Cada material debe tener id_detalle y cantidad_usada_final no negativa.")
+
+            # 1. Obtener la cantidad asignada originalmente y el id_material del detalle
+            cursor.execute("SELECT id_material, cantidad_usada, costo_total FROM DetalleOrdenMateriales WHERE id_detalle = ?", (id_detalle,))
+            detalle_actual = cursor.fetchone()
+            if not detalle_actual:
+                raise ValueError(f"No se encontró el detalle de material con ID {id_detalle}.")
+
+            id_material_actual = detalle_actual.id_material
+            cantidad_asignada = detalle_actual.cantidad_usada
+            
+            if int(cantidad_usada_final) > cantidad_asignada:
+                raise ValueError(f"La cantidad usada final ({cantidad_usada_final}) no puede ser mayor a la cantidad asignada ({cantidad_asignada}) para el detalle #{id_detalle}.")
+            
+            # 2. Calcular y devolver el stock sobrante
+            cantidad_sobrante = cantidad_asignada - int(cantidad_usada_final)
+            if cantidad_sobrante > 0:
+                print(f"Devolviendo {cantidad_sobrante} unidades del material ID {id_material_actual} al inventario.")
+                cursor.execute("UPDATE Materiales SET cantidad = cantidad + ? WHERE id_material = ?", (cantidad_sobrante, id_material_actual))
+
+            # 3. Actualizar el detalle de la orden con la cantidad y costo reales
+            cursor.execute("SELECT precio_unitario FROM Materiales WHERE id_material = ?", (id_material_actual,))
+            precio_unitario = cursor.fetchone()[0]
+            nuevo_costo_total = int(cantidad_usada_final) * precio_unitario
+            
+            cursor.execute("UPDATE DetalleOrdenMateriales SET cantidad_usada = ?, costo_total = ? WHERE id_detalle = ?",
+                           (int(cantidad_usada_final), nuevo_costo_total, id_detalle))
+
+        # 4. Finalmente, actualizar el estado de la orden de trabajo a 'Finalizado'
+        fecha_fin_actualizada = datetime.date.today()
+        sql_update_orden = "UPDATE OrdenesTrabajo SET estado = 'Finalizado', fecha_fin = ?, fecha_ultima_actualizacion = GETDATE(), id_usuario_ultima_actualizacion = ? WHERE id_orden = ?"
+        cursor.execute(sql_update_orden, (fecha_fin_actualizada, admin_user_id_from_token, id_orden))
+        
+        conn.commit() # Confirmar todos los cambios de la transacción
+        
+        print(f"API: Orden de trabajo #{id_orden} finalizada y materiales actualizados.")
+        return jsonify({'message': f'Orden de trabajo #{id_orden} finalizada y stock de materiales actualizado correctamente.'}), 200
+
+    except ValueError as ve:
+        if conn: conn.rollback()
+        print(f"Error de validación en la transacción: {str(ve)}")
+        return jsonify({'error': str(ve)}), 400
+    except Exception as e:
+        if conn: conn.rollback()
+        print(f"Error en PUT /ordenes-trabajo/{id_orden}/confirmar-uso-y-finalizar: {str(e)}")
+        return jsonify({'error': f'Error interno del servidor al finalizar la orden: {str(e)}'}), 500
+    finally:
+        if conn:
+            conn.autocommit = True
+            conn.close()
+        
+            
 # Ruta de prueba básica
 @app.route('/')
 def hello():
