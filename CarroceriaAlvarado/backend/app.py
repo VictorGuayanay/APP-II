@@ -51,7 +51,7 @@ def get_db_connection():
 def send_reset_email(email, user_id):
     try:
         # Usar el valor de APP_CONFIG para la expiración
-        expiry_minutes = APP_CONFIG.get('reset_token_expiry_minutes', 15) # Fallback a 15 si no está en config
+        expiry_minutes = APP_CONFIG.get('reset_token_expiry_minutes', 15) #15 min tiempo que dura el token para reestablecer contraseña
         print(f"DEBUG send_reset_email: Duración del token de reseteo establecida en: {expiry_minutes} minutos.")
         exp_time = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(minutes=expiry_minutes)
         

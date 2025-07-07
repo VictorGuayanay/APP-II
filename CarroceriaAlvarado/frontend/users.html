@@ -29,17 +29,8 @@
                 window.location.href = 'index.html';
                 return; // Detener ejecución adicional
             }
-
-            // Si el usuario es admin y llega aquí, podrías redirigirlo a admin.html
-            // if (userRol === 'Administrador') {
-            //     window.location.href = 'admin.html';
-            //     return;
-            // }
-
             console.log("Acceso concedido a users.html.");
             // Cargar contenido específico para usuarios no administradores
-
-            // Ejemplo: Añadir botón de logout
             $('#logoutButtonUser').on('click', function() { // Asegúrate que este botón exista en users.html
                 localStorage.removeItem('token');
                 localStorage.removeItem('userRol');

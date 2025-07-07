@@ -81,10 +81,9 @@
     <script>
         $(document).ready(function() {
             $('#resetPassForm').on('submit', function(event) {
-                event.preventDefault(); // Evita el envío del formulario por defecto
+                event.preventDefault(); 
                 const messageDiv = $('#message');
                 messageDiv.text('Instrucciones enviadas a su correo electrónico').css('color', 'green');
-                // Redirige a index.html después de 3 segundos
                 setTimeout(function() {
                     window.location.href = 'index.html';
                 }, 3000);

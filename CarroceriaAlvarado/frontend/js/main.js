@@ -87,7 +87,7 @@ $(document).ready(function() {
         }
 
         $.ajax({
-            url: 'http://127.0.0.1:5000/reset_password', // API Flask en puerto 5000
+            url: 'http://127.0.0.1:5000/reset_password',
             method: 'POST',
             contentType: 'application/json',
             data: JSON.stringify({ email }),
@@ -115,7 +115,6 @@ $(document).ready(function() {
         const messageDiv = $('#message'); 
 
         messageDiv.text('').removeClass('error success');
-        // No mostrar contraseñas en log de producción, solo un indicador de que se envían datos.
         console.log('Datos (sin contraseña) enviados para new password.');
 
 
@@ -140,7 +139,7 @@ $(document).ready(function() {
         }
 
         $.ajax({
-            url: 'http://127.0.0.1:5000/new_password', // API Flask en puerto 5000
+            url: 'http://127.0.0.1:5000/new_password', 
             method: 'POST',
             contentType: 'application/json',
             data: JSON.stringify({ token, password }),
@@ -160,9 +159,6 @@ $(document).ready(function() {
         });
     });
 
-    // Indicadores de robustez y coincidencia de contraseñas 
-    // (aplicable a páginas que tengan estos elementos, como new_pass.html o registrer.html)
-    // Solo se adjuntan los eventos si los elementos existen en la página actual.
     if ($('#password').length > 0) { 
         $('#password').on('input', function() {
             const passwordVal = $(this).val(); 
@@ -201,14 +197,12 @@ $(document).ready(function() {
     function cargarNotificaciones() {
         console.log("cargarNotificaciones() - Iniciando carga de notificaciones...");
         const token = localStorage.getItem('token');
-        const $notificationCount = $('#notificationCount'); // El span para el contador
-        const $notificationList = $('#notificationList');   // La lista <ul> para los mensajes
+        const $notificationCount = $('#notificationCount'); 
+        const $notificationList = $('#notificationList');   
 
-        // Verificación de token antes de la llamada
+      
         if (!token) {
             console.error("cargarNotificaciones() - No hay token. No se puede llamar a la API.");
-            // No es necesario redirigir aquí, ya que la protección de página principal debería haber actuado.
-            // Simplemente no se cargarán las notificaciones.
             return;
         }
 
@@ -220,7 +214,7 @@ $(document).ready(function() {
             },
             success: function(notificaciones) {
                 console.log("cargarNotificaciones() - Notificaciones recibidas:", notificaciones);
-                $notificationList.empty(); // Limpiar la lista actual
+                $notificationList.empty(); 
 
                 if (notificaciones && Array.isArray(notificaciones) && notificaciones.length > 0) {
                     // Hay notificaciones, actualizar contador y mostrarlo
@@ -257,8 +251,7 @@ $(document).ready(function() {
                 $notificationCount.hide();
                 $notificationList.empty().append('<li><span class="dropdown-item-text text-danger">Error al cargar notificaciones.</span></li>');
                 // No redirigimos aquí para no interrumpir al usuario, a menos que sea un error de autenticación
-                if (xhr.status === 401) { // Unauthorized
-                    // Podría ser útil recargar la página para que la protección de página lo envíe al login
+                if (xhr.status === 401) { //no autorizado
                     window.location.reload();
                 }
             }
@@ -326,7 +319,6 @@ $(document).ready(function() {
         });
     });
 
-    // Cargar recursos si se accede con una orden existente (puedes pasar id_orden como parámetro URL)
     const urlParams = new URLSearchParams(window.location.search);
     const idOrden = urlParams.get('id_orden');
     if (idOrden) {
