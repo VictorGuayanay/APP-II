@@ -100,8 +100,6 @@ def send_reset_email(email, user_id):
 
 @app.route('/registro', methods=['POST'])
 def registrar_usuario():
-    # (Tu código de /registro como lo tenías, asegurándote que no modifique app.config['SECRET_KEY'])
-    # ... (código de la función /registro) ...
     try:
         data = request.get_json()
         if not data:
@@ -288,18 +286,8 @@ def reset_password_request():
                 # No revelar si el correo existe o no por seguridad, pero para depuración es útil.
                 print(f"Reset Password - Correo no registrado: {email_req}")
                 return jsonify({'error': 'Si el correo está registrado, se enviarán instrucciones.'}), 200 # O 404 si prefieres ser explícito
-            
+
             user_id = user_db_data[0]
-            
-            # Guardar el token de reseteo y su expiración en la BD (si no lo estás haciendo ya)
-            # Esto es opcional pero más seguro para invalidar tokens usados o viejos.
-            # exp_time_db = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(minutes=15)
-            # temp_reset_token = jwt.encode({'user_id': user_id, 'exp': exp_time_db}, app.config['SECRET_KEY'], algorithm="HS256")
-            # cursor.execute("UPDATE Usuarios SET reset_token = ?, reset_token_expiry = ? WHERE id_usuario = ?", 
-            #                (temp_reset_token, exp_time_db, user_id))
-            # conn.commit()
-            # if not send_reset_email(email_req, user_id, temp_reset_token): # Modificar send_reset_email para usar este token
-            
             if send_reset_email(email_req, user_id): # Usando el token generado dentro de send_reset_email
                 return jsonify({'message': 'Instrucciones enviadas a su correo electrónico'}), 200
             else:
@@ -452,11 +440,33 @@ def admin_required(f):
         return f(admin_user_id_from_token=decoded_user_id, *args, **kwargs)
     return decorated_admin_function
 
+
+def roles_required(*required_roles):
+    def decorator(f):
+        @wraps(f)
+        @token_required # Primero, se asegura de que el token sea válido y obtiene el rol
+        def decorated_function(decoded_user_rol, decoded_user_id, *args, **kwargs):
+            
+            print(f"API Protegida - @roles_required: Verificando rol '{decoded_user_rol}' contra roles permitidos: {required_roles}")
+
+            # Comprobar si el rol del usuario está en la lista de roles requeridos
+            if decoded_user_rol not in required_roles:
+                print(f"API Protegida - @roles_required: Acceso denegado para rol '{decoded_user_rol}'.")
+                return jsonify({'error': 'Acceso denegado. No tiene los permisos necesarios para esta acción.'}), 403
+            
+            print(f"API Protegida - @roles_required: Acceso concedido para rol '{decoded_user_rol}'.")
+            # Si el rol es válido, se ejecuta la función del endpoint
+            return f(decoded_user_rol=decoded_user_rol, decoded_user_id=decoded_user_id, *args, **kwargs)
+        return decorated_function
+    return decorator
+
+
+
 # --- ENDPOINTS DE GESTIÓN DE USUARIOS ---
 @app.route('/usuarios', methods=['GET'])
-@admin_required
-def get_all_usuarios(admin_user_id_from_token):
-    print(f"API /usuarios GET: Solicitud recibida por admin con ID: {admin_user_id_from_token}")
+@roles_required('Administrador')
+def get_all_usuarios(decoded_user_rol, decoded_user_id):
+    print(f"API /usuarios GET: Solicitud recibida por admin con ID: {decoded_user_rol, decoded_user_id}")
     conn = None  # Inicializar a None
     try:
         conn = get_db_connection() # Obtener la conexión
@@ -486,9 +496,9 @@ def get_all_usuarios(admin_user_id_from_token):
             print("API /usuarios GET: Conexión a BD cerrada desde el bloque finally.")
 
 @app.route('/usuarios/<int:user_id>/desbloquear', methods=['PUT']) # O podrías usar POST
-@admin_required # Solo administradores pueden desbloquear
-def desbloquear_usuario(admin_user_id_from_token, user_id):
-    print(f"API /usuarios/{user_id}/desbloquear PUT: Solicitud de admin ID {admin_user_id_from_token} para desbloquear usuario ID {user_id}")
+@roles_required('Administrador') # Solo administradores pueden desbloquear
+def desbloquear_usuario(decoded_user_rol, decoded_user_id, user_id):
+    print(f"API /usuarios/{user_id}/desbloquear PUT: Solicitud de admin ID {decoded_user_rol, decoded_user_id} para desbloquear usuario ID {user_id}")
     
     conn = None
     try:
@@ -528,11 +538,11 @@ def desbloquear_usuario(admin_user_id_from_token, user_id):
             print(f"API /usuarios/{user_id}/desbloquear PUT: Conexión a BD cerrada desde el bloque finally.")
 
 @app.route('/usuarios/<int:user_id>/estado', methods=['PUT'])
-@admin_required
-def cambiar_estado_usuario(admin_user_id_from_token, user_id):
+@roles_required('Administrador')
+def cambiar_estado_usuario(decoded_user_rol, decoded_user_id, user_id):
     # (Tu código de /usuarios/<id>/estado PUT como lo tenías)
     # ... (código de la función /usuarios/<id>/estado PUT) ...
-    print(f"API /usuarios/{user_id}/estado PUT: Admin ID {admin_user_id_from_token} cambiando estado de usuario ID {user_id}")
+    print(f"API /usuarios/{user_id}/estado PUT: Admin ID {decoded_user_rol, decoded_user_id} cambiando estado de usuario ID {user_id}")
     try:
         data = request.get_json()
         if not data or 'estado' not in data or not isinstance(data['estado'], bool):
@@ -572,11 +582,11 @@ def cambiar_estado_usuario(admin_user_id_from_token, user_id):
         return jsonify({'error': f'Error interno del servidor: {str(e)}'}), 500
 
 @app.route('/usuarios/<int:user_id>', methods=['PUT'])
-@admin_required
-def actualizar_usuario(admin_user_id_from_token, user_id):
+@roles_required('Administrador')
+def actualizar_usuario(decoded_user_rol, decoded_user_id, user_id):
     # (Tu código de /usuarios/<id> PUT como lo tenías)
     # ... (código de la función /usuarios/<id> PUT para actualizar datos) ...
-    print(f"API /usuarios/{user_id} PUT (actualizar datos): Admin ID {admin_user_id_from_token} actualizando usuario ID {user_id}")
+    print(f"API /usuarios/{user_id} PUT (actualizar datos): Admin ID {decoded_user_rol, decoded_user_id} actualizando usuario ID {user_id}")
     try:
         data = request.get_json()
         if not data: return jsonify({'error': "No se recibieron datos JSON."}), 400
@@ -647,11 +657,11 @@ def actualizar_usuario(admin_user_id_from_token, user_id):
         return jsonify({'error': f'Error interno del servidor: {str(e)}'}), 500
 
 @app.route('/usuarios/<int:user_id>', methods=['GET'])
-@admin_required
-def get_usuario_por_id(admin_user_id_from_token, user_id):
+@roles_required('Administrador')
+def get_usuario_por_id(decoded_user_rol, decoded_user_id, user_id):
     # (Tu código de /usuarios/<id> GET como lo tenías)
     # ... (código de la función /usuarios/<id> GET) ...
-    print(f"API /usuarios/{user_id} GET: Admin ID {admin_user_id_from_token} solicitando usuario ID {user_id}")
+    print(f"API /usuarios/{user_id} GET: Admin ID {decoded_user_rol, decoded_user_id} solicitando usuario ID {user_id}")
     conn = None
     try:
         conn = get_db_connection()
@@ -678,22 +688,22 @@ def get_usuario_por_id(admin_user_id_from_token, user_id):
 
 # --- ENDPOINTS DE CONFIGURACIONES ---
 @app.route('/configuraciones', methods=['GET'])
-@admin_required 
-def get_configuraciones(admin_user_id_from_token): # El nombre del argumento debe coincidir con lo que pasa el decorador
-    print(f"API GET /configuraciones: Solicitud de Admin ID {admin_user_id_from_token}. Config actual: {APP_CONFIG}")
+@roles_required('Administrador')
+def get_configuraciones(decoded_user_rol, decoded_user_id): # El nombre del argumento debe coincidir con lo que pasa el decorador
+    print(f"API GET /configuraciones: Solicitud de Admin ID {decoded_user_rol, decoded_user_id}. Config actual: {APP_CONFIG}")
     # Devolver una copia para evitar modificar el original directamente si se pasa por referencia en algunos contextos Python
     return jsonify(APP_CONFIG.copy()), 200
 
 @app.route('/configuraciones', methods=['PUT'])
-@admin_required 
-def update_configuraciones(admin_user_id_from_token): # El nombre del argumento debe coincidir
+@roles_required('Administrador')
+def update_configuraciones(decoded_user_rol, decoded_user_id): # El nombre del argumento debe coincidir
     global APP_CONFIG # Necesario para modificar la variable global
     
     data = request.get_json()
     if not data:
         return jsonify({'error': 'No se recibieron datos JSON'}), 400
 
-    print(f"API PUT /configuraciones: Admin ID {admin_user_id_from_token} actualizando. Datos recibidos: {data}")
+    print(f"API PUT /configuraciones: Admin ID {decoded_user_rol, decoded_user_id} actualizando. Datos recibidos: {data}")
 
     updated_fields = []
     # Guardar una copia de la configuración actual para poder revertir en caso de error
@@ -746,9 +756,8 @@ def update_configuraciones(admin_user_id_from_token): # El nombre del argumento 
 
 
 # --- ENDPOINTS DE MATERIALES/INVENTARIO---
-
 @app.route('/materiales', methods=['GET'])
-@token_required # O @admin_required si solo los admins pueden ver la lista completa
+@roles_required ('Administrador', 'Supervisor') # O @admin_required si solo los admins pueden ver la lista completa
 def get_todos_los_materiales(decoded_user_rol, decoded_user_id): # Argumentos del decorador @token_required
     # Si usas @admin_required, el argumento sería admin_user_id_from_token
     print(f"API GET /materiales: Solicitud recibida por usuario ID {decoded_user_id} con rol {decoded_user_rol}")
@@ -794,8 +803,8 @@ def get_todos_los_materiales(decoded_user_rol, decoded_user_id): # Argumentos de
             print("API GET /materiales: Conexión a BD cerrada desde el bloque finally.")
             
 @app.route('/materiales', methods=['POST']) # ¡ASEGÚRATE QUE methods=['POST'] ESTÉ AQUÍ!
-@admin_required # O el decorador de rol que hayas decidido para esta acción
-def crear_nuevo_material(admin_user_id_from_token): # El argumento depende del decorador
+@roles_required ('Administrador', 'Supervisor')
+def crear_nuevo_material(decoded_user_rol, decoded_user_id): # El argumento depende del decorador
     
     data = request.get_json()
     if not data:
@@ -840,14 +849,14 @@ def crear_nuevo_material(admin_user_id_from_token): # El argumento depende del d
         # admin_user_id_from_token viene del decorador @admin_required
         cursor.execute(sql_insert, 
                        (nombre, descripcion, cantidad_inicial, precio_unitario, 
-                        fecha_actual, admin_user_id_from_token))
+                        fecha_actual, decoded_user_id))
         conn.commit()
         
         # Opcional: Obtener el ID del material recién insertado para devolverlo
         # new_material_id = cursor.execute("SELECT @@IDENTITY AS id").fetchone()[0] 
         # (Esto es específico de SQL Server y pyodbc; podría variar)
 
-        print(f"API POST /materiales: Material '{nombre}' creado por admin ID {admin_user_id_from_token}.")
+        print(f"API POST /materiales: Material '{nombre}' creado por admin ID {decoded_user_rol, decoded_user_id}.")
         return jsonify({'message': f'Material "{nombre}" creado exitosamente.'}), 201 # 201 Created
 
     except pyodbc.Error as db_err: # Captura errores específicos de pyodbc
@@ -862,14 +871,15 @@ def crear_nuevo_material(admin_user_id_from_token): # El argumento depende del d
         if conn:
             conn.close()
             print("API POST /materiales: Conexión a BD cerrada.")
+                        
 @app.route('/inventory/entry', methods=['POST'])
-@admin_required # O el rol apropiado para gestión de inventario
-def registrar_entrada_inventario(admin_user_id_from_token):
+@roles_required ('Administrador', 'Supervisor')
+def registrar_entrada_inventario(decoded_user_rol, decoded_user_id):
     data = request.get_json()
     if not data:
         return jsonify({'error': 'No se recibieron datos JSON'}), 400
 
-    print(f"API /inventory/entry POST: Admin ID {admin_user_id_from_token} registrando entrada. Datos: {data}")
+    print(f"API /inventory/entry POST: Admin ID {decoded_user_rol, decoded_user_id} registrando entrada. Datos: {data}")
 
     nombre_material = data.get('nombre_material') # CAMBIO: Buscar por nombre
     cantidad_entrada = data.get('cantidad_entrada')
@@ -910,7 +920,7 @@ def registrar_entrada_inventario(admin_user_id_from_token):
             WHERE id_material = ? 
         """
         # Si se permite actualizar precio_unitario, se añadiría a este UPDATE y a los params
-        cursor.execute(sql_update, (nuevo_stock, fecha_actualizacion, admin_user_id_from_token, id_material))
+        cursor.execute(sql_update, (nuevo_stock, fecha_actualizacion, decoded_user_id, id_material))
         conn.commit()
 
         if cursor.rowcount == 0:
@@ -936,13 +946,13 @@ def registrar_entrada_inventario(admin_user_id_from_token):
             print("API /inventory/entry POST: Conexión a BD cerrada.")
 
 @app.route('/inventory/exit', methods=['POST'])
-@admin_required # O el rol apropiado
-def registrar_salida_inventario(admin_user_id_from_token):
+@roles_required ('Administrador', 'Supervisor') 
+def registrar_salida_inventario (decoded_user_rol, decoded_user_id):
     data = request.get_json()
     if not data:
         return jsonify({'error': 'No se recibieron datos JSON'}), 400
 
-    print(f"API /inventory/exit POST: Admin ID {admin_user_id_from_token} registrando salida. Datos: {data}")
+    print(f"API /inventory/exit POST: Admin ID {decoded_user_rol, decoded_user_id} registrando salida. Datos: {data}")
 
     nombre_material = data.get('nombre_material') # CAMBIO: Buscar por nombre
     cantidad_salida = data.get('cantidad_salida')
@@ -992,7 +1002,7 @@ def registrar_salida_inventario(admin_user_id_from_token):
             SET cantidad = ?, fecha_ultima_actualizacion = ?, id_usuario_ultima_actualizacion = ?
             WHERE id_material = ? 
         """
-        cursor.execute(sql_update, (nuevo_stock, fecha_actualizacion, admin_user_id_from_token, id_material))
+        cursor.execute(sql_update, (nuevo_stock, fecha_actualizacion, decoded_user_id, id_material))
         
         # Lógica opcional para DetalleOrdenMateriales si es necesario
         # if id_orden_trabajo:
@@ -1023,9 +1033,9 @@ def registrar_salida_inventario(admin_user_id_from_token):
             print("API /inventory/exit POST: Conexión a BD cerrada.")
 
 @app.route('/materiales/<int:id_material>', methods=['DELETE'])
-@admin_required # O el rol apropiado para gestión de inventario
-def eliminar_material(admin_user_id_from_token, id_material):
-    print(f"API DELETE /materiales/{id_material}: Solicitud de admin ID {admin_user_id_from_token}")
+@roles_required('Administrador', 'Supervisor')
+def eliminar_material(decoded_user_rol, decoded_user_id, id_material):
+    print(f"API DELETE /materiales/{id_material}: Solicitud de admin ID {decoded_user_rol, decoded_user_id}")
     
     conn = None
     try:
@@ -1085,7 +1095,7 @@ def eliminar_material(admin_user_id_from_token, id_material):
 
 # --- ENDPOINTS DE GESTION DE EMPLEADOS---
 @app.route('/empleados', methods=['GET'])
-@token_required # Asumimos que cualquier usuario autenticado puede necesitar ver la lista de empleados
+@roles_required('Administrador')
 def get_todos_los_empleados(decoded_user_rol, decoded_user_id):
     print(f"API GET /empleados: Solicitud recibida por usuario ID {decoded_user_id} con rol {decoded_user_rol}")
     
@@ -1114,9 +1124,9 @@ def get_todos_los_empleados(decoded_user_rol, decoded_user_id):
             print("API GET /empleados: Conexión a BD cerrada desde el bloque finally.")
 
 @app.route('/empleados', methods=['POST'])
-@admin_required # Solo usuarios autorizados (admins) pueden registrar nuevos empleados
-def registrar_empleado(admin_user_id_from_token):
-    print(f"API POST /empleados: Solicitud de admin ID {admin_user_id_from_token} para registrar nuevo empleado.")
+@roles_required('Administrador')
+def registrar_empleado(decoded_user_rol, decoded_user_id):
+    print(f"API POST /empleados: Solicitud de admin ID {decoded_user_rol, decoded_user_id} para registrar nuevo empleado.")
     
     data = request.get_json()
     if not data:
@@ -1179,7 +1189,7 @@ def registrar_empleado(admin_user_id_from_token):
 
 # --- ENDPOINTS DE GESTION DE CLIENTES---
 @app.route('/clientes', methods=['GET'])
-@token_required # Asumimos que cualquier usuario autenticado puede necesitar ver la lista de clientes
+@roles_required('Administrador', 'Supervisor')
 def get_todos_los_clientes(decoded_user_rol, decoded_user_id):
     print(f"API GET /clientes: Solicitud recibida por usuario ID {decoded_user_id} con rol {decoded_user_rol}")
     
@@ -1208,9 +1218,9 @@ def get_todos_los_clientes(decoded_user_rol, decoded_user_id):
             print("API GET /clientes: Conexión a BD cerrada desde el bloque finally.")
 
 @app.route('/clientes', methods=['POST'])
-@admin_required # Solo usuarios autorizados (admins) pueden registrar nuevos clientes
-def registrar_cliente(admin_user_id_from_token):
-    print(f"API POST /clientes: Solicitud de admin ID {admin_user_id_from_token} para registrar nuevo cliente.")
+@roles_required('Administrador', 'Supervisor')
+def registrar_cliente(decoded_user_rol, decoded_user_id):
+    print(f"API POST /clientes: Solicitud de admin ID {decoded_user_rol, decoded_user_id} para registrar nuevo cliente.")
     
     data = request.get_json()
     if not data:
@@ -1270,31 +1280,27 @@ def registrar_cliente(admin_user_id_from_token):
 
 # --- ENDPOINTS DE ORDENES DE TRABAJO---
 @app.route('/ordenes-trabajo', methods=['POST'])
-@admin_required
-def crear_orden_trabajo(admin_user_id_from_token):
-    print(f"API POST /ordenes-trabajo (lógica híbrida): Solicitud de admin ID {admin_user_id_from_token}")
+@roles_required('Administrador', 'Supervisor')
+def crear_orden_trabajo(decoded_user_rol, decoded_user_id):
+    print(f"API POST /ordenes-trabajo (lógica híbrida): Solicitud de usuario ID {decoded_user_id} con rol {decoded_user_rol}")
     
     data = request.get_json()
     if not data:
         return jsonify({'error': 'No se recibieron datos JSON'}), 400
 
-    # --- Obtención de datos del frontend ---
     id_cliente = data.get('id_cliente')
     fecha_inicio_str = data.get('fecha_inicio')
     fecha_fin_str = data.get('fecha_fin')
     descripcion = data.get('descripcion')
-    
-    # --- DATOS PARA DECIDIR EL TIPO DE ASIGNACIÓN ---
     tipo_trabajo = data.get('tipo_trabajo') 
-    manual_employee_ids = data.get('manual_employee_ids') # Lista de IDs para asignación manual
+    manual_employee_ids = data.get('manual_employee_ids')
 
     if not all([id_cliente, fecha_inicio_str, descripcion]):
         return jsonify({'error': 'Faltan campos requeridos (cliente, fecha_inicio, descripcion).'}), 400
     
     if not tipo_trabajo and not manual_employee_ids:
-        return jsonify({'error': 'Debe proporcionar un "tipo_trabajo" para asignación automática o una lista de empleados para asignación manual.'}), 400
+        return jsonify({'error': 'Debe proporcionar un "tipo_trabajo" o una lista de empleados.'}), 400
 
-    # --- Validación de fechas ---
     try:
         fecha_inicio = datetime.date.fromisoformat(fecha_inicio_str)
         fecha_fin = datetime.date.fromisoformat(fecha_fin_str) if fecha_fin_str else None
@@ -1307,20 +1313,16 @@ def crear_orden_trabajo(admin_user_id_from_token):
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
-        conn.autocommit = False # Iniciar transacción
+        conn.autocommit = False 
 
         ids_empleados_a_asignar = []
 
         if manual_employee_ids:
-            # --- FLUJO DE ASIGNACIÓN MANUAL ---
             print("Procesando asignación manual...")
             if not isinstance(manual_employee_ids, list) or len(manual_employee_ids) == 0:
                 return jsonify({'error': 'La lista de empleados para asignación manual es inválida.'}), 400
-            # (Aquí podrías añadir una verificación para asegurar que los IDs de empleados existen y están activos)
             ids_empleados_a_asignar = manual_employee_ids
-
         else:
-            # --- FLUJO DE ASIGNACIÓN AUTOMÁTICA ---
             print("Procesando asignación automática...")
             recursos_recomendados = 1
             if fecha_fin and fecha_inicio:
@@ -1348,13 +1350,33 @@ def crear_orden_trabajo(admin_user_id_from_token):
                 return jsonify({
                     'error': f'Asignación automática falló. No hay suficientes empleados disponibles para "{tipo_trabajo}".',
                     'manual_assignment_required': True
-                }), 409 # 409 Conflict
+                }), 409
 
             ids_empleados_a_asignar = [row[0] for row in empleados_encontrados]
 
-        # --- Creación de la Orden y Asignaciones (común para ambos flujos) ---
-        sql_insert_orden = "INSERT INTO OrdenesTrabajo (id_cliente, fecha_inicio, fecha_fin, descripcion, id_usuario_creador, estado, fecha_ultima_actualizacion, id_usuario_ultima_actualizacion) VALUES (?, ?, ?, ?, ?, ?, GETDATE(), ?)"
-        params_orden = (id_cliente, fecha_inicio, fecha_fin, descripcion, admin_user_id_from_token, 'Asignado', admin_user_id_from_token)
+        # --- CORRECCIÓN DE LA SENTENCIA INSERT ---
+        # La tabla OrdenesTrabajo (después de eliminar id_empleado) tiene estas columnas para insertar:
+        # id_cliente, fecha_inicio, fecha_fin, descripcion, estado, id_usuario_creador, 
+        # fecha_ultima_actualizacion, id_usuario_ultima_actualizacion
+        sql_insert_orden = """
+            INSERT INTO OrdenesTrabajo 
+                (id_cliente, fecha_inicio, fecha_fin, descripcion, estado, 
+                 id_usuario_creador, fecha_ultima_actualizacion, id_usuario_ultima_actualizacion)
+            VALUES (?, ?, ?, ?, ?, ?, GETDATE(), ?)
+        """
+        # 7 placeholders (?) y 1 función (GETDATE())
+        
+        # CORRECCIÓN: La tupla de parámetros ahora tiene 7 elementos que coinciden con los '?'
+        params_orden = (
+            id_cliente,                 # 1
+            fecha_inicio,               # 2
+            fecha_fin,                  # 3
+            descripcion,                # 4
+            'Asignado',                 # 5 (para la columna 'estado')
+            decoded_user_id,            # 6 (para 'id_usuario_creador')
+            decoded_user_id             # 7 (para 'id_usuario_ultima_actualizacion')
+        )
+        
         cursor.execute(sql_insert_orden, params_orden)
         cursor.execute("SELECT @@IDENTITY AS id;")
         nueva_orden_id = cursor.fetchone()[0]
@@ -1379,9 +1401,9 @@ def crear_orden_trabajo(admin_user_id_from_token):
         if conn:
             conn.autocommit = True
             conn.close()
-           
+
 @app.route('/ordenes-trabajo/<int:id_orden>/calcular-recursos', methods=['GET'])
-@token_required # Cualquier usuario autenticado puede realizar el cálculo
+@roles_required('Administrador', 'Supervisor')
 def calcular_recursos_orden(decoded_user_rol, decoded_user_id, id_orden):
     print(f"API GET /ordenes-trabajo/{id_orden}/calcular-recursos: Solicitud de usuario ID {decoded_user_id}")
     
@@ -1440,7 +1462,7 @@ def calcular_recursos_orden(decoded_user_rol, decoded_user_id, id_orden):
             print("API GET /ordenes-trabajo/<id>/calcular-recursos: Conexión a BD cerrada.")
 
 @app.route('/ordenes-trabajo', methods=['GET'])
-@token_required
+@roles_required('Administrador', 'Supervisor')
 def get_todas_las_ordenes(decoded_user_rol, decoded_user_id):
     print(f"API GET /ordenes-trabajo (lógica multi-empleado): Solicitud de usuario ID {decoded_user_id}")
     
@@ -1488,7 +1510,7 @@ def get_todas_las_ordenes(decoded_user_rol, decoded_user_id):
             conn.close()
 
 @app.route('/ordenes-trabajo/<int:id_orden>', methods=['GET'])
-@token_required # Cualquier usuario logueado puede ver los detalles de una orden
+@roles_required('Administrador', 'Supervisor')
 def get_detalles_orden(decoded_user_rol, decoded_user_id, id_orden):
     """
     Obtiene los detalles completos de una orden de trabajo específica,
@@ -1574,12 +1596,12 @@ def get_detalles_orden(decoded_user_rol, decoded_user_id, id_orden):
             conn.close()
 
 @app.route('/ordenes-trabajo/<int:id_orden>/materiales', methods=['POST'])
-@admin_required # Solo usuarios autorizados pueden añadir materiales
-def anadir_material_a_orden(admin_user_id_from_token, id_orden):
+@roles_required('Administrador', 'Supervisor')
+def anadir_material_a_orden(decoded_user_rol, decoded_user_id, id_orden):
     """
     Añade un material a una orden de trabajo existente y descuenta el stock del inventario.
     """
-    print(f"API POST /ordenes-trabajo/{id_orden}/materiales: Solicitud de admin ID {admin_user_id_from_token}")
+    print(f"API POST /ordenes-trabajo/{id_orden}/materiales: Solicitud de usuario ID {decoded_user_id} con rol {decoded_user_rol}")
     
     data = request.get_json()
     if not data:
@@ -1602,8 +1624,7 @@ def anadir_material_a_orden(admin_user_id_from_token, id_orden):
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
-
-        # --- Iniciar Transacción (implícita en pyodbc, controlada con commit/rollback) ---
+        conn.autocommit = False # Iniciar transacción para asegurar consistencia
 
         # 1. Obtener ID, stock y precio del material por su nombre
         cursor.execute("SELECT id_material, cantidad, precio_unitario FROM Materiales WHERE nombre = ?", (nombre_material,))
@@ -1621,7 +1642,7 @@ def anadir_material_a_orden(admin_user_id_from_token, id_orden):
                 'nombre_material': nombre_material,
                 'stock_actual': stock_actual,
                 'cantidad_solicitada': cantidad_usada
-            }), 409 # 409 Conflict
+            }), 409 # Conflict
 
         # 3. Actualizar el stock en la tabla Materiales (descontar)
         nuevo_stock = stock_actual - cantidad_usada
@@ -1630,7 +1651,9 @@ def anadir_material_a_orden(admin_user_id_from_token, id_orden):
             UPDATE Materiales SET cantidad = ?, fecha_ultima_actualizacion = ?, id_usuario_ultima_actualizacion = ?
             WHERE id_material = ?
         """
-        cursor.execute(sql_update_stock, (nuevo_stock, fecha_actualizacion, admin_user_id_from_token, id_material))
+       
+        params_update = (nuevo_stock, fecha_actualizacion, decoded_user_id, id_material)
+        cursor.execute(sql_update_stock, params_update)
 
         # 4. Insertar el registro en la tabla de detalles de la orden
         costo_total_detalle = cantidad_usada * precio_unitario
@@ -1653,15 +1676,16 @@ def anadir_material_a_orden(admin_user_id_from_token, id_orden):
         return jsonify({'error': f'Error interno del servidor al añadir material: {str(e)}'}), 500
     finally:
         if conn:
-            conn.close()
-
+            conn.autocommit = True # Restaurar autocommit
+            conn.close() 
+            
 @app.route('/ordenes-trabajo/<int:id_orden>/modificar-asignacion', methods=['PUT'])
-@admin_required
-def modificar_asignacion_empleado(admin_user_id_from_token, id_orden):
+@roles_required('Administrador', 'Supervisor')
+def modificar_asignacion_empleado(decoded_user_rol, decoded_user_id, id_orden):
     """
     Modifica una asignación existente, reemplazando un empleado antiguo por uno nuevo en una orden.
     """
-    print(f"API PUT /ordenes-trabajo/{id_orden}/modificar-asignacion: Solicitud de admin ID {admin_user_id_from_token}")
+    print(f"API PUT /ordenes-trabajo/{id_orden}/modificar-asignacion: Solicitud de admin ID {decoded_user_rol, decoded_user_id}")
     
     data = request.get_json()
     if not data or 'id_empleado_antiguo' not in data or 'id_empleado_nuevo' not in data:
@@ -1716,7 +1740,7 @@ def modificar_asignacion_empleado(admin_user_id_from_token, id_orden):
 
 # --- ENDPOINTS DE ORDENES DE NOTIFICACIONES---
 @app.route('/notificaciones', methods=['GET'])
-@token_required # Cualquier usuario autenticado puede ver las notificaciones
+@roles_required('Administrador', 'Supervisor')
 def get_notificaciones(decoded_user_rol, decoded_user_id):
     print(f"API GET /notificaciones: Solicitud recibida por usuario ID {decoded_user_id} con rol {decoded_user_rol}")
     
@@ -1797,7 +1821,7 @@ def get_notificaciones(decoded_user_rol, decoded_user_id):
 
 # --- ENDPOINTS DE ORDENES DE DASHBOARD---
 @app.route('/dashboard/overview', methods=['GET'])
-@token_required # Cualquier usuario autenticado puede ver el dashboard
+@roles_required('Administrador', 'Supervisor')
 def get_dashboard_overview(decoded_user_rol, decoded_user_id):
     print(f"API GET /dashboard/overview: Solicitud recibida por usuario ID {decoded_user_id} con rol {decoded_user_rol}")
     
@@ -1857,9 +1881,9 @@ def get_dashboard_overview(decoded_user_rol, decoded_user_id):
 
 # --- INICIO DE NUEVO ENDPOINT PARA REPORTES ---
 @app.route('/reportes/uso-materiales', methods=['GET'])
-@admin_required
-def reporte_uso_materiales(admin_user_id_from_token):
-    print(f"API GET /reportes/uso-materiales: Solicitud de admin ID {admin_user_id_from_token}")
+@roles_required('Administrador')
+def reporte_uso_materiales(decoded_user_rol, decoded_user_id):
+    print(f"API GET /reportes/uso-materiales: Solicitud de admin ID {decoded_user_rol, decoded_user_id}")
 
     # --- Obtener parámetros de la URL ---
     fecha_desde_str = request.args.get('fecha_desde')
@@ -1949,9 +1973,9 @@ def reporte_uso_materiales(admin_user_id_from_token):
 
 # --- ENDPOINT PARA REGISTRO DE COMPROBANTES DE PAGO
 @app.route('/comprobantes-pago', methods=['POST'])
-@admin_required # O el rol apropiado, ej: Asistente Administrativo
-def registrar_comprobante_pago(admin_user_id_from_token):
-    print(f"API POST /comprobantes-pago: Solicitud de admin ID {admin_user_id_from_token}")
+@roles_required('Administrador', 'Supervisor')
+def registrar_comprobante_pago(decoded_user_rol, decoded_user_id):
+    print(f"API POST /comprobantes-pago: Solicitud de admin ID {decoded_user_rol, decoded_user_id}")
     
     data = request.get_json()
     if not data or 'id_orden' not in data:
@@ -2000,8 +2024,8 @@ def registrar_comprobante_pago(admin_user_id_from_token):
             monto_total, 
             metodo_pago, 
             'Pagado', # Estado por defecto
-            admin_user_id_from_token,
-            admin_user_id_from_token
+            decoded_user_id,
+            decoded_user_id
         )
         
         cursor.execute(sql_insert, params)
@@ -2027,7 +2051,7 @@ def registrar_comprobante_pago(admin_user_id_from_token):
             conn.close()
 
 @app.route('/comprobantes-pago', methods=['GET'])
-@token_required # Asumimos que cualquier usuario autenticado puede consultar
+@roles_required('Administrador', 'Supervisor')
 def consultar_comprobantes_pago(decoded_user_rol, decoded_user_id):
     print(f"API GET /comprobantes-pago: Solicitud de usuario ID {decoded_user_id} con rol {decoded_user_rol}")
 
@@ -2112,13 +2136,13 @@ def consultar_comprobantes_pago(decoded_user_rol, decoded_user_id):
     
 # --- FINALIZAR ORDEN DE TRABAJO
 @app.route('/ordenes-trabajo/<int:id_orden>/confirmar-uso-y-finalizar', methods=['PUT'])
-@admin_required
-def confirmar_y_finalizar_orden(admin_user_id_from_token, id_orden):
+@roles_required('Administrador', 'Supervisor')
+def confirmar_y_finalizar_orden(decoded_user_rol, decoded_user_id, id_orden):
     """
     Confirma las cantidades finales de materiales usados, devuelve el sobrante al stock,
     actualiza los costos y marca la orden como 'Finalizado'.
     """
-    print(f"API PUT /ordenes-trabajo/{id_orden}/confirmar-uso-y-finalizar: Solicitud de admin ID {admin_user_id_from_token}")
+    print(f"API PUT /ordenes-trabajo/{id_orden}/confirmar-uso-y-finalizar: Solicitud de admin ID {decoded_user_rol, decoded_user_id}")
     
     # El frontend enviará una lista de los materiales con sus cantidades finales
     # Formato esperado: [{"id_detalle": <int>, "cantidad_usada_final": <int>}, ...]
@@ -2168,7 +2192,7 @@ def confirmar_y_finalizar_orden(admin_user_id_from_token, id_orden):
         # 4. Finalmente, actualizar el estado de la orden de trabajo a 'Finalizado'
         fecha_fin_actualizada = datetime.date.today()
         sql_update_orden = "UPDATE OrdenesTrabajo SET estado = 'Finalizado', fecha_fin = ?, fecha_ultima_actualizacion = GETDATE(), id_usuario_ultima_actualizacion = ? WHERE id_orden = ?"
-        cursor.execute(sql_update_orden, (fecha_fin_actualizada, admin_user_id_from_token, id_orden))
+        cursor.execute(sql_update_orden, (fecha_fin_actualizada, decoded_user_id, id_orden))
         
         conn.commit() # Confirmar todos los cambios de la transacción
         

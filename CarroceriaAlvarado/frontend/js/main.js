@@ -9,13 +9,13 @@ $(document).ready(function() {
 
         messageDiv.text('').removeClass('error success'); // Limpiar mensajes anteriores
 
-        console.log('Datos enviados para login:', { username, password });
-
         if (!username || !password) {
             console.log('Faltan campos requeridos para login');
             messageDiv.text('Por favor, complete todos los campos.').addClass('error');
             return;
         }
+
+        console.log('Datos enviados para login:', { username, password });
 
         $.ajax({
             url: 'http://127.0.0.1:5000/login', // API Flask en puerto 5000

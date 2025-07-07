@@ -1,42 +1,114 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <title>Dashboard - Carrocería Alvarado</title>
+    <title>Panel de Usuario - Carrocería Alvarado</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" type="text/css" href="vendor/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="fonts/font-awesome-4.7.0/css/font-awesome.min.css">
     <link rel="stylesheet" type="text/css" href="css/main.css">
 </head>
 <body>
-    <div class="limiter">
-        <div class="container-login100" style="background-image: url('images/bg-01.jpg');">
-            <div class="wrap-login100">
-                <div class="text-center">
-                    <h2>Bienvenido Usuario a Carrocería Alvarado</h2>
-                    <p>Este es tu panel de usuario.</p>
-                    <a href="index.html" class="txt1">Cerrar Sesión</a>
+
+<div class="admin-wrapper">
+    <nav id="sidebar">
+        <div class="sidebar-header">
+            <h3>Carrocería Alvarado</h3>
+        </div>
+        <ul class="list-unstyled components">
+            <p class="ms-3">Menú Principal</p>
+            
+            <li class="active">
+                <a href="#inventarioSubmenu" data-bs-toggle="collapse" aria-expanded="true" class="dropdown-toggle">
+                    <i class="fa fa-archive"></i> Inventario
+                </a>
+                <ul class="collapse list-unstyled show" id="inventarioSubmenu">
+                    <li><a href="ver_inventario.html">Ver Inventario</a></li>
+                    <li><a href="anadir_material.html">Añadir Material</a></li>
+                    <li><a href="entradas_salidas_inventario.html">Entradas/Salidas</a></li>
+                </ul>
+            </li>
+
+            <li>
+                <a href="#ordenesSubmenu" data-bs-toggle="collapse" aria-expanded="false" class="dropdown-toggle">
+                    <i class="fa fa-briefcase"></i> Órdenes de Trabajo
+                </a>
+                <ul class="collapse list-unstyled" id="ordenesSubmenu">
+                    <li><a href="listar_ordenes_trabajo.html">Listar Órdenes</a></li>
+                    <li><a href="orden_trabajo.html">Crear Nueva Orden</a></li>
+                </ul>
+            </li>
+
+            </ul>
+    </nav>
+
+    <div id="content">
+        <nav class="navbar navbar-expand-lg navbar-light top-navbar">
+            <div class="container-fluid">
+                <button type="button" id="sidebarCollapse" class="btn btn-info">
+                    <i class="fa fa-align-left"></i> <span>Menú</span>
+                </button>
+                <div class="user-info">
+                    <span>Hola, <strong id="currentUserName">Usuario</strong>!</span>
+                    <a href="#" id="logoutButton" class="ms-3">Cerrar Sesión</a>
                 </div>
             </div>
-        </div>
-    </div>
-    <script src="vendor/jquery/jquery-3.2.1.min.js"></script>
-    <script src="js/main.js"></script> 
-    <script>
-        $(document).ready(function() {
-            const token = localStorage.getItem('token');
-            const userRol = localStorage.getItem('userRol'); // Opcional usar el rol aquí si quieres lógica específica
+        </nav>
 
-            if (!token) {
-                // Si no hay token, redirigir a login
-                window.location.href = 'index.html';
-                return; // Detener ejecución adicional
-            }
-            console.log("Acceso concedido a users.html.");
-            // Cargar contenido específico para usuarios no administradores
-            $('#logoutButtonUser').on('click', function() { // Asegúrate que este botón exista en users.html
-                localStorage.removeItem('token');
-                localStorage.removeItem('userRol');
-                window.location.href = 'index.html';
-            });
-        });
-    </script>
+        <div class="content-area container-fluid pt-4">
+            <h2 class="card-header-title">Panel de Usuario</h2>
+            <div class="card">
+                <div class="card-body">
+                    <h4>Bienvenido al Sistema de Gestión</h4>
+                    <p>Utilice el menú de la izquierda para navegar a las secciones de Inventario y Órdenes de Trabajo.</p>
+                </div>
+            </div>
+        </div> 
+    </div> 
+</div> 
+
+<script src="vendor/jquery/jquery-3.2.1.min.js"></script>
+<script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+
+<script>
+$(document).ready(function() {
+    // Lógica estándar del sidebar y logout
+    $('#sidebarCollapse').on('click', function() {
+        $('#sidebar').toggleClass('active');
+    });
+
+    $('#logoutButton').on('click', function(e) {
+        e.preventDefault();
+        localStorage.clear();
+        window.location.href = 'index.html';
+    });
+
+    // --- Lógica de Protección de Página para Otros Usuarios ---
+    const token = localStorage.getItem('token');
+    const userRol = localStorage.getItem('userRol');
+    const loggedInUsername = localStorage.getItem('loggedInUsername');
+
+    // 1. Si no hay token, no puede estar aquí.
+    if (!token) {
+        console.log("Acceso denegado: no hay token. Redirigiendo a login.");
+        window.location.href = 'index.html';
+        return;
+    }
+
+    // 2. Si es un Administrador, no debería estar en esta página limitada. Lo redirigimos a su panel completo.
+    if (userRol === 'Administrador') {
+        console.log("Usuario es Administrador. Redirigiendo al panel de admin.");
+        window.location.href = 'admin.html';
+        return;
+    }
+
+    // 3. Si es un usuario logueado (no-admin), puede quedarse. Mostramos su nombre.
+    console.log(`Acceso permitido para rol: ${userRol}`);
+    if (loggedInUsername) {
+        $('#currentUserName').text(loggedInUsername);
+    }
+});
+</script>
+
 </body>
 </html>
