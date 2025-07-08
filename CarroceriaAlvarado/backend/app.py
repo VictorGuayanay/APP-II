@@ -15,12 +15,10 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = "123456789" # ¡CAMBIA ESTO POR UNA CLAVE MÁS SEGURA Y COMPLEJA EN PRODUCCIÓN!
 print(f"APP INIT: app.config['SECRET_KEY'] establecida como: '{app.config.get('SECRET_KEY')}'")
 
-
-# --- Variables Globales para Configuración (Simulación - Idealmente irían en BD o archivo de config) ---
-# Valores por defecto basados en tu código actual o en valores comunes.
+#  Variables Globales para Configuración
 APP_CONFIG = {
     "reset_token_expiry_minutes": 15, # Duración actual en send_reset_email
-    "max_failed_login_attempts": 5,    # Un valor común
+    "max_failed_login_attempts": 5,    # intentos para iniciar sesion
     "global_low_stock_threshold": 10 # Valor para limite de stock bajo
 }
 
