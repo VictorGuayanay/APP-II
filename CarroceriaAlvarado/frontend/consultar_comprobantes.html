@@ -12,7 +12,40 @@
 <div class="admin-wrapper">
     <nav id="sidebar">
         <div class="sidebar-header"><h3>Carrocería Alvarado</h3></div>
-        <ul class="list-unstyled components"><p class="ms-3">Administración</p><li><a href="vision_general.html"><i class="fa fa-tachometer"></i> Visión General</a></li><li><a href="admin.html"><i class="fa fa-users"></i> Gestión de Usuarios</a></li><li><a href="ver_inventario.html"><i class="fa fa-archive"></i> Inventario</a></li><li><a href="listar_ordenes_trabajo.html"><i class="fa fa-briefcase"></i> Órdenes de Trabajo</a></li><li><a href="reportes.html"><i class="fa fa-bar-chart"></i> Reportes</a></li><li class="active"><a href="#pagosSubmenu" data-bs-toggle="collapse" aria-expanded="true" class="dropdown-toggle"><i class="fa fa-money"></i> Pagos</a><ul class="collapse list-unstyled show" id="pagosSubmenu"><li><a href="registrar_comprobante.html">Registrar Comprobante</a></li><li class="active"><a href="consultar_comprobantes.html">Consultar Comprobantes</a></li></ul></li></ul>
+        <ul class="list-unstyled components">
+            <p class="ms-3">Administración</p>
+            <li>
+                <a href="#dashboardSubmenu" data-bs-toggle="collapse" aria-expanded="false" class="dropdown-toggle">
+                    <i class="fa fa-tachometer"></i> Dashboard
+                </a>
+                <ul class="collapse list-unstyled" id="dashboardSubmenu">
+                    <li><a href="vision_general.html">Visión General</a></li>
+                </ul>
+            </li>
+            <li> 
+                <a href="admin.html">
+                    <i class="fa fa-users"></i> Panel Principal
+                </a>
+            </li>
+            <li>
+                <a href="#inventarioSubmenu" data-bs-toggle="collapse" aria-expanded="false" class="dropdown-toggle">
+                    <i class="fa fa-archive"></i> Inventario
+                </a>
+                <ul class="collapse list-unstyled" id="inventarioSubmenu">
+                    <li><a href="ver_inventario.html">Ver Inventario</a></li>
+                    <li><a href="anadir_material.html">Añadir Material</a></li>
+                    <li><a href="entradas_salidas_inventario.html">Entradas/Salidas</a></li>
+                </ul>
+            </li>
+            
+            <li><a href="ingresar_empleado.html"><i class="fa fa-address-card"></i> Ingreso Empleados</a></li>
+            <li><a href="ingresar_cliente.html"><i class="fa fa-user-plus"></i> Ingreso Clientes</a></li>
+            <li><a href="orden_trabajo.html"><i class="fa fa-briefcase"></i> Órdenes de Trabajo</a></li>
+            <li><a href="listar_ordenes_trabajo.html"><i class="fa fa-briefcase"></i> Listar Órdenes de Trabajo</a></li>
+            <li class="active"><a href="consultar_comprobantes.html"><i class="fa fa-money"></i> Comprobante</a></li>
+            <li><a href="reportes.html"><i class="fa fa-bar-chart"></i> Reportes</a></li>
+            <li><a href="#" data-bs-toggle="modal" data-bs-target="#settingsModal" ><i class="fa fa-cog"></i> Configuración</a></li>
+        </ul>
     </nav>
 
     <div id="content">

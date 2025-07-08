@@ -25,19 +25,21 @@ APP_CONFIG = {
 }
 
 
-CORS(app) # Permite CORS para todas las rutas
+CORS(app) 
 
 conn_str = (
     "DRIVER={ODBC Driver 17 for SQL Server};"
-    "SERVER=DESKTOP-OJ81G31\SQLEXPRESS;" # Asegúrate que este nombre de servidor sea correcto para ti
+    "SERVER=DESKTOP-OJ81G31\SQLEXPRESS;" 
     "DATABASE=CarroceriaAlvaradoDB;"
     "Trusted_Connection=yes;"
 )
 
 SMTP_SERVER = "smtp.gmail.com"
 SMTP_PORT = 587
-SMTP_USERNAME = "victorguayanay@gmail.com" # Reemplaza con tu correo
-SMTP_PASSWORD = "qzgl wxpz stvw uxdp" # Reemplaza con tu contraseña de aplicación (considera variables de entorno)
+SMTP_USERNAME = "victorguayanay@gmail.com" 
+SMTP_PASSWORD = "qzgl wxpz stvw uxdp" 
+
+
 
 def get_db_connection():
     try:
@@ -45,12 +47,11 @@ def get_db_connection():
         return conn
     except Exception as e:
         print(f"!!!!!!!! ERROR CRÍTICO AL CONECTAR A LA BASE DE DATOS: {str(e)} !!!!!!!!")
-        # En un entorno real, podrías querer reintentar o manejar esto de forma más robusta.
         raise Exception(f"Error al conectar a la base de datos: {str(e)}")
+
 
 def send_reset_email(email, user_id):
     try:
-        # Usar el valor de APP_CONFIG para la expiración
         expiry_minutes = APP_CONFIG.get('reset_token_expiry_minutes', 15) #15 min tiempo que dura el token para reestablecer contraseña
         print(f"DEBUG send_reset_email: Duración del token de reseteo establecida en: {expiry_minutes} minutos.")
         exp_time = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(minutes=expiry_minutes)
@@ -67,9 +68,6 @@ def send_reset_email(email, user_id):
         print(f"DEBUG send_reset_email: Token de reseteo GENERADO para user_id {user_id}: {token}")
 
         reset_link = f"http://127.0.0.1:8000/new_pass.html?token={token}" 
-
-        # ... (resto del código para configurar y enviar el email) ...
-        # (El código para msg, body y smtplib.SMTP permanece igual)
 
         msg = MIMEMultipart()
         msg['From'] = SMTP_USERNAME
@@ -688,14 +686,14 @@ def get_usuario_por_id(decoded_user_rol, decoded_user_id, user_id):
 
 # --- ENDPOINTS DE CONFIGURACIONES ---
 @app.route('/configuraciones', methods=['GET'])
-@roles_required('Administrador')
+@roles_required('Administrador', 'Supervisor')
 def get_configuraciones(decoded_user_rol, decoded_user_id): # El nombre del argumento debe coincidir con lo que pasa el decorador
     print(f"API GET /configuraciones: Solicitud de Admin ID {decoded_user_rol, decoded_user_id}. Config actual: {APP_CONFIG}")
     # Devolver una copia para evitar modificar el original directamente si se pasa por referencia en algunos contextos Python
     return jsonify(APP_CONFIG.copy()), 200
 
 @app.route('/configuraciones', methods=['PUT'])
-@roles_required('Administrador')
+@roles_required('Administrador', 'Supervisor')
 def update_configuraciones(decoded_user_rol, decoded_user_id): # El nombre del argumento debe coincidir
     global APP_CONFIG # Necesario para modificar la variable global
     
