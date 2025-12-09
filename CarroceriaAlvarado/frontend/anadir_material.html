@@ -89,6 +89,19 @@
                             </select>
                         </div>
                         
+                        <div class="mb-3">
+                            <label for="materialUnidad" class="form-label">Unidad de Medida <span class="text-danger">*</span></label>
+                            <select class="form-control" id="materialUnidad" required>
+                                <option value="">Cargando unidades...</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="materialCantidadInicial" class="form-label">Cantidad Inicial <span class="text-danger">*</span></label>
+                            <input type="number" min="0" step="1" class="form-control" id="materialCantidadInicial" placeholder="Ej: 100" value="0" required>
+                            <small class="form-text text-muted">Ingrese la cantidad inicial en stock de este material</small>
+                        </div>
+                        
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label for="materialPrecioCompra" class="form-label">Precio de Compra <span class="text-danger">*</span></label>
@@ -180,6 +193,28 @@ $(document).ready(function () {
     
     cargarProveedores(); // Cargar al iniciar
     
+    // --- Cargar Unidades de Medida ---
+    function cargarUnidadesDeMedida() {
+        $.ajax({
+            url: 'http://127.0.0.1:5000/unidades',
+            method: 'GET',
+            headers: { 'Authorization': 'Bearer ' + token },
+            success: function(unidades) {
+                const $select = $('#materialUnidad');
+                $select.empty().append('<option value="">Seleccione una unidad...</option>');
+                unidades.forEach(function(unidad) {
+                    $select.append(`<option value="${unidad.id_unidad}">${unidad.nombre_unidad} (${unidad.abreviatura})</option>`);
+                });
+            },
+            error: function(xhr) {
+                console.error("Error al cargar unidades de medida:", xhr.responseText);
+                $('#materialUnidad').html('<option value="">Error al cargar unidades</option>');
+            }
+        });
+    }
+    
+    cargarUnidadesDeMedida(); // Cargar al iniciar
+    
     // --- Calcular Precio de Venta Automáticamente ---
     function calcularPrecioVenta() {
         const precioCompra = parseFloat($('#materialPrecioCompra').val()) || 0;
@@ -208,9 +243,11 @@ $(document).ready(function () {
         const precioCompra = $('#materialPrecioCompra').val();
         const porcentajeGanancia = $('#materialPorcentajeGanancia').val();
         const idProveedor = $('#materialProveedor').val();
+        const idUnidad = $('#materialUnidad').val();
+        const cantidadInicial = $('#materialCantidadInicial').val();
 
-        if (!nombreMaterial || !precioCompra || !porcentajeGanancia) {
-            mensajeDiv.text('El nombre, precio de compra y porcentaje de ganancia son obligatorios.').removeClass('alert-info').addClass('alert-danger');
+        if (!nombreMaterial || !precioCompra || !porcentajeGanancia || !idUnidad || cantidadInicial === '') {
+            mensajeDiv.text('El nombre, precio de compra, porcentaje de ganancia, unidad de medida y cantidad inicial son obligatorios.').removeClass('alert-info').addClass('alert-danger');
             return;
         }
         
@@ -226,12 +263,27 @@ $(document).ready(function () {
             return;
         }
 
+        // Validar cantidad inicial
+        let cantidadInicialInt;
+        try {
+            cantidadInicialInt = parseInt(cantidadInicial);
+            if (isNaN(cantidadInicialInt) || cantidadInicialInt < 0) {
+                mensajeDiv.text('La cantidad inicial debe ser un número entero no negativo.').removeClass('alert-info').addClass('alert-danger');
+                return;
+            }
+        } catch (e) {
+            mensajeDiv.text('La cantidad inicial ingresada no es válida.').removeClass('alert-info').addClass('alert-danger');
+            return;
+        }
+
         const nuevoMaterialData = {
             nombre: nombreMaterial,
             descripcion: descripcionMaterial,
             precio_compra: precioFloat,
             porcentaje_ganancia: parseInt(porcentajeGanancia),
-            id_proveedor: idProveedor || null
+            id_proveedor: idProveedor || null,
+            id_unidad: parseInt(idUnidad),
+            cantidad_inicial: cantidadInicialInt
         };
 
         console.log("Enviando datos de nuevo material:", nuevoMaterialData);

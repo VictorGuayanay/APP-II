@@ -835,12 +835,14 @@ def crear_nuevo_material(decoded_user_rol, decoded_user_id): # El argumento depe
     precio_compra_str = data.get('precio_compra')
     porcentaje_ganancia = data.get('porcentaje_ganancia')
     id_proveedor = data.get('id_proveedor')  # Proveedor opcional
+    id_unidad = data.get('id_unidad')  # Unidad de medida requerida
     
     # Compatibilidad con código antiguo que usa precio_unitario
     if precio_compra_str is None:
         precio_compra_str = data.get('precio_unitario')
     
-    cantidad_inicial = 0 # Los nuevos materiales se crean con stock 0
+    # Obtener cantidad inicial del request, por defecto 0 si no se proporciona
+    cantidad_inicial = data.get('cantidad_inicial', 0)
     fecha_actual = datetime.datetime.now()
 
     # Validaciones básicas
@@ -848,6 +850,16 @@ def crear_nuevo_material(decoded_user_rol, decoded_user_id): # El argumento depe
         return jsonify({'error': 'El nombre del material es requerido'}), 400
     if precio_compra_str is None:
         return jsonify({'error': 'El precio de compra es requerido'}), 400
+    if not id_unidad:
+        return jsonify({'error': 'La unidad de medida es requerida'}), 400
+    
+    # Validar cantidad inicial
+    try:
+        cantidad_inicial = int(cantidad_inicial)
+        if cantidad_inicial < 0:
+            return jsonify({'error': 'La cantidad inicial no puede ser negativa'}), 400
+    except (ValueError, TypeError):
+        return jsonify({'error': 'La cantidad inicial debe ser un número entero válido'}), 400
 
     try:
         precio_compra = float(precio_compra_str)
@@ -875,6 +887,12 @@ def crear_nuevo_material(decoded_user_rol, decoded_user_id): # El argumento depe
         conn = get_db_connection()
         cursor = conn.cursor()
 
+        # Validar que la unidad de medida existe
+        cursor.execute("SELECT id_unidad FROM Unidades_de_Medida WHERE id_unidad = ?", (id_unidad,))
+        if not cursor.fetchone():
+            conn.close()
+            return jsonify({'error': f'La unidad de medida con ID {id_unidad} no existe'}), 404
+
         # Validar que el proveedor existe si se proporciona
         if id_proveedor:
             cursor.execute("SELECT id_proveedor FROM Proveedores WHERE id_proveedor = ?", (id_proveedor,))
@@ -891,14 +909,14 @@ def crear_nuevo_material(decoded_user_rol, decoded_user_id): # El argumento depe
         sql_insert = """
             INSERT INTO Materiales (nombre, descripcion, cantidad, precio_unitario, 
                                     precio_compra, precio_venta, porcentaje_ganancia,
-                                    fecha_ultima_actualizacion, id_usuario_ultima_actualizacion, id_proveedor)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                                    fecha_ultima_actualizacion, id_usuario_ultima_actualizacion, id_proveedor, id_unidad)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """
         # Mantener precio_unitario sincronizado con precio_compra por compatibilidad
         cursor.execute(sql_insert, 
                        (nombre, descripcion, cantidad_inicial, precio_compra,
                         precio_compra, precio_venta, porcentaje_ganancia,
-                        fecha_actual, decoded_user_id, id_proveedor))
+                        fecha_actual, decoded_user_id, id_proveedor, id_unidad))
         conn.commit()
 
         print(f"API POST /materiales: Material '{nombre}' creado por admin ID {decoded_user_rol, decoded_user_id}. Precio compra: {precio_compra}, Precio venta: {precio_venta}, Margen: {porcentaje_ganancia}%")
@@ -933,10 +951,11 @@ def registrar_entrada_inventario(decoded_user_rol, decoded_user_id):
 
     nombre_material = data.get('nombre_material') # CAMBIO: Buscar por nombre
     cantidad_entrada = data.get('cantidad_entrada')
+    id_unidad = data.get('id_unidad')  # Unidad de medida requerida
     # precio_unitario_entrada = data.get('precio_unitario_entrada') # Opcional
 
-    if not nombre_material or cantidad_entrada is None: # CAMBIO: nombre_material es requerido
-        return jsonify({'error': 'Se requiere nombre_material y cantidad_entrada'}), 400
+    if not nombre_material or cantidad_entrada is None or not id_unidad:
+        return jsonify({'error': 'Se requiere nombre_material, cantidad_entrada e id_unidad'}), 400
 
     try:
         cantidad_entrada = int(cantidad_entrada)
@@ -949,6 +968,12 @@ def registrar_entrada_inventario(decoded_user_rol, decoded_user_id):
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
+
+        # Validar que la unidad de medida existe
+        cursor.execute("SELECT id_unidad FROM Unidades_de_Medida WHERE id_unidad = ?", (id_unidad,))
+        if not cursor.fetchone():
+            conn.close()
+            return jsonify({'error': f'La unidad de medida con ID {id_unidad} no existe'}), 404
 
         # CAMBIO: Verificar si el material existe por nombre y obtener su ID y stock
         cursor.execute("SELECT id_material, cantidad FROM Materiales WHERE nombre = ?", (nombre_material,))
@@ -966,11 +991,11 @@ def registrar_entrada_inventario(decoded_user_rol, decoded_user_id):
 
         sql_update = """
             UPDATE Materiales 
-            SET cantidad = ?, fecha_ultima_actualizacion = ?, id_usuario_ultima_actualizacion = ?
+            SET cantidad = ?, fecha_ultima_actualizacion = ?, id_usuario_ultima_actualizacion = ?, id_unidad = ?
             WHERE id_material = ? 
         """
         # Si se permite actualizar precio_unitario, se añadiría a este UPDATE y a los params
-        cursor.execute(sql_update, (nuevo_stock, fecha_actualizacion, decoded_user_id, id_material))
+        cursor.execute(sql_update, (nuevo_stock, fecha_actualizacion, decoded_user_id, id_unidad, id_material))
         conn.commit()
 
         if cursor.rowcount == 0:
@@ -1006,10 +1031,11 @@ def registrar_salida_inventario (decoded_user_rol, decoded_user_id):
 
     nombre_material = data.get('nombre_material') # CAMBIO: Buscar por nombre
     cantidad_salida = data.get('cantidad_salida')
+    id_unidad = data.get('id_unidad')  # Unidad de medida requerida
     # id_orden_trabajo = data.get('id_orden_trabajo') # Opcional
 
-    if not nombre_material or cantidad_salida is None: # CAMBIO: nombre_material es requerido
-        return jsonify({'error': 'Se requiere nombre_material y cantidad_salida'}), 400
+    if not nombre_material or cantidad_salida is None or not id_unidad:
+        return jsonify({'error': 'Se requiere nombre_material, cantidad_salida e id_unidad'}), 400
 
     try:
         cantidad_salida = int(cantidad_salida)
@@ -1022,6 +1048,12 @@ def registrar_salida_inventario (decoded_user_rol, decoded_user_id):
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
+
+        # Validar que la unidad de medida existe
+        cursor.execute("SELECT id_unidad FROM Unidades_de_Medida WHERE id_unidad = ?", (id_unidad,))
+        if not cursor.fetchone():
+            conn.close()
+            return jsonify({'error': f'La unidad de medida con ID {id_unidad} no existe'}), 404
 
         # CAMBIO: Verificar si el material existe por nombre y obtener su ID y stock
         cursor.execute("SELECT id_material, cantidad FROM Materiales WHERE nombre = ?", (nombre_material,))
@@ -1049,10 +1081,10 @@ def registrar_salida_inventario (decoded_user_rol, decoded_user_id):
 
         sql_update = """
             UPDATE Materiales 
-            SET cantidad = ?, fecha_ultima_actualizacion = ?, id_usuario_ultima_actualizacion = ?
+            SET cantidad = ?, fecha_ultima_actualizacion = ?, id_usuario_ultima_actualizacion = ?, id_unidad = ?
             WHERE id_material = ? 
         """
-        cursor.execute(sql_update, (nuevo_stock, fecha_actualizacion, decoded_user_id, id_material))
+        cursor.execute(sql_update, (nuevo_stock, fecha_actualizacion, decoded_user_id, id_unidad, id_material))
         
         # Lógica opcional para DetalleOrdenMateriales si es necesario
         # if id_orden_trabajo:

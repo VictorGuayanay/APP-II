@@ -73,6 +73,51 @@
                     Lista de Materiales
                 </div>
                 <div class="card-body">
+                    <!-- Sección de Búsqueda y Filtros -->
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label for="searchInput" class="form-label">Buscar por Nombre/Descripción</label>
+                            <div class="input-group">
+                                <span class="input-group-text" style="display: flex; align-items: center;"><i class="fa fa-search"></i></span>
+                                <input type="text" id="searchInput" class="form-control" placeholder="Buscar material...">
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <label for="filterUnidad" class="form-label">Unidad</label>
+                            <select id="filterUnidad" class="form-select">
+                                <option value="">Todas</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label for="filterStock" class="form-label">Stock</label>
+                            <select id="filterStock" class="form-select">
+                                <option value="">Todos</option>
+                                <option value="sin-stock">Sin Stock</option>
+                                <option value="bajo-stock">Bajo Stock</option>
+                                <option value="con-stock">Con Stock</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="filterProveedor" class="form-label">Proveedor</label>
+                            <select id="filterProveedor" class="form-select">
+                                <option value="">Todos</option>
+                            </select>
+                        </div>
+                        <div class="col-md-1 d-flex align-items-end">
+                            <button id="btnLimpiarFiltros" class="btn btn-secondary w-100" title="Limpiar filtros">
+                                <i class="fa fa-refresh"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-12">
+                            <small class="text-muted">
+                                Mostrando <strong><span id="resultCount">0</span></strong> de <strong><span id="totalCount">0</span></strong> materiales
+                            </small>
+                        </div>
+                    </div>
+                    <!-- Fin Sección de Búsqueda y Filtros -->
+                    
                     <div class="table-responsive">
                         <table class="table table-striped table-hover">
                             <thead>
@@ -83,6 +128,7 @@
                                     <th>Stock Actual (Cantidad)</th>
                                     <th>Unidad</th>
                                     <th>Precio Unitario</th>
+                                    <th>Proveedor</th>
                                     <th>Última Actualización</th>
                                 </tr>
                             </thead>
@@ -186,6 +232,8 @@
 <script>
 
 let umbralGlobalStockBajo = null;
+let todosLosMateriales = []; // Array global con todos los materiales cargados
+let materialesFiltrados = []; // Array con materiales después de aplicar filtros
 
 function loadMateriales(umbralStockBajo) {
     console.log("loadMateriales() - Iniciando carga de materiales. Umbral de stock bajo:", umbralStockBajo);
@@ -210,72 +258,28 @@ function loadMateriales(umbralStockBajo) {
         },
         success: function(materiales) {
             console.log("loadMateriales() - Materiales recibidos:", materiales);
-            materialesTableBody.empty(); 
-
+            
             if (!materiales || !Array.isArray(materiales) || materiales.length === 0) {
                 console.log("loadMateriales() - No hay materiales para mostrar o 'materiales' no es un array.");
-                materialesTableBody.append('<tr><td colspan="7" class="text-center">No hay materiales registrados en el inventario.</td></tr>');
+                materialesTableBody.empty().append('<tr><td colspan="9" class="text-center">No hay materiales registrados en el inventario.</td></tr>');
+                $('#totalCount').text('0');
+                $('#resultCount').text('0');
                 return;
             }
 
-            materiales.forEach(function(material, index) { 
-                console.log(`loadMateriales() - Procesando material [${index}]:`, material); 
-                
-                // Verificar que las propiedades esperadas existan en el objeto 'material'
-                if (typeof material.id_material === 'undefined' || typeof material.nombre === 'undefined' || 
-                    typeof material.cantidad === 'undefined' || typeof material.precio_unitario === 'undefined' ) {
-                    console.error("loadMateriales() - Material con datos incompletos o formato incorrecto:", material);
-                    // Podrías añadir una fila de error o simplemente saltar este material
-                    return; // Saltar esta iteración del forEach
-                }
-
-                let fechaFormateada = 'N/A';
-                if (material.fecha_ultima_actualizacion) {
-                    try {
-                        fechaFormateada = new Date(material.fecha_ultima_actualizacion).toLocaleString('es-EC', {
-                            year: 'numeric', month: '2-digit', day: '2-digit',
-                            hour: '2-digit', minute: '2-digit'
-                        });
-                    } catch(e) { console.warn("Error formateando fecha:", material.fecha_ultima_actualizacion); }
-                }
-                
-                // Botones de acción
-                const editButton = `<button class="btn btn-sm btn-warning btn-editar-material" data-id="${material.id_material}"><i class="fa fa-edit"></i> Editar</button>`;
-            const deleteButton = `<button class="btn btn-sm btn-danger btn-eliminar-material ms-1" data-id="${material.id_material}" data-nombre="${material.nombre}"><i class="fa fa-trash"></i> Eliminar</button>`;
-                const actionButtons = editButton + deleteButton;
-
-                // Lógica para resaltar stock bajo
-                let filaClase = '';
-                if (typeof umbralStockBajo === 'number' && material.cantidad <= umbralStockBajo) {
-                    filaClase = 'table-warning'; // Resaltar en amarillo (Bootstrap)
-                     if (material.cantidad <= 0) { // Más urgente si es cero o negativo
-                        filaClase = 'table-danger'; // Resaltar en rojo (Bootstrap)
-                    }
-                }
-
-                // Mostrar proveedor o "Sin asignar"
-                const proveedorNombre = material.nombre_proveedor || 'Sin asignar';
-                
-                // Mostrar unidad o "N/A"
-                const unidadAbreviatura = material.abreviatura_unidad || 'N/A';
-
-                materialesTableBody.append(
-                    // Añadir la clase a la fila <tr>
-                    `<tr class="${filaClase}"> 
-                        <td>${material.id_material}</td>
-                        <td>${material.nombre}</td>
-                        <td>${material.descripcion || ''}</td>
-                        <td>${material.cantidad}</td>
-                        <td>${unidadAbreviatura}</td>
-                        <td>${(material.precio_compra || material.precio_unitario) !== undefined ? '$' + parseFloat(material.precio_compra || material.precio_unitario).toFixed(2) : 'N/A'}</td>
-                        <td>${proveedorNombre}</td>
-                        <td>${fechaFormateada}</td>
-                        <td class="text-center table-actions">
-                            ${actionButtons}
-                        </td>
-                    </tr>`
-                );
-            });
+            // Guardar materiales en variable global
+            todosLosMateriales = materiales;
+            materialesFiltrados = materiales;
+            
+            // Poblar los filtros con valores únicos
+            poblarFiltros(materiales);
+            
+            // Mostrar todos los materiales inicialmente
+            mostrarMateriales(materiales);
+            
+            // Actualizar contadores
+            $('#totalCount').text(materiales.length);
+            $('#resultCount').text(materiales.length);
         },
         error: function(xhr, status, error) { 
             console.error("loadMateriales() - AJAX Error! Status:", xhr.status, "Response:", xhr.responseText, "Error Thrown:", error);
@@ -290,6 +294,149 @@ function loadMateriales(umbralStockBajo) {
             }
         }
     });
+}
+
+// Función para mostrar materiales en la tabla
+function mostrarMateriales(materiales) {
+    const materialesTableBody = $('#materialesTableBody');
+    materialesTableBody.empty();
+    
+    if (!materiales || materiales.length === 0) {
+        materialesTableBody.append('<tr><td colspan="9" class="text-center">No se encontraron materiales con los filtros aplicados.</td></tr>');
+        return;
+    }
+    
+    materiales.forEach(function(material) {
+        // Verificar que las propiedades esperadas existan
+        if (typeof material.id_material === 'undefined' || typeof material.nombre === 'undefined' || 
+            typeof material.cantidad === 'undefined' || typeof material.precio_unitario === 'undefined') {
+            console.error("mostrarMateriales() - Material con datos incompletos:", material);
+            return;
+        }
+
+        let fechaFormateada = 'N/A';
+        if (material.fecha_ultima_actualizacion) {
+            try {
+                fechaFormateada = new Date(material.fecha_ultima_actualizacion).toLocaleString('es-EC', {
+                    year: 'numeric', month: '2-digit', day: '2-digit',
+                    hour: '2-digit', minute: '2-digit'
+                });
+            } catch(e) { console.warn("Error formateando fecha:", material.fecha_ultima_actualizacion); }
+        }
+        
+        // Botones de acción
+        const editButton = `<button class="btn btn-sm btn-warning btn-editar-material" data-id="${material.id_material}"><i class="fa fa-edit"></i> Editar</button>`;
+        const deleteButton = `<button class="btn btn-sm btn-danger btn-eliminar-material ms-1" data-id="${material.id_material}" data-nombre="${material.nombre}"><i class="fa fa-trash"></i> Eliminar</button>`;
+        const actionButtons = editButton + deleteButton;
+
+        // Lógica para resaltar stock bajo
+        let filaClase = '';
+        if (typeof umbralGlobalStockBajo === 'number' && material.cantidad <= umbralGlobalStockBajo) {
+            filaClase = 'table-warning';
+            if (material.cantidad <= 0) {
+                filaClase = 'table-danger';
+            }
+        }
+
+        const proveedorNombre = material.nombre_proveedor || 'Sin asignar';
+        const unidadAbreviatura = material.abreviatura_unidad || 'N/A';
+
+        materialesTableBody.append(
+            `<tr class="${filaClase}"> 
+                <td>${material.id_material}</td>
+                <td>${material.nombre}</td>
+                <td>${material.descripcion || ''}</td>
+                <td>${material.cantidad}</td>
+                <td>${unidadAbreviatura}</td>
+                <td>${(material.precio_compra || material.precio_unitario) !== undefined ? '$' + parseFloat(material.precio_compra || material.precio_unitario).toFixed(2) : 'N/A'}</td>
+                <td>${proveedorNombre}</td>
+                <td>${fechaFormateada}</td>
+                <td class="text-center table-actions">
+                    ${actionButtons}
+                </td>
+            </tr>`
+        );
+    });
+}
+
+// Función para poblar los filtros con valores únicos
+function poblarFiltros(materiales) {
+    // Poblar filtro de unidades
+    const unidadesUnicas = [...new Set(materiales.map(m => m.abreviatura_unidad).filter(u => u))];
+    const $filterUnidad = $('#filterUnidad');
+    $filterUnidad.find('option:not(:first)').remove(); // Mantener "Todas"
+    unidadesUnicas.sort().forEach(unidad => {
+        $filterUnidad.append(`<option value="${unidad}">${unidad}</option>`);
+    });
+    
+    // Poblar filtro de proveedores
+    const proveedoresUnicos = [...new Set(materiales.map(m => m.nombre_proveedor).filter(p => p))];
+    const $filterProveedor = $('#filterProveedor');
+    $filterProveedor.find('option:not(:first)').remove(); // Mantener "Todos"
+    proveedoresUnicos.sort().forEach(proveedor => {
+        $filterProveedor.append(`<option value="${proveedor}">${proveedor}</option>`);
+    });
+    
+    // Agregar opción "Sin asignar" si hay materiales sin proveedor
+    const sinProveedor = materiales.some(m => !m.nombre_proveedor);
+    if (sinProveedor) {
+        $filterProveedor.append(`<option value="Sin asignar">Sin asignar</option>`);
+    }
+}
+
+// Función para aplicar filtros
+function aplicarFiltros() {
+    const searchTerm = $('#searchInput').val().toLowerCase().trim();
+    const unidadSeleccionada = $('#filterUnidad').val();
+    const stockFilter = $('#filterStock').val();
+    const proveedorSeleccionado = $('#filterProveedor').val();
+    
+    console.log("Aplicando filtros:", { searchTerm, unidadSeleccionada, stockFilter, proveedorSeleccionado });
+    
+    let filtered = todosLosMateriales;
+    
+    // Filtro por búsqueda de texto
+    if (searchTerm) {
+        filtered = filtered.filter(m => 
+            m.nombre.toLowerCase().includes(searchTerm) ||
+            (m.descripcion && m.descripcion.toLowerCase().includes(searchTerm))
+        );
+    }
+    
+    // Filtro por unidad
+    if (unidadSeleccionada) {
+        filtered = filtered.filter(m => m.abreviatura_unidad === unidadSeleccionada);
+    }
+    
+    // Filtro por stock
+    if (stockFilter === 'sin-stock') {
+        filtered = filtered.filter(m => m.cantidad <= 0);
+    } else if (stockFilter === 'bajo-stock') {
+        filtered = filtered.filter(m => 
+            m.cantidad > 0 && 
+            typeof umbralGlobalStockBajo === 'number' && 
+            m.cantidad <= umbralGlobalStockBajo
+        );
+    } else if (stockFilter === 'con-stock') {
+        filtered = filtered.filter(m => 
+            typeof umbralGlobalStockBajo === 'number' ? 
+            m.cantidad > umbralGlobalStockBajo : 
+            m.cantidad > 0
+        );
+    }
+    
+    // Filtro por proveedor
+    if (proveedorSeleccionado) {
+        if (proveedorSeleccionado === 'Sin asignar') {
+            filtered = filtered.filter(m => !m.nombre_proveedor);
+        } else {
+            filtered = filtered.filter(m => m.nombre_proveedor === proveedorSeleccionado);
+        }
+    }
+    
+    materialesFiltrados = filtered;
+    mostrarMateriales(filtered);
+    $('#resultCount').text(filtered.length);
 }
 
 // Calcular precio de venta en modal de edición
@@ -377,6 +524,27 @@ $(document).ready(function () {
     }
     
     cargarProveedoresEnModal(); // Cargar al iniciar
+
+    // --- Event Listeners para Filtros ---
+    
+    // Búsqueda con debounce
+    let searchTimeout;
+    $('#searchInput').on('keyup', function() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(aplicarFiltros, 300); // 300ms delay
+    });
+    
+    // Filtros de selects
+    $('#filterUnidad, #filterStock, #filterProveedor').on('change', aplicarFiltros);
+    
+    // Botón limpiar filtros
+    $('#btnLimpiarFiltros').on('click', function() {
+        $('#searchInput').val('');
+        $('#filterUnidad').val('');
+        $('#filterStock').val('');
+        $('#filterProveedor').val('');
+        aplicarFiltros();
+    });
 
     // --- Manejador para abrir modal de edición ---
     $(document).on('click', '.btn-editar-material', function() {
