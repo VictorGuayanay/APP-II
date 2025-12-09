@@ -83,8 +83,38 @@
                             <textarea class="form-control" id="materialDescripcion" rows="3" placeholder="Ej: De acero inoxidable, para metal, caja de 100 unidades"></textarea>
                         </div>
                         <div class="mb-3">
-                            <label for="materialPrecioUnitario" class="form-label">Precio Unitario <span class="text-danger">*</span></label>
-                            <input type="number" step="0.01" min="0" class="form-control" id="materialPrecioUnitario" placeholder="Ej: 0.15" required>
+                            <label for="materialProveedor" class="form-label">Proveedor (Opcional)</label>
+                            <select class="form-control" id="materialProveedor">
+                                <option value="">Seleccione un proveedor...</option>
+                            </select>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="materialPrecioCompra" class="form-label">Precio de Compra <span class="text-danger">*</span></label>
+                                <input type="number" step="0.01" min="0" class="form-control" id="materialPrecioCompra" placeholder="Ej: 10.00" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="materialPorcentajeGanancia" class="form-label">Porcentaje de Ganancia <span class="text-danger">*</span></label>
+                                <select class="form-control" id="materialPorcentajeGanancia" required>
+                                    <option value="">Seleccione...</option>
+                                    <option value="5">5%</option>
+                                    <option value="10">10%</option>
+                                    <option value="15">15%</option>
+                                    <option value="20" selected>20%</option>
+                                    <option value="25">25%</option>
+                                    <option value="30">30%</option>
+                                    <option value="35">35%</option>
+                                    <option value="40">40%</option>
+                                    <option value="45">45%</option>
+                                    <option value="50">50%</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="materialPrecioVenta" class="form-label">Precio de Venta (Calculado Automáticamente)</label>
+                            <input type="number" step="0.01" class="form-control" id="materialPrecioVenta" readonly style="background-color: #e9ecef;">
                         </div>
                         
                         <button type="submit" class="btn btn-success">Guardar Nuevo Material</button>
@@ -129,6 +159,44 @@ $(document).ready(function () {
         window.location.href = 'index.html';
     });
 
+    // --- Cargar Proveedores ---
+    function cargarProveedores() {
+        $.ajax({
+            url: 'http://127.0.0.1:5000/proveedores',
+            method: 'GET',
+            headers: { 'Authorization': 'Bearer ' + token },
+            success: function(proveedores) {
+                const $select = $('#materialProveedor');
+                $select.empty().append('<option value="">Seleccione un proveedor...</option>');
+                proveedores.forEach(function(prov) {
+                    $select.append(`<option value="${prov.id_proveedor}">${prov.nombre_proveedor}</option>`);
+                });
+            },
+            error: function(xhr) {
+                console.error("Error al cargar proveedores:", xhr.responseText);
+            }
+        });
+    }
+    
+    cargarProveedores(); // Cargar al iniciar
+    
+    // --- Calcular Precio de Venta Automáticamente ---
+    function calcularPrecioVenta() {
+        const precioCompra = parseFloat($('#materialPrecioCompra').val()) || 0;
+        const porcentaje = parseInt($('#materialPorcentajeGanancia').val()) || 0;
+        
+        if (precioCompra > 0 && porcentaje > 0) {
+            const precioVenta = precioCompra * (1 + porcentaje / 100);
+            $('#materialPrecioVenta').val(precioVenta.toFixed(2));
+        } else {
+            $('#materialPrecioVenta').val('');
+        }
+    }
+    
+    // Eventos para recalcular
+    $('#materialPrecioCompra, #materialPorcentajeGanancia').on('input change', calcularPrecioVenta);
+    calcularPrecioVenta(); // Calcular inicial con 20% default
+
     // --- Lógica para Formulario de Añadir Material ---
     $('#formAnadirMaterial').on('submit', function(event) {
         event.preventDefault();
@@ -137,30 +205,33 @@ $(document).ready(function () {
 
         const nombreMaterial = $('#materialNombre').val().trim();
         const descripcionMaterial = $('#materialDescripcion').val().trim();
-        const precioUnitarioMaterial = $('#materialPrecioUnitario').val();
+        const precioCompra = $('#materialPrecioCompra').val();
+        const porcentajeGanancia = $('#materialPorcentajeGanancia').val();
+        const idProveedor = $('#materialProveedor').val();
 
-        if (!nombreMaterial || !precioUnitarioMaterial) {
-            mensajeDiv.text('El nombre y el precio unitario son campos obligatorios.').removeClass('alert-info').addClass('alert-danger');
+        if (!nombreMaterial || !precioCompra || !porcentajeGanancia) {
+            mensajeDiv.text('El nombre, precio de compra y porcentaje de ganancia son obligatorios.').removeClass('alert-info').addClass('alert-danger');
             return;
         }
         
         let precioFloat;
         try {
-            precioFloat = parseFloat(precioUnitarioMaterial);
+            precioFloat = parseFloat(precioCompra);
             if (isNaN(precioFloat) || precioFloat < 0) {
-                mensajeDiv.text('El precio unitario debe ser un número válido y no negativo.').removeClass('alert-info').addClass('alert-danger');
+                mensajeDiv.text('El precio de compra debe ser un número válido y no negativo.').removeClass('alert-info').addClass('alert-danger');
                 return;
             }
         } catch (e) {
-            mensajeDiv.text('El precio unitario ingresado no es un número válido.').removeClass('alert-info').addClass('alert-danger');
+            mensajeDiv.text('El precio de compra ingresado no es válido.').removeClass('alert-info').addClass('alert-danger');
             return;
         }
 
-
         const nuevoMaterialData = {
             nombre: nombreMaterial,
-            descripcion: descripcionMaterial, 
-            precio_unitario: precioFloat
+            descripcion: descripcionMaterial,
+            precio_compra: precioFloat,
+            porcentaje_ganancia: parseInt(porcentajeGanancia),
+            id_proveedor: idProveedor || null
         };
 
         console.log("Enviando datos de nuevo material:", nuevoMaterialData);
@@ -176,8 +247,11 @@ $(document).ready(function () {
             data: JSON.stringify(nuevoMaterialData),
             success: function(response) {
                 console.log("Respuesta de crear material:", response);
-                mensajeDiv.text(response.message || "Material añadido exitosamente.").removeClass('alert-info alert-danger').addClass('alert-success');
-                $('#formAnadirMaterial')[0].reset(); 
+                const precioVenta = response.precio_venta ? `$${response.precio_venta}` : 'N/A';
+                mensajeDiv.text(`${response.message} Precio de venta: ${precioVenta}`).removeClass('alert-info alert-danger').addClass('alert-success');
+                $('#formAnadirMaterial')[0].reset();
+                $('#materialPrecioVenta').val(''); // Limpiar precio calculado
+                calcularPrecioVenta(); // Recalcular con valores por defecto
             },
             error: function(xhr) {
                 console.error("Error al añadir material:", xhr.responseText);

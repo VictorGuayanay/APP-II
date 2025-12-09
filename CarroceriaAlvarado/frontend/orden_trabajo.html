@@ -42,6 +42,8 @@
             
             <li><a href="ingresar_empleado.html"><i class="fa fa-address-card"></i> Ingreso Empleados</a></li>
             <li><a href="ingresar_cliente.html"><i class="fa fa-user-plus"></i> Ingreso Clientes</a></li>
+            <li><a href="ingresar_proveedor.html"><i class="fa fa-truck"></i> Ingreso Proveedores</a></li>
+            <li><a href="ver_proveedores.html"><i class="fa fa-list"></i> Ver Proveedores</a></li>
             <li class="active"><a href="orden_trabajo.html"><i class="fa fa-briefcase"></i> Órdenes de Trabajo</a></li>
             <li><a href="listar_ordenes_trabajo.html"><i class="fa fa-briefcase"></i> Listar Órdenes de Trabajo</a></li>
             <li><a href="consultar_comprobantes.html"><i class="fa fa-bar-chart"></i> Comprobante</a></li>
@@ -105,6 +107,45 @@
                             <label for="descripcionOrden" class="form-label">Descripción del Trabajo <span class="text-danger">*</span></label>
                             <textarea class="form-control" id="descripcionOrden" rows="4" placeholder="Ej: Pintura de puerta del conductor y revisión de sistema eléctrico." required></textarea>
                         </div>
+                        
+                        <!-- NUEVA SECCIÓN: Selección de Materiales por Proveedor -->
+                        <hr>
+                        <h5>Materiales Necesarios (Opcional)</h5>
+                        <p class="text-muted">Seleccione un proveedor para ver sus materiales disponibles</p>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="selectProveedor" class="form-label">Proveedor</label>
+                                <select class="form-select" id="selectProveedor">
+                                    <option value="">Seleccione un proveedor...</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="selectMaterialProveedor" class="form-label">Material</label>
+                                <select class="form-select" id="selectMaterialProveedor" disabled>
+                                    <option value="">Primero seleccione un proveedor</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="cantidadMaterial" class="form-label">Cantidad</label>
+                                <input type="number" class="form-control" id="cantidadMaterial" min="1" placeholder="Ej: 5" disabled>
+                            </div>
+                            <div class="col-md-6 mb-3 d-flex align-items-end">
+                                <button type="button" id="btnAgregarMaterial" class="btn btn-secondary" disabled>
+                                    <i class="fa fa-plus"></i> Agregar Material
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Lista de materiales agregados -->
+                        <div id="listaMaterialesAgregados" class="mb-3" style="display: none;">
+                            <h6>Materiales Agregados:</h6>
+                            <ul id="materialesListaUl" class="list-group">
+                            </ul>
+                        </div>
+                        <hr>
                         
 
                         <div id="manualAssignmentSection" style="display: none;">
@@ -212,6 +253,150 @@ $(document).ready(function() {
 
     // Cargar selector de clientes al iniciar
     cargarSelectCliente();
+
+    // --- NUEVO: Cargar Proveedores ---
+    function cargarProveedores() {
+        const $selectProveedor = $('#selectProveedor');
+        $.ajax({
+            url: 'http://127.0.0.1:5000/proveedores',
+            method: 'GET',
+            headers: { 'Authorization': 'Bearer ' + token },
+            success: function(proveedores) {
+                $selectProveedor.empty().append('<option value="">Seleccione un proveedor...</option>');
+                proveedores.forEach(function(p) {
+                    if (p.estado === 'Activo') {
+                        $selectProveedor.append(`<option value="${p.id_proveedor}">${p.nombre_proveedor}</option>`);
+                    }
+                });
+            },
+            error: function(xhr) {
+                console.error('Error al cargar proveedores:', xhr.responseText);
+            }
+        });
+    }
+    cargarProveedores();
+
+    // --- NUEVO: Cascading Select - Cargar materiales por proveedor ---
+    let materialesAgregados = []; // Array para almacenar materiales seleccionados
+
+    $('#selectProveedor').on('change', function() {
+        const proveedorId = $(this).val();
+        const $selectMaterial = $('#selectMaterialProveedor');
+        const $cantidadInput = $('#cantidadMaterial');
+        const $btnAgregar = $('#btnAgregarMaterial');
+
+        if (proveedorId) {
+            // Cargar materiales del proveedor seleccionado
+            $.ajax({
+                url: `http://127.0.0.1:5000/proveedores/${proveedorId}/materiales`,
+                method: 'GET',
+                headers: { 'Authorization': 'Bearer ' + token },
+                success: function(materiales) {
+                    $selectMaterial.empty().prop('disabled', false);
+                    $selectMaterial.append('<option value="">Seleccione un material...</option>');
+                    
+                    if (materiales && materiales.length > 0) {
+                        materiales.forEach(function(m) {
+                            const precioFormat = m.precio_unitario ? `$${parseFloat(m.precio_unitario).toFixed(2)}` : 'N/A';
+                            $selectMaterial.append(`<option value="${m.id_material}" data-nombre="${m.nombre}" data-precio="${m.precio_unitario}">${m.nombre} - ${precioFormat} (Stock: ${m.cantidad})</option>`);
+                        });
+                    } else {
+                        $selectMaterial.append('<option value="">No hay materiales disponibles</option>');
+                    }
+                },
+                error: function(xhr) {
+                    console.error('Error al cargar materiales:', xhr.responseText);
+                    $selectMaterial.empty().prop('disabled', true);
+                    $selectMaterial.append('<option value="">Error al cargar materiales</option>');
+                }
+            });
+        } else {
+            // Resetear si no hay proveedor seleccionado
+            $selectMaterial.empty().prop('disabled', true).append('<option value="">Primero seleccione un proveedor</option>');
+            $cantidadInput.prop('disabled', true).val('');
+            $btnAgregar.prop('disabled', true);
+        }
+    });
+
+    // Habilitar cantidad y botón cuando se selecciona un material
+    $('#selectMaterialProveedor').on('change', function() {
+        const materialId = $(this).val();
+        if (materialId) {
+            $('#cantidadMaterial').prop('disabled', false);
+            $('#btnAgregarMaterial').prop('disabled', false);
+        } else {
+            $('#cantidadMaterial').prop('disabled', true).val('');
+            $('#btnAgregarMaterial').prop('disabled', true);
+        }
+    });
+
+    // Agregar material a la lista
+    $('#btnAgregarMaterial').on('click', function() {
+        const materialId = $('#selectMaterialProveedor').val();
+        const materialOption = $('#selectMaterialProveedor option:selected');
+        const materialNombre = materialOption.data('nombre');
+        const materialPrecio = materialOption.data('precio');
+        const cantidad = parseInt($('#cantidadMaterial').val());
+
+        if (!materialId || !cantidad || cantidad < 1) {
+            alert('Debe seleccionar un material y especificar una cantidad válida.');
+            return;
+        }
+
+        // Verificar si el material ya fue agregado
+        const yaExiste = materialesAgregados.find(m => m.id_material === parseInt(materialId));
+        if (yaExiste) {
+            alert('Este material ya fue agregado. Puede eliminarlo y agregarlo nuevamente con otra cantidad.');
+            return;
+        }
+
+        // Agregar a la lista
+        const material = {
+            id_material: parseInt(materialId),
+            nombre: materialNombre,
+            cantidad: cantidad,
+            precio_unitario: parseFloat(materialPrecio)
+        };
+        materialesAgregados.push(material);
+
+        // Actualizar UI
+        actualizarListaMateriales();
+
+        // Limpiar selección
+        $('#selectProveedor').val('');
+        $('#selectMaterialProveedor').empty().prop('disabled', true).append('<option value="">Primero seleccione un proveedor</option>');
+        $('#cantidadMaterial').val('').prop('disabled', true);
+        $('#btnAgregarMaterial').prop('disabled', true);
+    });
+
+    function actualizarListaMateriales() {
+        const $lista = $('#materialesListaUl');
+        $lista.empty();
+
+        if (materialesAgregados.length > 0) {
+            $('#listaMaterialesAgregados').show();
+            materialesAgregados.forEach(function(m, index) {
+                const precioTotal = (m.cantidad * m.precio_unitario).toFixed(2);
+                $lista.append(`
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span><strong>${m.nombre}</strong> - Cantidad: ${m.cantidad} - Precio Unit: $${m.precio_unitario.toFixed(2)} - Total: $${precioTotal}</span>
+                        <button type="button" class="btn btn-sm btn-danger btn-eliminar-material" data-index="${index}">
+                            <i class="fa fa-trash"></i>
+                        </button>
+                    </li>
+                `);
+            });
+        } else {
+            $('#listaMaterialesAgregados').hide();
+        }
+    }
+
+    // Eliminar material de la lista
+    $(document).on('click', '.btn-eliminar-material', function() {
+        const index = $(this).data('index');
+        materialesAgregados.splice(index, 1);
+        actualizarListaMateriales();
+    });
 
     // Lógica para el Formulario de Crear Orden (MODIFICADA PARA FLUJO HÍBRIDO)
     $('#formCrearOrden').on('submit', function(event) {

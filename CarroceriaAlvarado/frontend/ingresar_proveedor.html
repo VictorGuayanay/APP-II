@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <title>Ingresar Empleado - Carrocería Alvarado</title>
+    <title>Ingresar Proveedor - Carrocería Alvarado</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" type="text/css" href="vendor/bootstrap/css/bootstrap.min.css">
@@ -42,9 +42,9 @@
                 </ul>
             </li>
             
-            <li class="active"><a href="ingresar_empleado.html"><i class="fa fa-address-card"></i> Ingreso Empleados</a></li>
+            <li><a href="ingresar_empleado.html"><i class="fa fa-address-card"></i> Ingreso Empleados</a></li>
             <li><a href="ingresar_cliente.html"><i class="fa fa-user-plus"></i> Ingreso Clientes</a></li>
-            <li><a href="ingresar_proveedor.html"><i class="fa fa-truck"></i> Ingreso Proveedores</a></li>
+            <li class="active"><a href="ingresar_proveedor.html"><i class="fa fa-truck"></i> Ingreso Proveedores</a></li>
             <li><a href="ver_proveedores.html"><i class="fa fa-list"></i> Ver Proveedores</a></li>
             <li><a href="orden_trabajo.html"><i class="fa fa-briefcase"></i> Órdenes de Trabajo</a></li>
             <li><a href="listar_ordenes_trabajo.html"><i class="fa fa-briefcase"></i> Listar Órdenes de Trabajo</a></li>
@@ -70,42 +70,41 @@
         </nav>
 
         <div class="content-area container-fluid pt-4">
-            <h2 class="card-header-title">Registrar Nuevo Empleado</h2>
+            <h2 class="card-header-title">Registrar Nuevo Proveedor</h2>
             <div class="card">
                 <div class="card-body">
-                    <form id="formIngresarEmpleado">
+                    <form id="formIngresarProveedor">
                         <div class="mb-3">
-                            <label for="empleadoNombre" class="form-label">Nombre Completo <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="empleadoNombre" required>
+                            <label for="proveedorRuc" class="form-label">RUC <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="proveedorRuc" maxlength="13" pattern="[0-9]{13}" title="Debe contener exactamente 13 dígitos numéricos" required>
+                            <small class="form-text text-muted">Ingrese 13 dígitos numéricos</small>
                         </div>
                         <div class="mb-3">
-                            <label for="empleadoCedula" class="form-label">Cédula <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="empleadoCedula" maxlength="10" pattern="[0-9]{1,10}" title="Solo números, máximo 10 dígitos" required>
+                            <label for="proveedorNombre" class="form-label">Nombre del Proveedor <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="proveedorNombre" required>
                         </div>
                         <div class="mb-3">
-                            <label for="empleadoRol" class="form-label">Rol / Cargo <span class="text-danger">*</span></label>
-                            <select id="empleadoRol" class="form-control w-full p-2 border rounded" required>
-                                <option value="">Seleccione un cargo</option>
-                                <option value="electricista">Electricista</option>
-                                <option value="pintor">Pintor</option>
-                                <option value="tapicero">Tapicero</option>
-                                <option value="soldador">Soldador</option>
-                                <option value="enderezador">Enderezador</option>
-                                <option value="mecanico">Mecánico</option>
-                                <option value="laminador">Laminador</option>
-                                <option value="ensamblador">Ensamblador</option>
-                            </select>
+                            <label for="proveedorRazonSocial" class="form-label">Razón Social <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="proveedorRazonSocial" required>
                         </div>
                         <div class="mb-3">
-                            <label for="empleadoTelefono" class="form-label">Teléfono <span class="text-danger">*</span></label>
-                            <input type="tel" class="form-control" id="empleadoTelefono" maxlength="10" pattern="[0-9]{1,10}" title="Solo números, máximo 10 dígitos" required>
+                            <label for="proveedorDireccion" class="form-label">Dirección</label>
+                            <textarea class="form-control" id="proveedorDireccion" rows="2"></textarea>
                         </div>
                         <div class="mb-3">
-                            <label for="empleadoFechaContratacion" class="form-label">Fecha de Contratación <span class="text-danger">*</span></label>
-                            <input type="date" class="form-control" id="empleadoFechaContratacion" required>
+                            <label for="proveedorTelefono" class="form-label">Teléfono</label>
+                            <input type="tel" class="form-control" id="proveedorTelefono" maxlength="10" pattern="[0-9]{1,10}" title="Solo números, máximo 10 dígitos">
                         </div>
-                        <button type="submit" class="btn btn-primary">Registrar Empleado</button>
-                        <div id="mensajeEmpleado" class="mt-3"></div>
+                        <div class="mb-3">
+                            <label for="proveedorEmail" class="form-label">Correo Electrónico</label>
+                            <input type="email" class="form-control" id="proveedorEmail">
+                        </div>
+                        <div class="mb-3">
+                            <label for="proveedorDescripcion" class="form-label">Descripción</label>
+                            <textarea class="form-control" id="proveedorDescripcion" rows="3" placeholder="Descripción de productos o servicios que ofrece"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Registrar Proveedor</button>
+                        <div id="mensajeProveedor" class="mt-3"></div>
                     </form>
                 </div>
             </div>
@@ -125,39 +124,60 @@ $(document).ready(function () {
     if(loggedInUsername) { $('#currentUserName').text(loggedInUsername); }
     $('#logoutButton').on('click', function(e) { e.preventDefault(); localStorage.clear(); window.location.href = 'index.html'; });
 
-    // Lógica para registrar empleado
-    $('#formIngresarEmpleado').on('submit', function(event) {
+    // Validación de RUC en tiempo real
+    $('#proveedorRuc').on('input', function() {
+        const ruc = $(this).val();
+        if (ruc.length === 13 && /^\d{13}$/.test(ruc)) {
+            $(this).removeClass('is-invalid').addClass('is-valid');
+        } else if (ruc.length > 0) {
+            $(this).removeClass('is-valid').addClass('is-invalid');
+        } else {
+            $(this).removeClass('is-valid is-invalid');
+        }
+    });
+
+    // Lógica para registrar proveedor
+    $('#formIngresarProveedor').on('submit', function(event) {
         event.preventDefault();
-        const mensajeDiv = $('#mensajeEmpleado');
+        const mensajeDiv = $('#mensajeProveedor');
         mensajeDiv.text('Procesando...').removeClass('alert-success alert-danger').addClass('alert alert-info');
 
-        const empleadoData = {
-            nombre: $('#empleadoNombre').val().trim(),
-            cedula: $('#empleadoCedula').val().trim(),
-            rol: $('#empleadoRol').val().trim(),
-            telefono: $('#empleadoTelefono').val().trim(),
-            fecha_contratacion: $('#empleadoFechaContratacion').val()
+        const proveedorData = {
+            ruc: $('#proveedorRuc').val().trim(),
+            nombre_proveedor: $('#proveedorNombre').val().trim(),
+            razon_social: $('#proveedorRazonSocial').val().trim(),
+            direccion: $('#proveedorDireccion').val().trim(),
+            telefono: $('#proveedorTelefono').val().trim(),
+            email: $('#proveedorEmail').val().trim(),
+            descripcion: $('#proveedorDescripcion').val().trim()
         };
 
-        if (!empleadoData.nombre || !empleadoData.cedula || !empleadoData.rol || !empleadoData.telefono || !empleadoData.fecha_contratacion) {
-            mensajeDiv.text('Todos los campos son obligatorios.').removeClass('alert-info').addClass('alert alert-danger');
+        // Validación de RUC
+        if (!/^\d{13}$/.test(proveedorData.ruc)) {
+            mensajeDiv.text('El RUC debe contener exactamente 13 dígitos numéricos.').removeClass('alert-info').addClass('alert alert-danger');
+            return;
+        }
+
+        if (!proveedorData.nombre_proveedor || !proveedorData.razon_social) {
+            mensajeDiv.text('Los campos RUC, Nombre y Razón Social son obligatorios.').removeClass('alert-info').addClass('alert alert-danger');
             return;
         }
 
         $.ajax({
-            url: 'http://127.0.0.1:5000/empleados',
+            url: 'http://127.0.0.1:5000/proveedores',
             method: 'POST',
             headers: {
                 'Authorization': 'Bearer ' + token,
                 'Content-Type': 'application/json'
             },
-            data: JSON.stringify(empleadoData),
+            data: JSON.stringify(proveedorData),
             success: function(response) {
-                mensajeDiv.text(response.message || 'Empleado registrado con éxito.').removeClass('alert-info').addClass('alert alert-success');
-                $('#formIngresarEmpleado')[0].reset();
+                mensajeDiv.text(response.message || 'Proveedor registrado con éxito.').removeClass('alert-info').addClass('alert alert-success');
+                $('#formIngresarProveedor')[0].reset();
+                $('#proveedorRuc').removeClass('is-valid is-invalid');
             },
             error: function(xhr) {
-                mensajeDiv.text(xhr.responseJSON?.error || 'Error al registrar el empleado.').removeClass('alert-info').addClass('alert alert-danger');
+                mensajeDiv.text(xhr.responseJSON?.error || 'Error al registrar el proveedor.').removeClass('alert-info').addClass('alert alert-danger');
             }
         });
     });

@@ -81,6 +81,7 @@
                                     <th>Nombre</th>
                                     <th>Descripción</th>
                                     <th>Stock Actual (Cantidad)</th>
+                                    <th>Unidad</th>
                                     <th>Precio Unitario</th>
                                     <th>Última Actualización</th>
                                 </tr>
@@ -112,6 +113,73 @@
         </div>
     </div>
 </div>
+
+
+<!-- Modal de Edición de Material -->
+<div class="modal fade" id="editMaterialModal" tabindex="-1" aria-labelledby="editMaterialModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-warning">
+                <h5 class="modal-title" id="editMaterialModalLabel">Editar Material</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formEditarMaterial">
+                    <input type="hidden" id="editMaterialId">
+                    <div class="mb-3">
+                        <label for="editMaterialNombre" class="form-label">Nombre <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="editMaterialNombre" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editMaterialDescripcion" class="form-label">Descripción</label>
+                        <textarea class="form-control" id="editMaterialDescripcion" rows="2"></textarea>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="editMaterialPrecioCompra" class="form-label">Precio de Compra <span class="text-danger">*</span></label>
+                            <input type="number" step="0.01" min="0" class="form-control" id="editMaterialPrecioCompra" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="editMaterialPorcentajeGanancia" class="form-label">Porcentaje de Ganancia <span class="text-danger">*</span></label>
+                            <select class="form-control" id="editMaterialPorcentajeGanancia" required>
+                                <option value="">Seleccione...</option>
+                                <option value="5">5%</option>
+                                <option value="10">10%</option>
+                                <option value="15">15%</option>
+                                <option value="20">20%</option>
+                                <option value="25">25%</option>
+                                <option value="30">30%</option>
+                                <option value="35">35%</option>
+                                <option value="40">40%</option>
+                                <option value="45">45%</option>
+                                <option value="50">50%</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="editMaterialPrecioVenta" class="form-label">Precio de Venta (Calculado)</label>
+                        <input type="number" step="0.01" class="form-control" id="editMaterialPrecioVenta" readonly style="background-color: #e9ecef;">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="editMaterialProveedor" class="form-label">Proveedor</label>
+                        <select class="form-control" id="editMaterialProveedor">
+                            <option value="">Sin asignar</option>
+                        </select>
+                    </div>
+                    <div id="mensajeEditarMaterial" class="mt-3"></div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-warning" id="btnGuardarEdicion">Guardar Cambios</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script src="vendor/jquery/jquery-3.2.1.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
 
@@ -171,9 +239,10 @@ function loadMateriales(umbralStockBajo) {
                     } catch(e) { console.warn("Error formateando fecha:", material.fecha_ultima_actualizacion); }
                 }
                 
-                // Botón de eliminar
-                const deleteButton = `<button class="btn btn-sm btn-danger btn-eliminar-material ms-1" data-id="${material.id_material}" data-nombre="${material.nombre}"><i class="fa fa-trash"></i> Eliminar</button>`;
-                const actionButtons = deleteButton; 
+                // Botones de acción
+                const editButton = `<button class="btn btn-sm btn-warning btn-editar-material" data-id="${material.id_material}"><i class="fa fa-edit"></i> Editar</button>`;
+            const deleteButton = `<button class="btn btn-sm btn-danger btn-eliminar-material ms-1" data-id="${material.id_material}" data-nombre="${material.nombre}"><i class="fa fa-trash"></i> Eliminar</button>`;
+                const actionButtons = editButton + deleteButton;
 
                 // Lógica para resaltar stock bajo
                 let filaClase = '';
@@ -184,6 +253,12 @@ function loadMateriales(umbralStockBajo) {
                     }
                 }
 
+                // Mostrar proveedor o "Sin asignar"
+                const proveedorNombre = material.nombre_proveedor || 'Sin asignar';
+                
+                // Mostrar unidad o "N/A"
+                const unidadAbreviatura = material.abreviatura_unidad || 'N/A';
+
                 materialesTableBody.append(
                     // Añadir la clase a la fila <tr>
                     `<tr class="${filaClase}"> 
@@ -191,7 +266,9 @@ function loadMateriales(umbralStockBajo) {
                         <td>${material.nombre}</td>
                         <td>${material.descripcion || ''}</td>
                         <td>${material.cantidad}</td>
-                        <td>${material.precio_unitario !== undefined ? '$' + parseFloat(material.precio_unitario).toFixed(2) : 'N/A'}</td>
+                        <td>${unidadAbreviatura}</td>
+                        <td>${(material.precio_compra || material.precio_unitario) !== undefined ? '$' + parseFloat(material.precio_compra || material.precio_unitario).toFixed(2) : 'N/A'}</td>
+                        <td>${proveedorNombre}</td>
                         <td>${fechaFormateada}</td>
                         <td class="text-center table-actions">
                             ${actionButtons}
@@ -214,6 +291,20 @@ function loadMateriales(umbralStockBajo) {
         }
     });
 }
+
+// Calcular precio de venta en modal de edición
+function calcularPrecioVentaEdicion() {
+    const precioCompra = parseFloat($('#editMaterialPrecioCompra').val()) || 0;
+    const porcentaje = parseInt($('#editMaterialPorcentajeGanancia').val()) || 0;
+    
+    if (precioCompra > 0 && porcentaje > 0) {
+        const precioVenta = precioCompra * (1 + porcentaje / 100);
+        $('#editMaterialPrecioVenta').val(precioVenta.toFixed(2));
+    } else {
+        $('#editMaterialPrecioVenta').val('');
+    }
+}
+
 
 $(document).ready(function () {
     // Funcionalidad para mostrar/ocultar el sidebar
@@ -259,6 +350,116 @@ $(document).ready(function () {
         localStorage.removeItem('userRol');
         localStorage.removeItem('loggedInUsername'); 
         window.location.href = 'index.html';
+    });
+
+    // Eventos para recalcular precio de venta en modal de edición
+    $(document).on('input change', '#editMaterialPrecioCompra, #editMaterialPorcentajeGanancia', calcularPrecioVentaEdicion);
+
+    // Cargar proveedores en el select del modal de edición
+    function cargarProveedoresEnModal() {
+        const $selectProveedor = $('#editMaterialProveedor');
+        $.ajax({
+            url: 'http://127.0.0.1:5000/proveedores',
+            method: 'GET',
+            headers: { 'Authorization': 'Bearer ' + token },
+            success: function(proveedores) {
+                $selectProveedor.empty().append('<option value="">Sin asignar</option>');
+                proveedores.forEach(function(p) {
+                    if (p.estado === 'Activo') {
+                        $selectProveedor.append(`<option value="${p.id_proveedor}">${p.nombre_proveedor} (${p.ruc})</option>`);
+                    }
+                });
+            },
+            error: function(xhr) {
+                console.error('Error al cargar proveedores:', xhr.responseText);
+            }
+        });
+    }
+    
+    cargarProveedoresEnModal(); // Cargar al iniciar
+
+    // --- Manejador para abrir modal de edición ---
+    $(document).on('click', '.btn-editar-material', function() {
+        const materialId = $(this).data('id');
+        console.log("Editando material ID:", materialId);
+
+        // Obtener datos del material
+        $.ajax({
+            url: `http://127.0.0.1:5000/materiales/${materialId}`,
+            method: 'GET',
+            headers: { 'Authorization': 'Bearer ' + token },
+            success: function(material) {
+                console.log("Material obtenido:", material);
+                
+                // Llenar el formulario
+                $('#editMaterialId').val(material.id_material);
+                $('#editMaterialNombre').val(material.nombre);
+                $('#editMaterialDescripcion').val(material.descripcion || '');
+                $('#editMaterialPrecioCompra').val(material.precio_compra || material.precio_unitario);
+                $('#editMaterialPorcentajeGanancia').val(material.porcentaje_ganancia || 20);
+                $('#editMaterialProveedor').val(material.id_proveedor || '');
+                
+                // Calcular precio de venta
+                calcularPrecioVentaEdicion();
+                
+                // Mostrar modal
+                var editModal = new bootstrap.Modal(document.getElementById('editMaterialModal'));
+                editModal.show();
+            },
+            error: function(xhr) {
+                console.error("Error al obtener material:", xhr.responseText);
+                alert("Error al cargar los datos del material");
+            }
+        });
+    });
+
+    // --- Manejador para guardar cambios del material ---
+    $('#btnGuardarEdicion').on('click', function() {
+        const materialId = $('#editMaterialId').val();
+        const nombre = $('#editMaterialNombre').val().trim();
+        const descripcion = $('#editMaterialDescripcion').val().trim();
+        const precioCompra = $('#editMaterialPrecioCompra').val();
+        const porcentajeGanancia = $('#editMaterialPorcentajeGanancia').val();
+        const idProveedor = $('#editMaterialProveedor').val();
+        const mensajeDiv = $('#mensajeEditarMaterial');
+
+        if (!nombre || !precioCompra || !porcentajeGanancia) {
+            mensajeDiv.text('El nombre, precio de compra y porcentaje son obligatorios.').removeClass('alert-success').addClass('alert alert-danger');
+            return;
+        }
+
+        const datosActualizados = {
+            nombre: nombre,
+            descripcion: descripcion,
+            precio_compra: parseFloat(precioCompra),
+            porcentaje_ganancia: parseInt(porcentajeGanancia),
+            id_proveedor: idProveedor || null
+        };
+
+        $.ajax({
+            url: `http://127.0.0.1:5000/materiales/${materialId}`,
+            method: 'PUT',
+            headers: {
+                'Authorization': 'Bearer ' + token,
+                'Content-Type': 'application/json'
+            },
+            data: JSON.stringify(datosActualizados),
+            success: function(response) {
+                console.log("Material actualizado:", response);
+                mensajeDiv.text('Material actualizado exitosamente').removeClass('alert-danger').addClass('alert alert-success');
+                
+                setTimeout(function() {
+                    var editModalInstance = bootstrap.Modal.getInstance(document.getElementById('editMaterialModal'));
+                    if (editModalInstance) { editModalInstance.hide(); }
+                    loadMateriales(umbralGlobalStockBajo);
+                }, 1500);
+            },
+            error: function(xhr) {
+                console.error("Error al actualizar material:", xhr.responseText);
+                const errorMsg = xhr.responseJSON?.error || 'Error al actualizar el material';
+                mensajeDiv.text(errorMsg).removeClass('alert-success').addClass('alert alert-danger');
+            }
+        });
     });
 
     // --- Obtener Configuraciones y Luego Cargar Materiales ---
@@ -311,6 +512,7 @@ $(document).ready(function () {
             alert("Error de interfaz: No se pudo mostrar la confirmación de eliminación.");
         }
     });
+
 
     // Cuando se hace clic en el botón "Sí, Eliminar" del modal de confirmación
     $('#confirmDeleteMaterialButton').on('click', function() {

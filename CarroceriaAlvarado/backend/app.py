@@ -763,12 +763,28 @@ def get_todos_los_materiales(decoded_user_rol, decoded_user_id): # Argumentos de
         conn = get_db_connection()
         cursor = conn.cursor()
         
-        # Consulta para obtener todos los campos relevantes de la tabla Materiales
-        # Basado en tu CarroceriaAlvaradoDB.sql: id_material, nombre, descripcion, cantidad, precio_unitario, fecha_ultima_actualizacion
+        # Consulta con LEFT JOIN para incluir información del proveedor y unidad
         sql_query = """
-            SELECT id_material, nombre, descripcion, cantidad, precio_unitario, fecha_ultima_actualizacion 
-            FROM Materiales
-            ORDER BY nombre ASC 
+            SELECT 
+                m.id_material, 
+                m.nombre, 
+                m.descripcion, 
+                m.cantidad, 
+                m.precio_unitario,
+                m.precio_compra,
+                m.precio_venta,
+                m.porcentaje_ganancia,
+                m.fecha_ultima_actualizacion,
+                m.id_proveedor,
+                m.id_unidad,
+                p.nombre_proveedor,
+                p.ruc,
+                u.nombre_unidad,
+                u.abreviatura AS abreviatura_unidad
+            FROM Materiales m
+            LEFT JOIN Proveedores p ON m.id_proveedor = p.id_proveedor
+            LEFT JOIN Unidades_de_Medida u ON m.id_unidad = u.id_unidad
+            ORDER BY m.nombre ASC 
         """
         cursor.execute(sql_query)
         
@@ -781,6 +797,12 @@ def get_todos_los_materiales(decoded_user_rol, decoded_user_id): # Argumentos de
                 material_dict['cantidad'] = int(material_dict['cantidad'])
             if 'precio_unitario' in material_dict and material_dict['precio_unitario'] is not None:
                 material_dict['precio_unitario'] = float(material_dict['precio_unitario'])
+            if 'precio_compra' in material_dict and material_dict['precio_compra'] is not None:
+                material_dict['precio_compra'] = float(material_dict['precio_compra'])
+            if 'precio_venta' in material_dict and material_dict['precio_venta'] is not None:
+                material_dict['precio_venta'] = float(material_dict['precio_venta'])
+            if 'porcentaje_ganancia' in material_dict and material_dict['porcentaje_ganancia'] is not None:
+                material_dict['porcentaje_ganancia'] = int(material_dict['porcentaje_ganancia'])
             if 'fecha_ultima_actualizacion' in material_dict and material_dict['fecha_ultima_actualizacion'] is not None:
                 # Convertir datetime a string ISO para JSON, si no lo hace automáticamente el driver/jsonify
                 material_dict['fecha_ultima_actualizacion'] = material_dict['fecha_ultima_actualizacion'].isoformat()
@@ -808,7 +830,15 @@ def crear_nuevo_material(decoded_user_rol, decoded_user_id): # El argumento depe
 
     nombre = data.get('nombre')
     descripcion = data.get('descripcion') # Puede ser None o vacío si es opcional
-    precio_unitario_str = data.get('precio_unitario')
+    
+    # NUEVO: Soporte para sistema de doble precio
+    precio_compra_str = data.get('precio_compra')
+    porcentaje_ganancia = data.get('porcentaje_ganancia')
+    id_proveedor = data.get('id_proveedor')  # Proveedor opcional
+    
+    # Compatibilidad con código antiguo que usa precio_unitario
+    if precio_compra_str is None:
+        precio_compra_str = data.get('precio_unitario')
     
     cantidad_inicial = 0 # Los nuevos materiales se crean con stock 0
     fecha_actual = datetime.datetime.now()
@@ -816,20 +846,41 @@ def crear_nuevo_material(decoded_user_rol, decoded_user_id): # El argumento depe
     # Validaciones básicas
     if not nombre:
         return jsonify({'error': 'El nombre del material es requerido'}), 400
-    if precio_unitario_str is None: # El precio puede ser 0, pero el campo debe estar presente
-        return jsonify({'error': 'El precio unitario es requerido'}), 400
+    if precio_compra_str is None:
+        return jsonify({'error': 'El precio de compra es requerido'}), 400
 
     try:
-        precio_unitario = float(precio_unitario_str)
-        if precio_unitario < 0:
-            return jsonify({'error': 'El precio unitario no puede ser negativo'}), 400
+        precio_compra = float(precio_compra_str)
+        if precio_compra < 0:
+            return jsonify({'error': 'El precio de compra no puede ser negativo'}), 400
     except (ValueError, TypeError):
-        return jsonify({'error': 'El precio unitario debe ser un número válido'}), 400
+        return jsonify({'error': 'El precio de compra debe ser un número válido'}), 400
+
+    # Validar y calcular precio de venta
+    if porcentaje_ganancia is None:
+        porcentaje_ganancia = 20  # Default 20%
+    
+    try:
+        porcentaje_ganancia = int(porcentaje_ganancia)
+        if porcentaje_ganancia < 5 or porcentaje_ganancia > 50:
+            return jsonify({'error': 'El porcentaje de ganancia debe estar entre 5% y 50%'}), 400
+    except (ValueError, TypeError):
+        return jsonify({'error': 'El porcentaje de ganancia debe ser un número válido'}), 400
+    
+    # Calcular precio de venta automáticamente
+    precio_venta = round(precio_compra * (1 + porcentaje_ganancia / 100), 2)
 
     conn = None
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
+
+        # Validar que el proveedor existe si se proporciona
+        if id_proveedor:
+            cursor.execute("SELECT id_proveedor FROM Proveedores WHERE id_proveedor = ?", (id_proveedor,))
+            if not cursor.fetchone():
+                conn.close()
+                return jsonify({'error': f'El proveedor con ID {id_proveedor} no existe'}), 404
 
         # Opcional: Verificar si ya existe un material con el mismo nombre
         cursor.execute("SELECT id_material FROM Materiales WHERE nombre = ?", (nombre,))
@@ -839,21 +890,24 @@ def crear_nuevo_material(decoded_user_rol, decoded_user_id): # El argumento depe
         
         sql_insert = """
             INSERT INTO Materiales (nombre, descripcion, cantidad, precio_unitario, 
-                                    fecha_ultima_actualizacion, id_usuario_ultima_actualizacion)
-            VALUES (?, ?, ?, ?, ?, ?)
+                                    precio_compra, precio_venta, porcentaje_ganancia,
+                                    fecha_ultima_actualizacion, id_usuario_ultima_actualizacion, id_proveedor)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """
-        # admin_user_id_from_token viene del decorador @admin_required
+        # Mantener precio_unitario sincronizado con precio_compra por compatibilidad
         cursor.execute(sql_insert, 
-                       (nombre, descripcion, cantidad_inicial, precio_unitario, 
-                        fecha_actual, decoded_user_id))
+                       (nombre, descripcion, cantidad_inicial, precio_compra,
+                        precio_compra, precio_venta, porcentaje_ganancia,
+                        fecha_actual, decoded_user_id, id_proveedor))
         conn.commit()
-        
-        # Opcional: Obtener el ID del material recién insertado para devolverlo
-        # new_material_id = cursor.execute("SELECT @@IDENTITY AS id").fetchone()[0] 
-        # (Esto es específico de SQL Server y pyodbc; podría variar)
 
-        print(f"API POST /materiales: Material '{nombre}' creado por admin ID {decoded_user_rol, decoded_user_id}.")
-        return jsonify({'message': f'Material "{nombre}" creado exitosamente.'}), 201 # 201 Created
+        print(f"API POST /materiales: Material '{nombre}' creado por admin ID {decoded_user_rol, decoded_user_id}. Precio compra: {precio_compra}, Precio venta: {precio_venta}, Margen: {porcentaje_ganancia}%")
+        return jsonify({
+            'message': f'Material "{nombre}" creado exitosamente.',
+            'precio_compra': precio_compra,
+            'precio_venta': precio_venta,
+            'porcentaje_ganancia': porcentaje_ganancia
+        }), 201 # 201 Created
 
     except pyodbc.Error as db_err: # Captura errores específicos de pyodbc
         if conn: conn.rollback()
@@ -1089,6 +1143,174 @@ def eliminar_material(decoded_user_rol, decoded_user_id, id_material):
             print(f"API DELETE /materiales/{id_material}: Conexión a BD cerrada desde el bloque finally.")
 
 
+# --- Endpoint: GET /materiales/<id> - Obtener un material específico ---
+@app.route('/materiales/<int:id_material>', methods=['GET'])
+@roles_required('Administrador', 'Supervisor', 'Encargado de Inventario')
+def get_material_por_id(decoded_user_rol, decoded_user_id, id_material):
+    print(f"API GET /materiales/{id_material}: Usuario ID {decoded_user_id} con rol {decoded_user_rol}")
+    
+    conn = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        sql_query = """
+            SELECT 
+                m.id_material, 
+                m.nombre, 
+                m.descripcion, 
+                m.cantidad, 
+                m.precio_unitario,
+                m.precio_compra,
+                m.precio_venta,
+                m.porcentaje_ganancia,
+                m.fecha_ultima_actualizacion,
+                m.id_proveedor,
+                p.nombre_proveedor,
+                p.ruc
+            FROM Materiales m
+            LEFT JOIN Proveedores p ON m.id_proveedor = p.id_proveedor
+            WHERE m.id_material = ?
+        """
+        cursor.execute(sql_query, (id_material,))
+        row = cursor.fetchone()
+        
+        if not row:
+            return jsonify({'error': 'Material no encontrado'}), 404
+        
+        columns = [column[0] for column in cursor.description]
+        material = dict(zip(columns, row))
+        
+        # Convertir tipos para JSON
+        if 'cantidad' in material and material['cantidad'] is not None:
+            material['cantidad'] = int(material['cantidad'])
+        if 'precio_unitario' in material and material['precio_unitario'] is not None:
+            material['precio_unitario'] = float(material['precio_unitario'])
+        if 'precio_compra' in material and material['precio_compra'] is not None:
+            material['precio_compra'] = float(material['precio_compra'])
+        if 'precio_venta' in material and material['precio_venta'] is not None:
+            material['precio_venta'] = float(material['precio_venta'])
+        if 'porcentaje_ganancia' in material and material['porcentaje_ganancia'] is not None:
+            material['porcentaje_ganancia'] = int(material['porcentaje_ganancia'])
+        if 'fecha_ultima_actualizacion' in material and material['fecha_ultima_actualizacion'] is not None:
+            material['fecha_ultima_actualizacion'] = material['fecha_ultima_actualizacion'].isoformat()
+        
+        return jsonify(material), 200
+    
+    except Exception as e:
+        print(f"Error en GET /materiales/{id_material}: {str(e)}")
+        return jsonify({'error': f'Error interno del servidor: {str(e)}'}), 500
+    finally:
+        if conn:
+            conn.close()
+
+
+# --- Endpoint: PUT /materiales/<id> - Actualizar un material ---
+@app.route('/materiales/<int:id_material>', methods=['PUT'])
+@roles_required('Administrador', 'Supervisor')
+def actualizar_material(decoded_user_rol, decoded_user_id, id_material):
+    print(f"API PUT /materiales/{id_material}: Usuario ID {decoded_user_id} con rol {decoded_user_rol}")
+    
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'No se recibieron datos JSON'}), 400
+    
+    nombre = data.get('nombre')
+    descripcion = data.get('descripcion')
+    
+    # NUEVO: Soporte para sistema de doble precio
+    precio_compra = data.get('precio_compra')
+    porcentaje_ganancia = data.get('porcentaje_ganancia')
+    id_proveedor = data.get('id_proveedor')
+    
+    # Compatibilidad con código antiguo
+    if precio_compra is None:
+        precio_compra = data.get('precio_unitario')
+    
+    # Validaciones
+    if not nombre:
+        return jsonify({'error': 'El nombre del material es requerido'}), 400
+    if precio_compra is None:
+        return jsonify({'error': 'El precio de compra es requerido'}), 400
+    
+    try:
+        precio_compra = float(precio_compra)
+        if precio_compra < 0:
+            return jsonify({'error': 'El precio de compra no puede ser negativo'}), 400
+    except (ValueError, TypeError):
+        return jsonify({'error': 'El precio de compra debe ser un número válido'}), 400
+    
+    # Validar y calcular precio de venta
+    if porcentaje_ganancia is None:
+        porcentaje_ganancia = 20  # Default 20%
+    
+    try:
+        porcentaje_ganancia = int(porcentaje_ganancia)
+        if porcentaje_ganancia < 5 or porcentaje_ganancia > 50:
+            return jsonify({'error': 'El porcentaje de ganancia debe estar entre 5% y 50%'}), 400
+    except (ValueError, TypeError):
+        return jsonify({'error': 'El porcentaje de ganancia debe ser un número válido'}), 400
+    
+    # Calcular precio de venta automáticamente
+    precio_venta = round(precio_compra * (1 + porcentaje_ganancia / 100), 2)
+    
+    conn = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Verificar que el material existe
+        cursor.execute("SELECT id_material FROM Materiales WHERE id_material = ?", (id_material,))
+        if not cursor.fetchone():
+            return jsonify({'error': 'Material no encontrado'}), 404
+        
+        # Validar que el proveedor existe si se proporciona
+        if id_proveedor:
+            cursor.execute("SELECT id_proveedor FROM Proveedores WHERE id_proveedor = ?", (id_proveedor,))
+            if not cursor.fetchone():
+                return jsonify({'error': f'El proveedor con ID {id_proveedor} no existe'}), 404
+        
+        # Actualizar el material
+        sql_update = """
+            UPDATE Materiales 
+            SET nombre = ?, 
+                descripcion = ?, 
+                precio_unitario = ?,
+                precio_compra = ?,
+                precio_venta = ?,
+                porcentaje_ganancia = ?,
+                id_proveedor = ?,
+                fecha_ultima_actualizacion = ?,
+                id_usuario_ultima_actualizacion = ?
+            WHERE id_material = ?
+        """
+        fecha_actual = datetime.datetime.now()
+        cursor.execute(sql_update, (nombre, descripcion, precio_compra, 
+                                   precio_compra, precio_venta, porcentaje_ganancia,
+                                   id_proveedor, fecha_actual, decoded_user_id, id_material))
+        conn.commit()
+        
+        print(f"API PUT /materiales/{id_material}: Material actualizado exitosamente. Precio compra: {precio_compra}, Precio venta: {precio_venta}, Margen: {porcentaje_ganancia}%")
+        return jsonify({
+            'message': f'Material "{nombre}" actualizado exitosamente.',
+            'precio_compra': precio_compra,
+            'precio_venta': precio_venta,
+            'porcentaje_ganancia': porcentaje_ganancia
+        }), 200
+    
+    except pyodbc.Error as db_err:
+        if conn: conn.rollback()
+        print(f"Error de BD en PUT /materiales/{id_material}: {str(db_err)}")
+        return jsonify({'error': f'Error de base de datos: {str(db_err)}'}), 500
+    except Exception as e:
+        if conn: conn.rollback()
+        print(f"Error en PUT /materiales/{id_material}: {str(e)}")
+        return jsonify({'error': f'Error interno del servidor: {str(e)}'}), 500
+    finally:
+        if conn:
+            conn.close()
+
+
 # --- ENDPOINTS DE GESTION DE EMPLEADOS---
 @app.route('/empleados', methods=['GET'])
 @roles_required('Administrador')
@@ -1274,7 +1496,580 @@ def registrar_cliente(decoded_user_rol, decoded_user_id):
 
 
 
-# --- ENDPOINTS DE ORDENES DE TRABAJO---
+# --- ENDPOINTS DE GESTION DE PROVEEDORES---
+@app.route('/proveedores', methods=['GET'])
+@roles_required('Administrador', 'Supervisor')
+def get_todos_los_proveedores(decoded_user_rol, decoded_user_id):
+    print(f"API GET /proveedores: Solicitud recibida por usuario ID {decoded_user_id} con rol {decoded_user_rol}")
+    
+    conn = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Consulta para obtener todos los proveedores
+        sql_query = """
+            SELECT id_proveedor, ruc, nombre_proveedor, razon_social, direccion, 
+                   descripcion, telefono, email, estado, fecha_registro 
+            FROM Proveedores
+            ORDER BY nombre_proveedor ASC
+        """
+        cursor.execute(sql_query)
+        
+        columns = [column[0] for column in cursor.description]
+        proveedores = []
+        for row in cursor.fetchall():
+            proveedor_dict = dict(zip(columns, row))
+            # Convertir fecha a string ISO para JSON
+            if 'fecha_registro' in proveedor_dict and proveedor_dict['fecha_registro'] is not None:
+                proveedor_dict['fecha_registro'] = proveedor_dict['fecha_registro'].isoformat()
+            proveedores.append(proveedor_dict)
+        
+        print(f"API GET /proveedores: Devolviendo {len(proveedores)} proveedores.")
+        return jsonify(proveedores), 200
+
+    except Exception as e:
+        print(f"Error en GET /proveedores: {str(e)}")
+        return jsonify({'error': f'Error interno del servidor al obtener proveedores: {str(e)}'}), 500
+    finally:
+        if conn:
+            conn.close()
+            print("API GET /proveedores: Conexión a BD cerrada.")
+
+@app.route('/proveedores', methods=['POST'])
+@roles_required('Administrador', 'Supervisor')
+def registrar_proveedor(decoded_user_rol, decoded_user_id):
+    print(f"API POST /proveedores: Solicitud de {decoded_user_rol} ID {decoded_user_id} para registrar nuevo proveedor.")
+    
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'No se recibieron datos JSON'}), 400
+
+    # Obtener datos del frontend
+    ruc = data.get('ruc')
+    nombre_proveedor = data.get('nombre_proveedor')
+    razon_social = data.get('razon_social')
+    direccion = data.get('direccion', '')
+    descripcion = data.get('descripcion', '')
+    telefono = data.get('telefono', '')
+    email = data.get('email', '')
+
+    # Validación de datos requeridos
+    if not all([ruc, nombre_proveedor, razon_social]):
+        return jsonify({'error': 'Faltan campos requeridos (ruc, nombre_proveedor, razon_social).'}), 400
+
+    # Validar formato de RUC (13 dígitos)
+    if not ruc.isdigit() or len(ruc) != 13:
+        return jsonify({'error': 'El RUC debe contener exactamente 13 dígitos numéricos.'}), 400
+
+    # Validar email si se proporciona
+    if email and ('@' not in email or '.' not in email):
+        return jsonify({'error': 'El formato del correo electrónico es inválido.'}), 400
+
+    conn = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        # Verificar si el RUC ya existe
+        cursor.execute("SELECT id_proveedor FROM Proveedores WHERE ruc = ?", (ruc,))
+        if cursor.fetchone():
+            return jsonify({'error': 'El RUC ya está registrado para otro proveedor.'}), 409
+
+        # Verificar si el email ya existe (si se proporciona)
+        if email:
+            cursor.execute("SELECT id_proveedor FROM Proveedores WHERE email = ?", (email,))
+            if cursor.fetchone():
+                return jsonify({'error': 'El correo electrónico ya está registrado para otro proveedor.'}), 409
+
+        # Insertar nuevo proveedor
+        sql_insert = """
+            INSERT INTO Proveedores (ruc, nombre_proveedor, razon_social, direccion, descripcion, telefono, email) 
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        """
+        params = (ruc, nombre_proveedor, razon_social, direccion, descripcion, telefono, email)
+        
+        cursor.execute(sql_insert, params)
+        
+        # Obtener el ID del proveedor recién creado
+        cursor.execute("SELECT @@IDENTITY AS id;")
+        nuevo_proveedor_id = cursor.fetchone()[0]
+        
+        conn.commit()
+        
+        print(f"API POST /proveedores: Proveedor creado con ID: {nuevo_proveedor_id}")
+        return jsonify({
+            'message': 'Proveedor registrado exitosamente.',
+            'id_proveedor_creado': nuevo_proveedor_id
+        }), 201
+
+    except Exception as e:
+        if conn: conn.rollback()
+        print(f"Error en POST /proveedores: {str(e)}")
+        return jsonify({'error': f'Error interno del servidor al registrar el proveedor: {str(e)}'}), 500
+    finally:
+        if conn:
+            conn.close()
+            print("API POST /proveedores: Conexión a BD cerrada.")
+
+@app.route('/proveedores/<int:id_proveedor>', methods=['GET'])
+@roles_required('Administrador', 'Supervisor')
+def get_proveedor_por_id(decoded_user_rol, decoded_user_id, id_proveedor):
+    print(f"API GET /proveedores/{id_proveedor}: Solicitud de {decoded_user_rol} ID {decoded_user_id}")
+    
+    conn = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        sql_query = """
+            SELECT id_proveedor, ruc, nombre_proveedor, razon_social, direccion, 
+                   descripcion, telefono, email, estado, fecha_registro 
+            FROM Proveedores 
+            WHERE id_proveedor = ?
+        """
+        cursor.execute(sql_query, (id_proveedor,))
+        
+        columns = [column[0] for column in cursor.description]
+        proveedor_row = cursor.fetchone()
+
+        if proveedor_row:
+            proveedor = dict(zip(columns, proveedor_row))
+            # Convertir fecha a string ISO para JSON
+            if 'fecha_registro' in proveedor and proveedor['fecha_registro'] is not None:
+                proveedor['fecha_registro'] = proveedor['fecha_registro'].isoformat()
+            
+            print(f"API GET /proveedores/{id_proveedor}: Proveedor encontrado.")
+            return jsonify(proveedor), 200
+        else:
+            print(f"API GET /proveedores/{id_proveedor}: Proveedor no encontrado.")
+            return jsonify({'error': 'Proveedor no encontrado'}), 404
+
+    except Exception as e:
+        print(f"Error en GET /proveedores/{id_proveedor}: {str(e)}")
+        return jsonify({'error': f'Error interno del servidor: {str(e)}'}), 500
+    finally:
+        if conn:
+            conn.close()
+            print(f"API GET /proveedores/{id_proveedor}: Conexión a BD cerrada.")
+
+@app.route('/proveedores/<int:id_proveedor>', methods=['PUT'])
+@roles_required('Administrador', 'Supervisor')
+def actualizar_proveedor(decoded_user_rol, decoded_user_id, id_proveedor):
+    print(f"API PUT /proveedores/{id_proveedor}: {decoded_user_rol} ID {decoded_user_id} actualizando proveedor")
+    
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'No se recibieron datos JSON.'}), 400
+
+    # Obtener datos a actualizar
+    nuevo_ruc = data.get('ruc')
+    nuevo_nombre = data.get('nombre_proveedor')
+    nueva_razon_social = data.get('razon_social')
+    nueva_direccion = data.get('direccion')
+    nueva_descripcion = data.get('descripcion')
+    nuevo_telefono = data.get('telefono')
+    nuevo_email = data.get('email')
+    nuevo_estado = data.get('estado')
+
+    conn = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        # Verificar que el proveedor existe
+        cursor.execute("SELECT ruc, email FROM Proveedores WHERE id_proveedor = ?", (id_proveedor,))
+        proveedor_actual = cursor.fetchone()
+        if not proveedor_actual:
+            return jsonify({'error': 'Proveedor no encontrado'}), 404
+
+        update_fields = []
+        params = []
+
+        # Validar y agregar RUC si se proporciona
+        if nuevo_ruc:
+            if not nuevo_ruc.isdigit() or len(nuevo_ruc) != 13:
+                return jsonify({'error': 'El RUC debe contener exactamente 13 dígitos numéricos.'}), 400
+            if nuevo_ruc != proveedor_actual[0]:
+                cursor.execute("SELECT id_proveedor FROM Proveedores WHERE ruc = ? AND id_proveedor != ?", (nuevo_ruc, id_proveedor))
+                if cursor.fetchone():
+                    return jsonify({'error': f"RUC '{nuevo_ruc}' ya está en uso."}), 409
+                update_fields.append("ruc = ?")
+                params.append(nuevo_ruc)
+
+        # Validar y agregar email si se proporciona
+        if nuevo_email:
+            if '@' not in nuevo_email or '.' not in nuevo_email:
+                return jsonify({'error': 'Email inválido'}), 400
+            if nuevo_email != proveedor_actual[1]:
+                cursor.execute("SELECT id_proveedor FROM Proveedores WHERE email = ? AND id_proveedor != ?", (nuevo_email, id_proveedor))
+                if cursor.fetchone():
+                    return jsonify({'error': f"Email '{nuevo_email}' ya está en uso."}), 409
+                update_fields.append("email = ?")
+                params.append(nuevo_email)
+
+        # Agregar otros campos
+        if nuevo_nombre:
+            update_fields.append("nombre_proveedor = ?")
+            params.append(nuevo_nombre)
+        
+        if nueva_razon_social:
+            update_fields.append("razon_social = ?")
+            params.append(nueva_razon_social)
+        
+        if nueva_direccion is not None:
+            update_fields.append("direccion = ?")
+            params.append(nueva_direccion)
+        
+        if nueva_descripcion is not None:
+            update_fields.append("descripcion = ?")
+            params.append(nueva_descripcion)
+        
+        if nuevo_telefono is not None:
+            update_fields.append("telefono = ?")
+            params.append(nuevo_telefono)
+        
+        if nuevo_estado and nuevo_estado in ['Activo', 'Inactivo']:
+            update_fields.append("estado = ?")
+            params.append(nuevo_estado)
+
+        if not update_fields:
+            return jsonify({'message': 'No hay cambios para aplicar.'}), 200
+
+        # Construir y ejecutar query
+        query = f"UPDATE Proveedores SET {', '.join(update_fields)} WHERE id_proveedor = ?"
+        params.append(id_proveedor)
+        
+        print(f"API PUT /proveedores/{id_proveedor}: Query: {query}")
+        cursor.execute(query, tuple(params))
+        conn.commit()
+        
+        print(f"API PUT /proveedores/{id_proveedor}: Proveedor actualizado.")
+        return jsonify({'message': f'Proveedor {id_proveedor} actualizado correctamente.'}), 200
+
+    except Exception as e:
+        if conn: conn.rollback()
+        print(f"Error en PUT /proveedores/{id_proveedor}: {str(e)}")
+        return jsonify({'error': f'Error de BD: {str(e)}'}), 500
+    finally:
+        if conn:
+            conn.close()
+            print(f"API PUT /proveedores/{id_proveedor}: Conexión a BD cerrada.")
+
+@app.route('/proveedores/<int:id_proveedor>', methods=['DELETE'])
+@roles_required('Administrador')
+def eliminar_proveedor(decoded_user_rol, decoded_user_id, id_proveedor):
+    print(f"API DELETE /proveedores/{id_proveedor}: Admin ID {decoded_user_id} eliminando proveedor")
+    
+    conn = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        # Verificar que el proveedor existe
+        cursor.execute("SELECT id_proveedor FROM Proveedores WHERE id_proveedor = ?", (id_proveedor,))
+        if not cursor.fetchone():
+            return jsonify({'error': 'Proveedor no encontrado'}), 404
+
+        # Eliminar proveedor (hard delete)
+        # Nota: Si hay relaciones con otras tablas, considerar soft delete (cambiar estado a 'Inactivo')
+        cursor.execute("DELETE FROM Proveedores WHERE id_proveedor = ?", (id_proveedor,))
+        conn.commit()
+        
+        if cursor.rowcount > 0:
+            print(f"API DELETE /proveedores/{id_proveedor}: Proveedor eliminado.")
+            return jsonify({'message': f'Proveedor {id_proveedor} eliminado exitosamente.'}), 200
+        else:
+            return jsonify({'error': 'No se pudo eliminar el proveedor.'}), 500
+
+    except Exception as e:
+        if conn: conn.rollback()
+        print(f"Error en DELETE /proveedores/{id_proveedor}: {str(e)}")
+        return jsonify({'error': f'Error de BD: {str(e)}'}), 500
+    finally:
+        if conn:
+            conn.close()
+            print(f"API DELETE /proveedores/{id_proveedor}: Conexión a BD cerrada.")
+
+
+
+# ============================================
+# Endpoint: GET /proveedores/<id>/materiales
+# Descripción: Obtener todos los materiales de un proveedor específico
+# ============================================
+@app.route('/proveedores/<int:id_proveedor>/materiales', methods=['GET'])
+@roles_required('Administrador', 'Supervisor')
+def get_materiales_por_proveedor(decoded_user_rol, decoded_user_id, id_proveedor):
+    print(f"API GET /proveedores/{id_proveedor}/materiales: Usuario ID {decoded_user_id} con rol {decoded_user_rol}")
+    
+    conn = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        # Verificar que el proveedor existe
+        cursor.execute("SELECT id_proveedor, nombre_proveedor FROM Proveedores WHERE id_proveedor = ?", (id_proveedor,))
+        proveedor = cursor.fetchone()
+        if not proveedor:
+            return jsonify({'error': 'Proveedor no encontrado'}), 404
+
+        # Obtener materiales del proveedor
+        sql_query = """
+            SELECT 
+                id_material, 
+                nombre, 
+                descripcion, 
+                cantidad, 
+                precio_unitario, 
+                fecha_ultima_actualizacion
+            FROM Materiales
+            WHERE id_proveedor = ?
+            ORDER BY nombre ASC
+        """
+        cursor.execute(sql_query, (id_proveedor,))
+        
+        columns = [column[0] for column in cursor.description]
+        materiales = []
+        for row in cursor.fetchall():
+            material_dict = dict(zip(columns, row))
+            # Convertir tipos para JSON
+            if 'cantidad' in material_dict and material_dict['cantidad'] is not None:
+                material_dict['cantidad'] = int(material_dict['cantidad'])
+            if 'precio_unitario' in material_dict and material_dict['precio_unitario'] is not None:
+                material_dict['precio_unitario'] = float(material_dict['precio_unitario'])
+            if 'fecha_ultima_actualizacion' in material_dict and material_dict['fecha_ultima_actualizacion'] is not None:
+                material_dict['fecha_ultima_actualizacion'] = material_dict['fecha_ultima_actualizacion'].isoformat()
+            
+            materiales.append(material_dict)
+        
+        print(f"API GET /proveedores/{id_proveedor}/materiales: Devolviendo {len(materiales)} materiales.")
+        return jsonify(materiales), 200
+
+    except Exception as e:
+        print(f"Error en GET /proveedores/{id_proveedor}/materiales: {str(e)}")
+        return jsonify({'error': f'Error interno del servidor: {str(e)}'}), 500
+    finally:
+        if conn:
+            conn.close()
+            print(f"API GET /proveedores/{id_proveedor}/materiales: Conexión a BD cerrada.")
+
+@app.route('/unidades', methods=['GET'])
+@roles_required('Administrador', 'Supervisor', 'Encargado de Inventario')
+def get_unidades(decoded_user_rol, decoded_user_id):
+    """Obtener todas las unidades de medida activas"""
+    print(f"API GET /unidades: Solicitud de usuario ID {decoded_user_id} con rol {decoded_user_rol}")
+    
+    conn = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            SELECT id_unidad, nombre_unidad, abreviatura, descripcion, estado
+            FROM Unidades_de_Medida
+            WHERE estado = 'Activo'
+            ORDER BY nombre_unidad ASC
+        """)
+        
+        columns = [column[0] for column in cursor.description]
+        unidades = []
+        for row in cursor.fetchall():
+            unidad_dict = dict(zip(columns, row))
+            unidades.append(unidad_dict)
+        
+        print(f"API GET /unidades: Devolviendo {len(unidades)} unidades.")
+        return jsonify(unidades), 200
+    
+    except Exception as e:
+        print(f"Error en GET /unidades: {str(e)}")
+        return jsonify({'error': f'Error al obtener unidades: {str(e)}'}), 500
+    finally:
+        if conn:
+            conn.close()
+            print("API GET /unidades: Conexión a BD cerrada.")
+
+
+@app.route('/unidades', methods=['POST'])
+@roles_required('Administrador')
+def crear_unidad(decoded_user_rol, decoded_user_id):
+    """Crear una nueva unidad de medida (solo Administrador)"""
+    print(f"API POST /unidades: Solicitud de admin ID {decoded_user_id}")
+    
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'No se recibieron datos JSON'}), 400
+    
+    nombre_unidad = data.get('nombre_unidad', '').strip()
+    abreviatura = data.get('abreviatura', '').strip()
+    descripcion = data.get('descripcion', '').strip()
+    
+    if not nombre_unidad or not abreviatura:
+        return jsonify({'error': 'Nombre y abreviatura son obligatorios'}), 400
+    
+    conn = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Verificar si ya existe
+        cursor.execute("SELECT id_unidad FROM Unidades_de_Medida WHERE nombre_unidad = ?", (nombre_unidad,))
+        if cursor.fetchone():
+            return jsonify({'error': f'La unidad "{nombre_unidad}" ya existe'}), 409
+        
+        # Insertar nueva unidad
+        cursor.execute("""
+            INSERT INTO Unidades_de_Medida (nombre_unidad, abreviatura, descripcion)
+            VALUES (?, ?, ?)
+        """, (nombre_unidad, abreviatura, descripcion))
+        conn.commit()
+        
+        # Obtener el ID de la unidad creada
+        cursor.execute("SELECT @@IDENTITY AS id")
+        new_id = cursor.fetchone()[0]
+        
+        print(f"API POST /unidades: Unidad '{nombre_unidad}' creada con ID {new_id}")
+        return jsonify({
+            'message': f'Unidad "{nombre_unidad}" creada exitosamente',
+            'id_unidad': new_id
+        }), 201
+    
+    except Exception as e:
+        if conn:
+            conn.rollback()
+        print(f"Error en POST /unidades: {str(e)}")
+        return jsonify({'error': f'Error al crear unidad: {str(e)}'}), 500
+    finally:
+        if conn:
+            conn.close()
+            print("API POST /unidades: Conexión a BD cerrada.")
+
+
+@app.route('/unidades/<int:id_unidad>', methods=['PUT'])
+@roles_required('Administrador')
+def actualizar_unidad(decoded_user_rol, decoded_user_id, id_unidad):
+    """Actualizar una unidad de medida existente (solo Administrador)"""
+    print(f"API PUT /unidades/{id_unidad}: Solicitud de admin ID {decoded_user_id}")
+    
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'No se recibieron datos JSON'}), 400
+    
+    nombre_unidad = data.get('nombre_unidad', '').strip()
+    abreviatura = data.get('abreviatura', '').strip()
+    descripcion = data.get('descripcion', '').strip()
+    estado = data.get('estado', 'Activo')
+    
+    if not nombre_unidad and not abreviatura and not descripcion and not estado:
+        return jsonify({'error': 'No se proporcionaron datos para actualizar'}), 400
+    
+    conn = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Verificar que la unidad existe
+        cursor.execute("SELECT id_unidad FROM Unidades_de_Medida WHERE id_unidad = ?", (id_unidad,))
+        if not cursor.fetchone():
+            return jsonify({'error': 'Unidad no encontrada'}), 404
+        
+        # Construir query de actualización
+        update_fields = []
+        params = []
+        
+        if nombre_unidad:
+            # Verificar que el nuevo nombre no esté en uso
+            cursor.execute("""
+                SELECT id_unidad FROM Unidades_de_Medida 
+                WHERE nombre_unidad = ? AND id_unidad != ?
+            """, (nombre_unidad, id_unidad))
+            if cursor.fetchone():
+                return jsonify({'error': f'El nombre "{nombre_unidad}" ya está en uso'}), 409
+            update_fields.append("nombre_unidad = ?")
+            params.append(nombre_unidad)
+        
+        if abreviatura:
+            update_fields.append("abreviatura = ?")
+            params.append(abreviatura)
+        
+        if descripcion:
+            update_fields.append("descripcion = ?")
+            params.append(descripcion)
+        
+        if estado:
+            if estado not in ['Activo', 'Inactivo']:
+                return jsonify({'error': 'Estado debe ser "Activo" o "Inactivo"'}), 400
+            update_fields.append("estado = ?")
+            params.append(estado)
+        
+        if not update_fields:
+            return jsonify({'message': 'No hay cambios para aplicar'}), 200
+        
+        query = f"UPDATE Unidades_de_Medida SET {', '.join(update_fields)} WHERE id_unidad = ?"
+        params.append(id_unidad)
+        
+        cursor.execute(query, tuple(params))
+        conn.commit()
+        
+        print(f"API PUT /unidades/{id_unidad}: Unidad actualizada")
+        return jsonify({'message': f'Unidad {id_unidad} actualizada exitosamente'}), 200
+    
+    except Exception as e:
+        if conn:
+            conn.rollback()
+        print(f"Error en PUT /unidades/{id_unidad}: {str(e)}")
+        return jsonify({'error': f'Error al actualizar unidad: {str(e)}'}), 500
+    finally:
+        if conn:
+            conn.close()
+            print(f"API PUT /unidades/{id_unidad}: Conexión a BD cerrada.")
+
+
+@app.route('/unidades/<int:id_unidad>', methods=['DELETE'])
+@roles_required('Administrador')
+def eliminar_unidad(decoded_user_rol, decoded_user_id, id_unidad):
+    """Eliminar una unidad de medida (solo si no está en uso)"""
+    print(f"API DELETE /unidades/{id_unidad}: Solicitud de admin ID {decoded_user_id}")
+    
+    conn = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Verificar que la unidad existe
+        cursor.execute("SELECT nombre_unidad FROM Unidades_de_Medida WHERE id_unidad = ?", (id_unidad,))
+        unidad = cursor.fetchone()
+        if not unidad:
+            return jsonify({'error': 'Unidad no encontrada'}), 404
+        
+        nombre_unidad = unidad[0]
+        
+        # Verificar si está en uso por algún material
+        cursor.execute("SELECT COUNT(*) FROM Materiales WHERE id_unidad = ?", (id_unidad,))
+        count = cursor.fetchone()[0]
+        
+        if count > 0:
+            return jsonify({
+                'error': f'No se puede eliminar la unidad "{nombre_unidad}" porque está siendo usada por {count} material(es)'
+            }), 409
+        
+        # Eliminar la unidad
+        cursor.execute("DELETE FROM Unidades_de_Medida WHERE id_unidad = ?", (id_unidad,))
+        conn.commit()
+        
+        print(f"API DELETE /unidades/{id_unidad}: Unidad '{nombre_unidad}' eliminada")
+        return jsonify({'message': f'Unidad "{nombre_unidad}" eliminada exitosamente'}), 200
+    
+    except Exception as e:
+        if conn:
+            conn.rollback()
+        print(f"Error en DELETE /unidades/{id_unidad}: {str(e)}")
+        return jsonify({'error': f'Error al eliminar unidad: {str(e)}'}), 500
+    finally:
+        if conn:
+            conn.close()
+            print(f"API DELETE /unidades/{id_unidad}: Conexión a BD cerrada.")
+
+
 @app.route('/ordenes-trabajo', methods=['POST'])
 @roles_required('Administrador', 'Supervisor')
 def crear_orden_trabajo(decoded_user_rol, decoded_user_id):
