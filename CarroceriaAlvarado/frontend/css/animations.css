@@ -1,0 +1,277 @@
+/* ========================================
+   ANIMACIONES PERSONALIZADAS - Carrocería Alvarado
+   ======================================== */
+
+/* Transiciones globales suaves */
+* {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Deshabilitar animaciones para usuarios que prefieren movimiento reducido */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* ========================================
+   ANIMACIONES PARA TABLAS
+   ======================================== */
+
+/* Fade-in para tabla completa */
+.table-fade-in {
+    animation: fadeInTable 0.5s ease-in;
+}
+
+@keyframes fadeInTable {
+    from { 
+        opacity: 0; 
+        transform: translateY(20px); 
+    }
+    to { 
+        opacity: 1; 
+        transform: translateY(0); 
+    }
+}
+
+/* Slide-in para filas de tabla */
+.table tbody tr {
+    animation: slideInRow 0.3s ease-out;
+    animation-fill-mode: both;
+}
+
+@keyframes slideInRow {
+    from { 
+        opacity: 0; 
+        transform: translateX(-10px); 
+    }
+    to { 
+        opacity: 1; 
+        transform: translateX(0); 
+    }
+}
+
+/* Efecto hover en filas de tabla */
+.table tbody tr {
+    transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.table tbody tr:hover {
+    transform: scale(1.01);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* ========================================
+   ANIMACIONES PARA BOTONES
+   ======================================== */
+
+.btn {
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Hover effect - elevación */
+.btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Active state */
+.btn:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Disabled state */
+.btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Loading state para botones */
+.btn-loading {
+    pointer-events: none;
+    opacity: 0.7;
+}
+
+/* ========================================
+   ANIMACIONES PARA MODALES
+   ======================================== */
+
+/* Zoom-in al abrir modal */
+.modal.fade .modal-dialog {
+    transition: transform 0.3s ease-out, opacity 0.3s ease-out;
+    transform: scale(0.8);
+    opacity: 0;
+}
+
+.modal.show .modal-dialog {
+    transform: scale(1);
+    opacity: 1;
+}
+
+/* Backdrop fade */
+.modal-backdrop.fade {
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.modal-backdrop.show {
+    opacity: 0.5;
+}
+
+/* ========================================
+   ANIMACIONES PARA FORMULARIOS
+   ======================================== */
+
+/* Focus effect en inputs */
+.form-control,
+.form-select {
+    transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.2s ease;
+}
+
+.form-control:focus,
+.form-select:focus {
+    transform: scale(1.01);
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15);
+}
+
+/* Input group con icono */
+.input-group {
+    transition: all 0.3s ease;
+}
+
+.input-group:focus-within {
+    transform: scale(1.01);
+}
+
+/* ========================================
+   ANIMACIONES PARA CARDS
+   ======================================== */
+
+.card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+}
+
+/* ========================================
+   ANIMACIONES PARA ALERTS
+   ======================================== */
+
+.alert {
+    animation: slideDown 0.4s ease-out;
+}
+
+@keyframes slideDown {
+    from { 
+        opacity: 0; 
+        transform: translateY(-20px); 
+    }
+    to { 
+        opacity: 1; 
+        transform: translateY(0); 
+    }
+}
+
+/* ========================================
+   LOADING SPINNER
+   ======================================== */
+
+.spinner-border {
+    animation: spin 0.75s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* ========================================
+   FADE ANIMATIONS
+   ======================================== */
+
+.fade-in {
+    animation: fadeIn 0.5s ease-in;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.fade-out {
+    animation: fadeOut 0.3s ease-out;
+}
+
+@keyframes fadeOut {
+    from { opacity: 1; }
+    to { opacity: 0; }
+}
+
+/* ========================================
+   PULSE ANIMATION (para notificaciones)
+   ======================================== */
+
+.pulse {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+/* ========================================
+   SHAKE ANIMATION (para errores)
+   ======================================== */
+
+.shake {
+    animation: shake 0.5s;
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+    20%, 40%, 60%, 80% { transform: translateX(5px); }
+}
+
+/* ========================================
+   BOUNCE ANIMATION (para éxito)
+   ======================================== */
+
+.bounce {
+    animation: bounce 0.6s;
+}
+
+@keyframes bounce {
+    0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+    40% { transform: translateY(-15px); }
+    60% { transform: translateY(-7px); }
+}
+
+/* ========================================
+   UTILIDADES
+   ======================================== */
+
+/* Smooth scroll */
+html {
+    scroll-behavior: smooth;
+}
+
+/* Transición suave para cambios de color */
+.bg-transition {
+    transition: background-color 0.3s ease;
+}
+
+/* Transición para opacidad */
+.opacity-transition {
+    transition: opacity 0.3s ease;
+}

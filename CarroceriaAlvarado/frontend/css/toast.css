@@ -1,0 +1,167 @@
+/* ========================================
+   TOAST NOTIFICATIONS - Carrocería Alvarado
+   Sistema de notificaciones moderno
+   ======================================== */
+
+/* Contenedor de toasts */
+.toast-container {
+    position: fixed;
+    top: 80px;
+    right: 20px;
+    z-index: 9999;
+    max-width: 350px;
+}
+
+/* Estilos base para toast */
+.toast {
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    margin-bottom: 10px;
+    animation: slideInRight 0.3s ease-out;
+}
+
+/* Animación de entrada */
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* Animación de salida */
+.toast.hiding {
+    animation: slideOutRight 0.3s ease-out;
+}
+
+@keyframes slideOutRight {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+
+    to {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+}
+
+/* Toast Success */
+.toast-success {
+    border-left: 4px solid #28a745;
+}
+
+.toast-success .toast-header {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.toast-success .toast-icon {
+    color: #28a745;
+}
+
+/* Toast Error */
+.toast-error {
+    border-left: 4px solid #dc3545;
+}
+
+.toast-error .toast-header {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.toast-error .toast-icon {
+    color: #dc3545;
+}
+
+/* Toast Warning */
+.toast-warning {
+    border-left: 4px solid #ffc107;
+}
+
+.toast-warning .toast-header {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+.toast-warning .toast-icon {
+    color: #ffc107;
+}
+
+/* Toast Info */
+.toast-info {
+    border-left: 4px solid #17a2b8;
+}
+
+.toast-info .toast-header {
+    background-color: #d1ecf1;
+    color: #0c5460;
+}
+
+.toast-info .toast-icon {
+    color: #17a2b8;
+}
+
+/* Header del toast */
+.toast-header {
+    border-bottom: none;
+    padding: 12px 15px;
+    font-weight: 600;
+}
+
+/* Icono del toast */
+.toast-icon {
+    font-size: 20px;
+    margin-right: 10px;
+}
+
+/* Cuerpo del toast */
+.toast-body {
+    padding: 12px 15px;
+    color: #333;
+}
+
+/* Botón de cerrar */
+.toast .btn-close {
+    margin-left: auto;
+}
+
+/* Progress bar para auto-dismiss */
+.toast-progress {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 3px;
+    background-color: rgba(0, 0, 0, 0.2);
+    animation: progressBar 3s linear;
+}
+
+@keyframes progressBar {
+    from {
+        width: 100%;
+    }
+
+    to {
+        width: 0%;
+    }
+}
+
+/* Hover effect - pausar auto-dismiss */
+.toast:hover .toast-progress {
+    animation-play-state: paused;
+}
+
+/* Responsive */
+@media (max-width: 576px) {
+    .toast-container {
+        top: 60px;
+        right: 10px;
+        left: 10px;
+        max-width: none;
+    }
+}

@@ -777,6 +777,8 @@ def get_todos_los_materiales(decoded_user_rol, decoded_user_id): # Argumentos de
                 m.fecha_ultima_actualizacion,
                 m.id_proveedor,
                 m.id_unidad,
+                m.ubicacion,
+                m.numero_factura,
                 p.nombre_proveedor,
                 p.ruc,
                 u.nombre_unidad,
@@ -906,17 +908,23 @@ def crear_nuevo_material(decoded_user_rol, decoded_user_id): # El argumento depe
             conn.close() # Cerrar conexión antes de retornar
             return jsonify({'error': f'Ya existe un material con el nombre "{nombre}"'}), 409 # 409 Conflict
         
+        # Obtener ubicacion y numero_factura (opcionales)
+        ubicacion = data.get('ubicacion', '').strip() if data.get('ubicacion') else None
+        numero_factura = data.get('numero_factura', '').strip() if data.get('numero_factura') else None
+        
         sql_insert = """
             INSERT INTO Materiales (nombre, descripcion, cantidad, precio_unitario, 
                                     precio_compra, precio_venta, porcentaje_ganancia,
-                                    fecha_ultima_actualizacion, id_usuario_ultima_actualizacion, id_proveedor, id_unidad)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                                    fecha_ultima_actualizacion, id_usuario_ultima_actualizacion, id_proveedor, id_unidad,
+                                    ubicacion, numero_factura)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """
         # Mantener precio_unitario sincronizado con precio_compra por compatibilidad
         cursor.execute(sql_insert, 
                        (nombre, descripcion, cantidad_inicial, precio_compra,
                         precio_compra, precio_venta, porcentaje_ganancia,
-                        fecha_actual, decoded_user_id, id_proveedor, id_unidad))
+                        fecha_actual, decoded_user_id, id_proveedor, id_unidad,
+                        ubicacion, numero_factura))
         conn.commit()
 
         print(f"API POST /materiales: Material '{nombre}' creado por admin ID {decoded_user_rol, decoded_user_id}. Precio compra: {precio_compra}, Precio venta: {precio_venta}, Margen: {porcentaje_ganancia}%")

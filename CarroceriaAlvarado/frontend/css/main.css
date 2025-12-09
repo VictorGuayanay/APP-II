@@ -1,77 +1,188 @@
-
-
-
-
 /*//////////////////////////////////////////////////////////////////
 [ FONT ]*/
 
 @font-face {
   font-family: Poppins-Regular;
-  src: url('../fonts/poppins/Poppins-Regular.ttf'); 
+  src: url('../fonts/poppins/Poppins-Regular.ttf');
 }
 
 @font-face {
   font-family: Poppins-Medium;
-  src: url('../fonts/poppins/Poppins-Medium.ttf'); 
+  src: url('../fonts/poppins/Poppins-Medium.ttf');
 }
 
 @font-face {
   font-family: Poppins-Bold;
-  src: url('../fonts/poppins/Poppins-Bold.ttf'); 
+  src: url('../fonts/poppins/Poppins-Bold.ttf');
 }
 
 @font-face {
   font-family: Poppins-SemiBold;
-  src: url('../fonts/poppins/Poppins-SemiBold.ttf'); 
+  src: url('../fonts/poppins/Poppins-SemiBold.ttf');
 }
 
 /*////////////////////////////////////////////////////////////////////////////
 /* En tu archivo css/main.css o en un <style> dentro de ver_inventario.html */
 .stock-bajo {
-    background-color: #fff3cd; /* Amarillo claro, similar a table-warning */
-    color: #664d03;
+  background-color: #fff3cd;
+  /* Amarillo claro, similar a table-warning */
+  color: #664d03;
 }
+
 .stock-critico {
-    background-color: #f8d7da; /* Rojo claro, similar a table-danger */
-    color: #842029;
+  background-color: #f8d7da;
+  /* Rojo claro, similar a table-danger */
+  color: #842029;
 }
+
 /*//////////////////////////////////////////////////////////*/
 
 /* Reutilizamos los estilos de admin.html para la estructura general */
-        body { display: flex; min-height: 100vh; flex-direction: column; background-color: #f1f1f1; }
-        .admin-wrapper { display: flex; width: 100%; align-items: stretch; flex-grow: 1; }
-        #sidebar { min-width: 250px; max-width: 250px; background: #23282d; color: #fff; transition: all 0.3s; }
-        #sidebar.active { margin-left: -250px; }
-        #sidebar .sidebar-header { padding: 20px; background: #191e23; text-align: center; font-size: 1.5em; }
-        #sidebar ul.components { padding: 20px 0; }
-        #sidebar ul li a { padding: 10px 20px; font-size: 1.1em; display: block; color: #adb5bd; text-decoration: none; }
-        #sidebar ul li a:hover { color: #fff; background: #343a40; }
-        #sidebar ul li.active > a, a[aria-expanded="true"] { color: #fff; background: #0073aa; }
-        #content { width: 100%; padding: 0; min-height: 100vh; transition: all 0.3s; background-color: #f1f1f1; display: flex; flex-direction: column; }
-        .top-navbar { background-color: #fff; border-bottom: 1px solid #ddd; padding: 0.75rem 1.25rem; display: flex; justify-content: space-between; align-items: center; width: 100%; }
-        .top-navbar .user-info { display: flex; align-items: center; }
-        .top-navbar .user-info span { margin-right: 15px; }
-        .top-navbar .user-info a { color: #0073aa; text-decoration: none; }
-        .content-area { padding: 20px; flex-grow: 1; }
-        .card-header-title { font-size: 1.5rem; font-weight: 400; margin-bottom: 1rem; color: #23282d; }
+body {
+  display: flex;
+  min-height: 100vh;
+  flex-direction: column;
+  background-color: #f1f1f1;
+  overflow: hidden;
+  /* Evitar scroll en body */
+}
+
+.admin-wrapper {
+  display: flex;
+  width: 100%;
+  align-items: stretch;
+  flex-grow: 1;
+  height: 100vh;
+  /* Altura completa de viewport */
+  overflow: hidden;
+  /* Evitar scroll en wrapper */
+}
+
+#sidebar {
+  min-width: 250px;
+  max-width: 250px;
+  background: #23282d;
+  color: #fff;
+  transition: all 0.3s;
+  position: fixed;
+  /* Sidebar fijo */
+  left: 0;
+  top: 0;
+  height: 100vh;
+  /* Altura completa */
+  overflow-y: auto;
+  /* Scroll solo si el sidebar es muy largo */
+  z-index: 1000;
+}
+
+#sidebar.active {
+  margin-left: -250px;
+}
+
+#sidebar .sidebar-header {
+  padding: 20px;
+  background: #191e23;
+  text-align: center;
+  font-size: 1.5em;
+}
+
+#sidebar ul.components {
+  padding: 20px 0;
+}
+
+#sidebar ul li a {
+  padding: 10px 20px;
+  font-size: 1.1em;
+  display: block;
+  color: #adb5bd;
+  text-decoration: none;
+}
+
+#sidebar ul li a:hover {
+  color: #fff;
+  background: #343a40;
+}
+
+#sidebar ul li.active>a,
+a[aria-expanded="true"] {
+  color: #fff;
+  background: #0073aa;
+}
+
+#content {
+  width: 100%;
+  padding: 0;
+  min-height: 100vh;
+  transition: all 0.3s;
+  background-color: #f1f1f1;
+  display: flex;
+  flex-direction: column;
+  margin-left: 250px;
+  /* Espacio para el sidebar fijo */
+  height: 100vh;
+  /* Altura completa */
+  overflow-y: auto;
+  /* Scroll independiente */
+}
+
+.top-navbar {
+  background-color: #fff;
+  border-bottom: 1px solid #ddd;
+  padding: 0.75rem 1.25rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.top-navbar .user-info {
+  display: flex;
+  align-items: center;
+}
+
+.top-navbar .user-info span {
+  margin-right: 15px;
+}
+
+.top-navbar .user-info a {
+  color: #0073aa;
+  text-decoration: none;
+}
+
+.content-area {
+  padding: 20px;
+  flex-grow: 1;
+  overflow-y: auto;
+}
+
+.card-header-title {
+  font-size: 1.5rem;
+  font-weight: 400;
+  margin-bottom: 1rem;
+  color: #23282d;
+}
 
 
 /*//////////////////////////////////////////////////////////////////
 /*NOTIFICACION*/
 /* Dentro de la etiqueta &lt;style&gt; en el &lt;head&gt; de tus archivos HTML */
 .dropdown-menu#notificationList .dropdown-item {
-    white-space: normal; /* Permite que el texto largo de la notificación se ajuste en varias líneas */
-    font-size: 0.9rem;
-    padding: 0.5rem 1rem;
-    border-bottom: 1px solid #eee;
+  white-space: normal;
+  /* Permite que el texto largo de la notificación se ajuste en varias líneas */
+  font-size: 0.9rem;
+  padding: 0.5rem 1rem;
+  border-bottom: 1px solid #eee;
 }
 
 .dropdown-menu\#notificationList .dropdown-item:last-child {
-border-bottom: none;
+  border-bottom: none;
 }
 
 .dropdown-menu\#notificationList .dropdown-item i {
-margin-right: 10px; /
+  margin-right: 10px;/
 }
 
 /*////////////////////////////////////////////////////////////////*/
@@ -84,65 +195,72 @@ margin-right: 10px; /
 /*[ RESTYLE TAG ]*/
 
 * {
-	margin: 0px; 
-	padding: 0px; 
-	box-sizing: border-box;
+  margin: 0px;
+  padding: 0px;
+  box-sizing: border-box;
 }
 
-body, html {
-	height: 100%;
-	font-family: Poppins-Regular, sans-serif;
+body,
+html {
+  height: 100%;
+  font-family: Poppins-Regular, sans-serif;
   display: flex;
   min-height: 100vh;
   flex-direction: column;
-  background-color: #f1f1f1; /
+  background-color: #f1f1f1;/
 }
 
 /*---------------------------------------------*/
 a {
-	font-family: Poppins-Regular;
-	font-size: 14px;
-	line-height: 1.7;
-	color: #666666;
-	margin: 0px;
-	transition: all 0.4s;
-	-webkit-transition: all 0.4s;
+  font-family: Poppins-Regular;
+  font-size: 14px;
+  line-height: 1.7;
+  color: #666666;
+  margin: 0px;
+  transition: all 0.4s;
+  -webkit-transition: all 0.4s;
   -o-transition: all 0.4s;
   -moz-transition: all 0.4s;
 }
 
 a:focus {
-	outline: none !important;
+  outline: none !important;
 }
 
 a:hover {
-	text-decoration: none;
+  text-decoration: none;
   color: #fff;
 }
 
 /*---------------------------------------------*/
-h1,h2,h3,h4,h5,h6 {
-	margin: 0px;
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  margin: 0px;
 }
 
 p {
-	font-family: Poppins-Regular;
-	font-size: 14px;
-	line-height: 1.7;
-	color: #666666;
-	margin: 0px;
+  font-family: Poppins-Regular;
+  font-size: 14px;
+  line-height: 1.7;
+  color: #666666;
+  margin: 0px;
 }
 
-ul, li {
-	margin: 0px;
-	list-style-type: none;
+ul,
+li {
+  margin: 0px;
+  list-style-type: none;
 }
 
 
 /*---------------------------------------------*/
 input {
-	outline: none;
-	border: none;
+  outline: none;
+  border: none;
 }
 
 textarea {
@@ -150,29 +268,74 @@ textarea {
   border: none;
 }
 
-textarea:focus, input:focus {
+textarea:focus,
+input:focus {
   border-color: transparent !important;
 }
 
-input:focus::-webkit-input-placeholder { color:transparent; }
-input:focus:-moz-placeholder { color:transparent; }
-input:focus::-moz-placeholder { color:transparent; }
-input:focus:-ms-input-placeholder { color:transparent; }
+input:focus::-webkit-input-placeholder {
+  color: transparent;
+}
 
-textarea:focus::-webkit-input-placeholder { color:transparent; }
-textarea:focus:-moz-placeholder { color:transparent; }
-textarea:focus::-moz-placeholder { color:transparent; }
-textarea:focus:-ms-input-placeholder { color:transparent; }
+input:focus:-moz-placeholder {
+  color: transparent;
+}
 
-input::-webkit-input-placeholder { color: #fff;}
-input:-moz-placeholder { color: #fff;}
-input::-moz-placeholder { color: #fff;}
-input:-ms-input-placeholder { color: #fff;}
+input:focus::-moz-placeholder {
+  color: transparent;
+}
 
-textarea::-webkit-input-placeholder { color: #fff;}
-textarea:-moz-placeholder { color: #fff;}
-textarea::-moz-placeholder { color: #fff;}
-textarea:-ms-input-placeholder { color: #fff;}
+input:focus:-ms-input-placeholder {
+  color: transparent;
+}
+
+textarea:focus::-webkit-input-placeholder {
+  color: transparent;
+}
+
+textarea:focus:-moz-placeholder {
+  color: transparent;
+}
+
+textarea:focus::-moz-placeholder {
+  color: transparent;
+}
+
+textarea:focus:-ms-input-placeholder {
+  color: transparent;
+}
+
+input::-webkit-input-placeholder {
+  color: #fff;
+}
+
+input:-moz-placeholder {
+  color: #fff;
+}
+
+input::-moz-placeholder {
+  color: #fff;
+}
+
+input:-ms-input-placeholder {
+  color: #fff;
+}
+
+textarea::-webkit-input-placeholder {
+  color: #fff;
+}
+
+textarea:-moz-placeholder {
+  color: #fff;
+}
+
+textarea::-moz-placeholder {
+  color: #fff;
+}
+
+textarea:-ms-input-placeholder {
+  color: #fff;
+}
 
 label {
   margin: 0;
@@ -181,17 +344,17 @@ label {
 
 /*---------------------------------------------*/
 button {
-	outline: none !important;
-	border: none;
-	background: transparent;
+  outline: none !important;
+  border: none;
+  background: transparent;
 }
 
 button:hover {
-	cursor: pointer;
+  cursor: pointer;
 }
 
 iframe {
-	border: none !important;
+  border: none !important;
 }
 
 
@@ -214,7 +377,7 @@ iframe {
 }
 
 .container-login100 {
-  width: 100%;  
+  width: 100%;
   min-height: 100vh;
   display: -webkit-box;
   display: -webkit-flex;
@@ -230,7 +393,7 @@ iframe {
   background-position: center;
   background-size: cover;
   position: relative;
-  z-index: 1;  
+  z-index: 1;
 }
 
 .container-login100::before {
@@ -251,7 +414,8 @@ iframe {
   overflow: hidden;
   padding: 55px 55px 37px 55px;
 
-  background: #2E4057; /* fallback */
+  background: #2E4057;
+  /* fallback */
   background: -webkit-linear-gradient(top, #749dbc, #2e2e2d);
   background: -o-linear-gradient(top, #749dbc, #2e2e2d);
   background: -moz-linear-gradient(top, #749dbc, #2e2e2d);
@@ -267,7 +431,7 @@ iframe {
 }
 
 .login100-form-logo {
-  font-size: 60px; 
+  font-size: 60px;
   color: #333333;
 
   display: -webkit-box;
@@ -302,7 +466,7 @@ iframe {
 .wrap-input100 {
   width: 100%;
   position: relative;
-  border-bottom: 2px solid rgba(255,255,255,0.24);
+  border-bottom: 2px solid rgba(255, 255, 255, 0.24);
   margin-bottom: 30px;
 }
 
@@ -319,7 +483,7 @@ iframe {
   padding: 0 5px 0 38px;
 }
 
-/*---------------------------------------------*/ 
+/*---------------------------------------------*/
 .focus-input100 {
   position: absolute;
   display: block;
@@ -370,21 +534,21 @@ iframe {
   padding-left: 5px;
 }
 
-.input100:focus + .focus-input100::after {
+.input100:focus+.focus-input100::after {
   top: -22px;
   font-size: 18px;
 }
 
-.input100:focus + .focus-input100::before {
+.input100:focus+.focus-input100::before {
   width: 100%;
 }
 
-.has-val.input100 + .focus-input100::after {
+.has-val.input100+.focus-input100::after {
   top: -22px;
   font-size: 18px;
 }
 
-.has-val.input100 + .focus-input100::before {
+.has-val.input100+.focus-input100::before {
   width: 100%;
 }
 
@@ -445,7 +609,7 @@ iframe {
   transform: translateY(-50%);
 }
 
-.input-checkbox100:checked + .label-checkbox100::before {
+.input-checkbox100:checked+.label-checkbox100::before {
   color: #555555;
 }
 
@@ -481,7 +645,8 @@ iframe {
   height: 50px;
   border-radius: 25px;
 
-  background: #2E4057; /* fallback */
+  background: #2E4057;
+  /* fallback */
   background: -webkit-linear-gradient(top, #749dbc, #2e2e2d);
   background: -o-linear-gradient(top, #749dbc, #2e2e2d);
   background: -moz-linear-gradient(top, #749dbc, #2e2e2d);
@@ -607,6 +772,7 @@ iframe {
   text-align: center;
   color: #e74c3c;
 }
+
 .message.success {
   color: #27ae60;
 }
@@ -621,9 +787,19 @@ iframe {
 #sidebar {
   min-width: 250px;
   max-width: 250px;
-  background: #23282d; /* Color de sidebar WP */
+  background: #23282d;
+  /* Color de sidebar WP */
   color: #fff;
   transition: all 0.3s;
+  position: fixed;
+  /* Sidebar fijo */
+  left: 0;
+  top: 0;
+  height: 100vh;
+  /* Altura completa */
+  overflow-y: auto;
+  /* Scroll solo si el sidebar es muy largo */
+  z-index: 1000;
 }
 
 #sidebar.active {
@@ -632,7 +808,8 @@ iframe {
 
 #sidebar .sidebar-header {
   padding: 20px;
-  background: #191e23; /* Un poco más oscuro para el header del sidebar */
+  background: #191e23;
+  /* Un poco más oscuro para el header del sidebar */
   text-align: center;
   font-size: 1.5em;
 }
@@ -651,26 +828,38 @@ iframe {
   padding: 10px 20px;
   font-size: 1.1em;
   display: block;
-  color: #adb5bd; /* Color de enlaces WP */
+  color: #adb5bd;
+  /* Color de enlaces WP */
   text-decoration: none;
 }
 
 #sidebar ul li a:hover {
   color: #fff;
-  background: #343a40; /* Hover en enlaces */
+  background: #343a40;
+  /* Hover en enlaces */
 }
 
-#sidebar ul li.active > a, a[aria-expanded="true"] {
+#sidebar ul li.active>a,
+a[aria-expanded="true"] {
   color: #fff;
-  background: #0073aa; /* Color de activo/seleccionado WP */
+  background: #0073aa;
+  /* Color de activo/seleccionado WP */
 }
 
 #content {
   width: 100%;
-  padding: 20px;
+  padding: 0;
   min-height: 100vh;
   transition: all 0.3s;
   background-color: #f1f1f1;
+  margin-left: 250px;
+  /* Espacio para el sidebar fijo */
+  height: 100vh;
+  /* Altura completa */
+  overflow-y: auto;
+  /* Scroll independiente */
+  display: flex;
+  flex-direction: column;
 }
 
 .top-navbar {
@@ -681,20 +870,24 @@ iframe {
   justify-content: space-between;
   align-items: center;
 }
+
 .top-navbar .navbar-brand {
   color: #333;
   font-weight: bold;
 }
+
 .top-navbar .user-info a {
   color: #0073aa;
   text-decoration: none;
 }
+
 .card-header-title {
   font-size: 1.5rem;
   font-weight: 400;
   margin-bottom: 1rem;
   color: #23282d;
 }
+
 .table-actions button {
   margin-right: 5px;
 }
