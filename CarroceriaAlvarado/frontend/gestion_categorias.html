@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <title>Gestión de Categorías - Carrocería Alvarado</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" type="text/css" href="vendor/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="fonts/font-awesome-4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" type="text/css" href="css/main.css">
+    <link rel="stylesheet" href="css/fixed-layout.css">
+</head>
+<body>
+
+<div class="admin-wrapper">
+    <!-- Sidebar -->
+    <nav id="sidebar">
+        <div class="sidebar-header">
+            <h3>Carrocería Alvarado</h3>
+        </div>
+        <ul class="list-unstyled components">
+            <p class="ms-3">Administración</p>
+            <li>
+                <a href="#dashboardSubmenu" data-bs-toggle="collapse" aria-expanded="false" class="dropdown-toggle">
+                    <i class="fa fa-tachometer"></i> Dashboard
+                </a>
+                <ul class="collapse list-unstyled" id="dashboardSubmenu">
+                    <li><a href="vision_general.html">Visión General</a></li>
+                </ul>
+            </li>
+            <li> 
+                <a href="admin.html">
+                    <i class="fa fa-users"></i> Panel Principal
+                </a>
+            </li>
+            <li>
+                <a href="#inventarioSubmenu" data-bs-toggle="collapse" aria-expanded="true" class="dropdown-toggle">
+                    <i class="fa fa-archive"></i> Inventario
+                </a>
+                <ul class="collapse list-unstyled show" id="inventarioSubmenu">
+                    <li><a href="ver_inventario.html">Ver Inventario</a></li>
+                    <li><a href="anadir_material.html">Añadir Material</a></li>
+                    <li><a href="entradas_salidas_inventario.html">Entradas/Salidas</a></li>
+                    <li class="active"><a href="gestion_categorias.html">Categorías de Materiales</a></li>
+                </ul>
+            </li>
+            
+            <li><a href="ingresar_empleado.html"><i class="fa fa-address-card"></i> Ingreso Empleados</a></li>
+            <li><a href="ver_empleados.html"><i class="fa fa-users"></i> Ver Empleados</a></li>
+            <li><a href="ingresar_cliente.html"><i class="fa fa-user-plus"></i> Ingreso Clientes</a></li>
+            <li><a href="ingresar_proveedor.html"><i class="fa fa-truck"></i> Ingreso Proveedores</a></li>
+            <li><a href="ver_proveedores.html"><i class="fa fa-list"></i> Ver Proveedores</a></li>
+            <li><a href="orden_trabajo.html"><i class="fa fa-briefcase"></i> Órdenes de Trabajo</a></li>
+            <li><a href="listar_ordenes_trabajo.html"><i class="fa fa-briefcase"></i> Listar Órdenes de Trabajo</a></li>
+            <li><a href="consultar_comprobantes.html"><i class="fa fa-money"></i> Comprobante</a></li>
+            <li><a href="reportes.html"><i class="fa fa-bar-chart"></i> Reportes</a></li>
+            <li><a href="#" data-bs-toggle="modal" data-bs-target="#settingsModal" ><i class="fa fa-cog"></i> Configuración</a></li>
+        </ul>
+    </nav>
+
+    <!-- Page Content -->
+    <div id="content">
+        <nav class="navbar navbar-expand-lg navbar-light top-navbar">
+            <div class="container-fluid">
+                <button type="button" id="sidebarCollapse" class="btn btn-info">
+                    <i class="fa fa-align-left"></i> <span>Menú</span>
+                </button>
+                <div class="user-info">
+                    <span>Hola, <strong id="currentUserName">Usuario</strong>!</span>
+                    <a href="#" id="logoutButton" class="ms-3">Cerrar Sesión</a>
+                </div>
+            </div>
+        </nav>
+
+        <div class="content-area container-fluid pt-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h2 class="card-header-title">Categorías de Materiales</h2>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#agregarCategoriaModal">
+                    <i class="fa fa-plus"></i> Agregar Categoría
+                </button>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    Lista de Categorías
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Código Prefijo</th>
+                                    <th>Nombre</th>
+                                    <th>Descripción</th>
+                                    <th>Estado</th>
+                                    <th>Fecha Creación</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="categoriasTableBody">
+                                <tr>
+                                    <td colspan="7" class="text-center">Cargando categorías...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Agregar Categoría -->
+<div class="modal fade" id="agregarCategoriaModal" tabindex="-1" aria-labelledby="agregarCategoriaModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="agregarCategoriaModalLabel">Agregar Nueva Categoría</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formAgregarCategoria">
+                    <div class="mb-3">
+                        <label for="codigoPrefijo" class="form-label">Código Prefijo <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control text-uppercase" id="codigoPrefijo" maxlength="10" required placeholder="Ej: PIN, TAP">
+                        <small class="text-muted">2-10 letras mayúsculas, sin números ni espacios</small>
+                    </div>
+                    <div class="mb-3">
+                        <label for="nombreCategoria" class="form-label">Nombre <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="nombreCategoria" required placeholder="Ej: Pinturas">
+                    </div>
+                    <div class="mb-3">
+                        <label for="descripcionCategoria" class="form-label">Descripción</label>
+                        <textarea class="form-control" id="descripcionCategoria" rows="3" placeholder="Descripción opcional"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="guardarCategoria()">Guardar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Editar Categoría -->
+<div class="modal fade" id="editarCategoriaModal" tabindex="-1" aria-labelledby="editarCategoriaModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editarCategoriaModalLabel">Editar Categoría</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formEditarCategoria">
+                    <input type="hidden" id="editIdCategoria">
+                    <div class="mb-3">
+                        <label for="editCodigoPrefijo" class="form-label">Código Prefijo</label>
+                        <input type="text" class="form-control" id="editCodigoPrefijo" readonly>
+                        <small class="text-muted">El código prefijo no se puede modificar</small>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editNombreCategoria" class="form-label">Nombre <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="editNombreCategoria" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editDescripcionCategoria" class="form-label">Descripción</label>
+                        <textarea class="form-control" id="editDescripcionCategoria" rows="3"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editEstado" class="form-label">Estado</label>
+                        <select class="form-select" id="editEstado">
+                            <option value="1">Activo</option>
+                            <option value="0">Inactivo</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="guardarCambiosCategoria()">Guardar Cambios</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Scripts -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+$(document).ready(function() {
+    // Lógica estándar
+    $('#sidebarCollapse').on('click', function() { $('#sidebar').toggleClass('active'); });
+    const token = localStorage.getItem('token');
+    if (!token) { window.location.href = 'index.html'; return; }
+    const loggedInUsername = localStorage.getItem('loggedInUsername');
+    if (loggedInUsername) { $('#currentUserName').text(loggedInUsername); }
+    $('#logoutButton').on('click', function(e) { e.preventDefault(); localStorage.clear(); window.location.href = 'index.html'; });
+
+    // Cargar categorías al iniciar
+    cargarCategorias();
+
+    // Auto-mayúsculas en código prefijo
+    $('#codigoPrefijo').on('input', function() {
+        this.value = this.value.toUpperCase().replace(/[^A-Z]/g, '');
+    });
+});
+
+function cargarCategorias() {
+    const token = localStorage.getItem('token');
+    const tbody = $('#categoriasTableBody');
+    
+    $.ajax({
+        url: 'http://127.0.0.1:5000/categorias-materiales',
+        method: 'GET',
+        headers: {'Authorization': 'Bearer ' + token},
+        success: function(categorias) {
+            tbody.empty();
+            
+            if (categorias.length === 0) {
+                tbody.append('<tr><td colspan="7" class="text-center">No hay categorías registradas</td></tr>');
+                return;
+            }
+            
+            categorias.forEach(function(cat) {
+                const estadoBadge = cat.estado === 1 
+                    ? '<span class="badge bg-success">Activo</span>' 
+                    : '<span class="badge bg-secondary">Inactivo</span>';
+                
+                const fecha = cat.fecha_creacion ? new Date(cat.fecha_creacion).toLocaleDateString() : 'N/A';
+                
+                const fila = `
+                    <tr>
+                        <td>${cat.id_categoria}</td>
+                        <td><strong>${cat.codigo_prefijo}</strong></td>
+                        <td>${cat.nombre_categoria}</td>
+                        <td>${cat.descripcion || '-'}</td>
+                        <td>${estadoBadge}</td>
+                        <td>${fecha}</td>
+                        <td class="text-nowrap">
+                            <button class="btn btn-warning btn-sm me-1" onclick="abrirModalEditar(${cat.id_categoria})" title="Editar">
+                                <i class="fa fa-edit"></i>
+                            </button>
+                            <button class="btn btn-danger btn-sm" onclick="eliminarCategoria(${cat.id_categoria}, '${cat.nombre_categoria}')" title="Eliminar">
+                                <i class="fa fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+                tbody.append(fila);
+            });
+        },
+        error: function(xhr) {
+            console.error('Error al cargar categorías:', xhr);
+            tbody.html('<tr><td colspan="7" class="text-center text-danger">Error al cargar categorías</td></tr>');
+        }
+    });
+}
+
+function guardarCategoria() {
+    const token = localStorage.getItem('token');
+    const codigo = $('#codigoPrefijo').val().trim().toUpperCase();
+    const nombre = $('#nombreCategoria').val().trim();
+    const descripcion = $('#descripcionCategoria').val().trim();
+    
+    // Validaciones
+    if (!codigo || !nombre) {
+        alert('El código prefijo y el nombre son requeridos');
+        return;
+    }
+    
+    if (codigo.length < 2 || codigo.length > 10) {
+        alert('El código prefijo debe tener entre 2 y 10 caracteres');
+        return;
+    }
+    
+    if (!/^[A-Z]+$/.test(codigo)) {
+        alert('El código prefijo solo puede contener letras mayúsculas');
+        return;
+    }
+    
+    const categoriaData = {
+        codigo_prefijo: codigo,
+        nombre_categoria: nombre,
+        descripcion: descripcion
+    };
+    
+    $.ajax({
+        url: 'http://127.0.0.1:5000/categorias-materiales',
+        method: 'POST',
+        headers: {
+            'Authorization': 'Bearer ' + token,
+            'Content-Type': 'application/json'
+        },
+        data: JSON.stringify(categoriaData),
+        success: function(response) {
+            alert(response.message);
+            $('#agregarCategoriaModal').modal('hide');
+            $('#formAgregarCategoria')[0].reset();
+            cargarCategorias();
+        },
+        error: function(xhr) {
+            const error = xhr.responseJSON?.error || 'Error al crear categoría';
+            alert(error);
+        }
+    });
+}
+
+function abrirModalEditar(idCategoria) {
+    const token = localStorage.getItem('token');
+    
+    $.ajax({
+        url: 'http://127.0.0.1:5000/categorias-materiales',
+        method: 'GET',
+        headers: {'Authorization': 'Bearer ' + token},
+        success: function(categorias) {
+            const categoria = categorias.find(c => c.id_categoria === idCategoria);
+            if (categoria) {
+                $('#editIdCategoria').val(categoria.id_categoria);
+                $('#editCodigoPrefijo').val(categoria.codigo_prefijo);
+                $('#editNombreCategoria').val(categoria.nombre_categoria);
+                $('#editDescripcionCategoria').val(categoria.descripcion || '');
+                $('#editEstado').val(categoria.estado);
+                
+                $('#editarCategoriaModal').modal('show');
+            }
+        }
+    });
+}
+
+function guardarCambiosCategoria() {
+    const token = localStorage.getItem('token');
+    const idCategoria = $('#editIdCategoria').val();
+    const nombre = $('#editNombreCategoria').val().trim();
+    const descripcion = $('#editDescripcionCategoria').val().trim();
+    const estado = parseInt($('#editEstado').val());
+    
+    if (!nombre) {
+        alert('El nombre es requerido');
+        return;
+    }
+    
+    const categoriaData = {
+        nombre_categoria: nombre,
+        descripcion: descripcion,
+        estado: estado
+    };
+    
+    $.ajax({
+        url: `http://127.0.0.1:5000/categorias-materiales/${idCategoria}`,
+        method: 'PUT',
+        headers: {
+            'Authorization': 'Bearer ' + token,
+            'Content-Type': 'application/json'
+        },
+        data: JSON.stringify(categoriaData),
+        success: function(response) {
+            alert(response.message);
+            $('#editarCategoriaModal').modal('hide');
+            cargarCategorias();
+        },
+        error: function(xhr) {
+            const error = xhr.responseJSON?.error || 'Error al actualizar categoría';
+            alert(error);
+        }
+    });
+}
+
+function eliminarCategoria(idCategoria, nombreCategoria) {
+    if (!confirm(`¿Está seguro de eliminar la categoría "${nombreCategoria}"?\n\nNota: Solo se puede eliminar si no tiene materiales asociados.`)) {
+        return;
+    }
+    
+    const token = localStorage.getItem('token');
+    
+    $.ajax({
+        url: `http://127.0.0.1:5000/categorias-materiales/${idCategoria}`,
+        method: 'DELETE',
+        headers: {'Authorization': 'Bearer ' + token},
+        success: function(response) {
+            alert(response.message);
+            cargarCategorias();
+        },
+        error: function(xhr) {
+            const error = xhr.responseJSON?.error || 'Error al eliminar categoría';
+            alert(error);
+        }
+    });
+}
+</script>
+
+</body>
+</html>

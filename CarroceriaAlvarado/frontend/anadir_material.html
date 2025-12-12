@@ -80,6 +80,34 @@
                 </div>
                 <div class="card-body">
                     <form id="formAnadirMaterial">
+                        <!-- Categoría y Código del Material (PRIMERO) -->
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="materialCategoria" class="form-label">Categoría <span class="text-danger">*</span></label>
+                                <select class="form-control" id="materialCategoria" required>
+                                    <option value="">Cargando categorías...</option>
+                                </select>
+                                <small class="form-text text-muted">Seleccione la categoría del material</small>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="materialCodigoNumero" class="form-label">Código (5 dígitos) <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <span class="input-group-text" id="codigoPrefijo">---</span>
+                                    <input type="text" class="form-control" id="materialCodigoNumero" placeholder="00001" maxlength="5" pattern="[0-9]{5}" required>
+                                </div>
+                                <small class="form-text text-muted">Ingrese 5 dígitos numéricos</small>
+                            </div>
+                        </div>
+                        
+                        <!-- Preview del código completo -->
+                        <div class="alert alert-info" id="codigoPreview" style="display: none;">
+                            <strong><i class="fa fa-barcode"></i> Código completo:</strong> 
+                            <span id="codigoCompleto" class="fs-3 fw-bold">---00000</span>
+                        </div>
+                        
+                        <hr class="my-4">
+                        
+                        <!-- Nombre y Descripción -->
                         <div class="mb-3">
                             <label for="materialNombre" class="form-label">Nombre del Material <span class="text-danger">*</span></label>
                             <input type="text" class="form-control" id="materialNombre" placeholder="Ej: Tornillo Phillips 1/4" required>
@@ -88,6 +116,7 @@
                             <label for="materialDescripcion" class="form-label">Descripción (Opcional)</label>
                             <textarea class="form-control" id="materialDescripcion" rows="3" placeholder="Ej: De acero inoxidable, para metal, caja de 100 unidades"></textarea>
                         </div>
+                        
                         <div class="mb-3">
                             <label for="materialProveedor" class="form-label">Proveedor (Opcional)</label>
                             <select class="form-control" id="materialProveedor">
@@ -274,6 +303,56 @@ $(document).ready(function () {
     
     cargarUnidadesDeMedida(); // Cargar al iniciar
     
+    // --- Cargar Categorías de Materiales ---
+    function cargarCategorias() {
+        $.ajax({
+            url: 'http://127.0.0.1:5000/categorias-materiales',
+            method: 'GET',
+            headers: { 'Authorization': 'Bearer ' + token },
+            success: function(categorias) {
+                const $select = $('#materialCategoria');
+                $select.empty().append('<option value="">Seleccione una categoría...</option>');
+                
+                // Filtrar solo categorías activas
+                const categoriasActivas = categorias.filter(cat => cat.estado === 1);
+                
+                categoriasActivas.forEach(function(cat) {
+                    $select.append(`<option value="${cat.id_categoria}" data-prefijo="${cat.codigo_prefijo}">${cat.codigo_prefijo} - ${cat.nombre_categoria}</option>`);
+                });
+            },
+            error: function(xhr) {
+                console.error("Error al cargar categorías:", xhr.responseText);
+                $('#materialCategoria').html('<option value="">Error al cargar categorías</option>');
+            }
+        });
+    }
+    
+    cargarCategorias(); // Cargar al iniciar
+    
+    // --- Preview del Código al seleccionar categoría o ingresar número ---
+    function actualizarPreviewCodigo() {
+        const categoriaSelect = $('#materialCategoria');
+        const prefijo = categoriaSelect.find('option:selected').data('prefijo') || '---';
+        const numero = $('#materialCodigoNumero').val().padStart(5, '0');
+        
+        $('#codigoPrefijo').text(prefijo);
+        
+        if (prefijo !== '---' && numero.length === 5) {
+            const codigoCompleto = prefijo + numero;
+            $('#codigoCompleto').text(codigoCompleto);
+            $('#codigoPreview').slideDown();
+        } else {
+            $('#codigoPreview').slideUp();
+        }
+    }
+    
+    $('#materialCategoria').on('change', actualizarPreviewCodigo);
+    $('#materialCodigoNumero').on('input', function() {
+        // Solo permitir números
+        this.value = this.value.replace(/[^0-9]/g, '');
+        actualizarPreviewCodigo();
+    });
+    
     // --- Calcular Precio de Venta Automáticamente ---
     function calcularPrecioVenta() {
         const precioCompra = parseFloat($('#materialPrecioCompra').val()) || 0;
@@ -299,14 +378,23 @@ $(document).ready(function () {
 
         const nombreMaterial = $('#materialNombre').val().trim();
         const descripcionMaterial = $('#materialDescripcion').val().trim();
+        const idCategoria = $('#materialCategoria').val();
+        const codigoNumero = $('#materialCodigoNumero').val().trim();
         const precioCompra = $('#materialPrecioCompra').val();
         const porcentajeGanancia = $('#materialPorcentajeGanancia').val();
         const idProveedor = $('#materialProveedor').val();
         const idUnidad = $('#materialUnidad').val();
         const cantidadInicial = $('#materialCantidadInicial').val();
 
-        if (!nombreMaterial || !precioCompra || !porcentajeGanancia || !idUnidad || cantidadInicial === '') {
-            mensajeDiv.text('El nombre, precio de compra, porcentaje de ganancia, unidad de medida y cantidad inicial son obligatorios.').removeClass('alert-info').addClass('alert-danger');
+        // Validaciones básicas
+        if (!nombreMaterial || !idCategoria || !codigoNumero || !precioCompra || !porcentajeGanancia || !idUnidad || cantidadInicial === '') {
+            mensajeDiv.text('Todos los campos marcados con * son obligatorios.').removeClass('alert-info').addClass('alert-danger');
+            return;
+        }
+        
+        // Validar código (5 dígitos)
+        if (!/^\d{5}$/.test(codigoNumero)) {
+            mensajeDiv.text('El código debe ser exactamente 5 dígitos numéricos.').removeClass('alert-info').addClass('alert-danger');
             return;
         }
         
@@ -334,10 +422,16 @@ $(document).ready(function () {
             mensajeDiv.text('La cantidad inicial ingresada no es válida.').removeClass('alert-info').addClass('alert-danger');
             return;
         }
+        // Construir código completo
+        const categoriaSelect = $('#materialCategoria');
+        const prefijo = categoriaSelect.find('option:selected').data('prefijo');
+        const codigoCompleto = prefijo + codigoNumero;
 
         const nuevoMaterialData = {
             nombre: nombreMaterial,
             descripcion: descripcionMaterial,
+            id_categoria: parseInt(idCategoria),
+            codigo_numero: codigoNumero,
             precio_compra: precioFloat,
             porcentaje_ganancia: parseInt(porcentajeGanancia),
             id_proveedor: idProveedor || null,
@@ -348,6 +442,7 @@ $(document).ready(function () {
         };
 
         console.log("Enviando datos de nuevo material:", nuevoMaterialData);
+        console.log("Código completo que se generará:", codigoCompleto);
 
         $.ajax({
             

@@ -1034,7 +1034,7 @@ def get_todos_los_materiales(decoded_user_rol, decoded_user_id): # Argumentos de
         conn = get_db_connection()
         cursor = conn.cursor()
         
-        # Consulta con LEFT JOIN para incluir información del proveedor y unidad
+        # Consulta con LEFT JOIN para incluir información del proveedor, unidad y categoría
         sql_query = """
             SELECT 
                 m.id_material, 
@@ -1048,15 +1048,20 @@ def get_todos_los_materiales(decoded_user_rol, decoded_user_id): # Argumentos de
                 m.fecha_ultima_actualizacion,
                 m.id_proveedor,
                 m.id_unidad,
+                m.id_categoria,
+                m.codigo_material,
                 m.ubicacion,
                 m.numero_factura,
                 p.nombre_proveedor,
                 p.ruc,
                 u.nombre_unidad,
-                u.abreviatura AS abreviatura_unidad
+                u.abreviatura AS abreviatura_unidad,
+                c.nombre_categoria,
+                c.codigo_prefijo
             FROM Materiales m
             LEFT JOIN Proveedores p ON m.id_proveedor = p.id_proveedor
             LEFT JOIN Unidades_de_Medida u ON m.id_unidad = u.id_unidad
+            LEFT JOIN CategoriaMateriales c ON m.id_categoria = c.id_categoria
             ORDER BY m.nombre ASC 
         """
         cursor.execute(sql_query)
@@ -1104,6 +1109,10 @@ def crear_nuevo_material(decoded_user_rol, decoded_user_id): # El argumento depe
     nombre = data.get('nombre')
     descripcion = data.get('descripcion') # Puede ser None o vacío si es opcional
     
+    # NUEVO: Categoría y código
+    id_categoria = data.get('id_categoria')
+    codigo_numero = data.get('codigo_numero')  # 5 dígitos numéricos
+    
     # NUEVO: Soporte para sistema de doble precio
     precio_compra_str = data.get('precio_compra')
     porcentaje_ganancia = data.get('porcentaje_ganancia')
@@ -1121,10 +1130,18 @@ def crear_nuevo_material(decoded_user_rol, decoded_user_id): # El argumento depe
     # Validaciones básicas
     if not nombre:
         return jsonify({'error': 'El nombre del material es requerido'}), 400
+    if not id_categoria:
+        return jsonify({'error': 'La categoría es requerida'}), 400
+    if not codigo_numero:
+        return jsonify({'error': 'El código numérico es requerido'}), 400
     if precio_compra_str is None:
         return jsonify({'error': 'El precio de compra es requerido'}), 400
     if not id_unidad:
         return jsonify({'error': 'La unidad de medida es requerida'}), 400
+    
+    # Validar formato de código (5 dígitos)
+    if not isinstance(codigo_numero, str) or len(codigo_numero) != 5 or not codigo_numero.isdigit():
+        return jsonify({'error': 'El código debe ser exactamente 5 dígitos numéricos'}), 400
     
     # Validar cantidad inicial
     try:
@@ -1160,6 +1177,22 @@ def crear_nuevo_material(decoded_user_rol, decoded_user_id): # El argumento depe
         conn = get_db_connection()
         cursor = conn.cursor()
 
+        # Validar que la categoría existe
+        cursor.execute("SELECT codigo_prefijo FROM CategoriaMateriales WHERE id_categoria = ?", (id_categoria,))
+        row = cursor.fetchone()
+        if not row:
+            conn.close()
+            return jsonify({'error': f'La categoría con ID {id_categoria} no existe'}), 404
+        
+        codigo_prefijo = row[0]
+        codigo_material = codigo_prefijo + codigo_numero
+        
+        # Validar que el código completo sea único
+        cursor.execute("SELECT id_material FROM Materiales WHERE codigo_material = ?", (codigo_material,))
+        if cursor.fetchone():
+            conn.close()
+            return jsonify({'error': f'Ya existe un material con el código "{codigo_material}"'}), 409
+
         # Validar que la unidad de medida existe
         cursor.execute("SELECT id_unidad FROM Unidades_de_Medida WHERE id_unidad = ?", (id_unidad,))
         if not cursor.fetchone():
@@ -1184,23 +1217,24 @@ def crear_nuevo_material(decoded_user_rol, decoded_user_id): # El argumento depe
         numero_factura = data.get('numero_factura', '').strip() if data.get('numero_factura') else None
         
         sql_insert = """
-            INSERT INTO Materiales (nombre, descripcion, cantidad, precio_unitario, 
+            INSERT INTO Materiales (nombre, descripcion, id_categoria, codigo_material, cantidad, precio_unitario, 
                                     precio_compra, precio_venta, porcentaje_ganancia,
                                     fecha_ultima_actualizacion, id_usuario_ultima_actualizacion, id_proveedor, id_unidad,
                                     ubicacion, numero_factura)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """
         # Mantener precio_unitario sincronizado con precio_compra por compatibilidad
         cursor.execute(sql_insert, 
-                       (nombre, descripcion, cantidad_inicial, precio_compra,
+                       (nombre, descripcion, id_categoria, codigo_material, cantidad_inicial, precio_compra,
                         precio_compra, precio_venta, porcentaje_ganancia,
                         fecha_actual, decoded_user_id, id_proveedor, id_unidad,
                         ubicacion, numero_factura))
         conn.commit()
 
-        print(f"API POST /materiales: Material '{nombre}' creado por admin ID {decoded_user_rol, decoded_user_id}. Precio compra: {precio_compra}, Precio venta: {precio_venta}, Margen: {porcentaje_ganancia}%")
+        print(f"API POST /materiales: Material '{nombre}' con código '{codigo_material}' creado por admin ID {decoded_user_rol, decoded_user_id}. Precio compra: {precio_compra}, Precio venta: {precio_venta}, Margen: {porcentaje_ganancia}%")
         return jsonify({
-            'message': f'Material "{nombre}" creado exitosamente.',
+            'message': f'Material "{nombre}" creado exitosamente con código {codigo_material}.',
+            'codigo_material': codigo_material,
             'precio_compra': precio_compra,
             'precio_venta': precio_venta,
             'porcentaje_ganancia': porcentaje_ganancia
@@ -1529,6 +1563,10 @@ def actualizar_material(decoded_user_rol, decoded_user_id, id_material):
     nombre = data.get('nombre')
     descripcion = data.get('descripcion')
     
+    # NUEVO: Categoría y código
+    id_categoria = data.get('id_categoria')
+    codigo_numero = data.get('codigo_numero')
+    
     # NUEVO: Soporte para sistema de doble precio
     precio_compra = data.get('precio_compra')
     porcentaje_ganancia = data.get('porcentaje_ganancia')
@@ -1541,8 +1579,16 @@ def actualizar_material(decoded_user_rol, decoded_user_id, id_material):
     # Validaciones
     if not nombre:
         return jsonify({'error': 'El nombre del material es requerido'}), 400
+    if not id_categoria:
+        return jsonify({'error': 'La categoría es requerida'}), 400
+    if not codigo_numero:
+        return jsonify({'error': 'El código numérico es requerido'}), 400
     if precio_compra is None:
         return jsonify({'error': 'El precio de compra es requerido'}), 400
+    
+    # Validar formato de código (5 dígitos)
+    if not isinstance(codigo_numero, str) or len(codigo_numero) != 5 or not codigo_numero.isdigit():
+        return jsonify({'error': 'El código debe ser exactamente 5 dígitos numéricos'}), 400
     
     try:
         precio_compra = float(precio_compra)
@@ -1575,6 +1621,20 @@ def actualizar_material(decoded_user_rol, decoded_user_id, id_material):
         if not cursor.fetchone():
             return jsonify({'error': 'Material no encontrado'}), 404
         
+        # Validar que la categoría existe
+        cursor.execute("SELECT codigo_prefijo FROM CategoriaMateriales WHERE id_categoria = ?", (id_categoria,))
+        row = cursor.fetchone()
+        if not row:
+            return jsonify({'error': f'La categoría con ID {id_categoria} no existe'}), 404
+        
+        codigo_prefijo = row[0]
+        codigo_material = codigo_prefijo + codigo_numero
+        
+        # Validar que el código completo sea único (excepto para este material)
+        cursor.execute("SELECT id_material FROM Materiales WHERE codigo_material = ? AND id_material != ?", (codigo_material, id_material))
+        if cursor.fetchone():
+            return jsonify({'error': f'Ya existe otro material con el código "{codigo_material}"'}), 409
+        
         # Validar que el proveedor existe si se proporciona
         if id_proveedor:
             cursor.execute("SELECT id_proveedor FROM Proveedores WHERE id_proveedor = ?", (id_proveedor,))
@@ -1585,7 +1645,9 @@ def actualizar_material(decoded_user_rol, decoded_user_id, id_material):
         sql_update = """
             UPDATE Materiales 
             SET nombre = ?, 
-                descripcion = ?, 
+                descripcion = ?,
+                id_categoria = ?,
+                codigo_material = ?,
                 precio_unitario = ?,
                 precio_compra = ?,
                 precio_venta = ?,
@@ -1596,14 +1658,15 @@ def actualizar_material(decoded_user_rol, decoded_user_id, id_material):
             WHERE id_material = ?
         """
         fecha_actual = datetime.datetime.now()
-        cursor.execute(sql_update, (nombre, descripcion, precio_compra, 
-                                   precio_compra, precio_venta, porcentaje_ganancia,
+        cursor.execute(sql_update, (nombre, descripcion, id_categoria, codigo_material,
+                                   precio_compra, precio_compra, precio_venta, porcentaje_ganancia,
                                    id_proveedor, fecha_actual, decoded_user_id, id_material))
         conn.commit()
         
-        print(f"API PUT /materiales/{id_material}: Material actualizado exitosamente. Precio compra: {precio_compra}, Precio venta: {precio_venta}, Margen: {porcentaje_ganancia}%")
+        print(f"API PUT /materiales/{id_material}: Material '{nombre}' con código '{codigo_material}' actualizado exitosamente. Precio compra: {precio_compra}, Precio venta: {precio_venta}, Margen: {porcentaje_ganancia}%")
         return jsonify({
-            'message': f'Material "{nombre}" actualizado exitosamente.',
+            'message': f'Material "{nombre}" actualizado exitosamente con código {codigo_material}.',
+            'codigo_material': codigo_material,
             'precio_compra': precio_compra,
             'precio_venta': precio_venta,
             'porcentaje_ganancia': porcentaje_ganancia
@@ -2379,6 +2442,216 @@ def eliminar_unidad(decoded_user_rol, decoded_user_id, id_unidad):
         if conn:
             conn.close()
             print(f"API DELETE /unidades/{id_unidad}: Conexión a BD cerrada.")
+
+
+# ========================================
+# ENDPOINTS: CATEGORÍAS DE MATERIALES
+# ========================================
+
+@app.route('/categorias-materiales', methods=['GET'])
+@roles_required('Administrador', 'Supervisor', 'Encargado de Inventario')
+def get_categorias_materiales(decoded_user_rol, decoded_user_id):
+    """Obtener todas las categorías de materiales"""
+    print(f"API GET /categorias-materiales: Solicitud de usuario ID {decoded_user_id}")
+    
+    conn = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            SELECT id_categoria, codigo_prefijo, nombre_categoria, 
+                   descripcion, estado, fecha_creacion
+            FROM CategoriaMateriales
+            ORDER BY codigo_prefijo
+        """)
+        
+        columns = [column[0] for column in cursor.description]
+        categorias = []
+        
+        for row in cursor.fetchall():
+            categoria_dict = dict(zip(columns, row))
+            
+            # Convertir estado a int
+            if categoria_dict.get('estado') is not None:
+                categoria_dict['estado'] = 1 if categoria_dict['estado'] else 0
+            
+            # Formatear fecha
+            if categoria_dict.get('fecha_creacion'):
+                categoria_dict['fecha_creacion'] = categoria_dict['fecha_creacion'].isoformat()
+            
+            categorias.append(categoria_dict)
+        
+        print(f"API GET /categorias-materiales: Devolviendo {len(categorias)} categorías")
+        return jsonify(categorias), 200
+    
+    except Exception as e:
+        print(f"Error en GET /categorias-materiales: {str(e)}")
+        return jsonify({'error': f'Error al obtener categorías: {str(e)}'}), 500
+    finally:
+        if conn:
+            conn.close()
+
+
+@app.route('/categorias-materiales', methods=['POST'])
+@roles_required('Administrador')
+def crear_categoria_material(decoded_user_rol, decoded_user_id):
+    """Crear nueva categoría de materiales (solo Administrador)"""
+    print(f"API POST /categorias-materiales: Solicitud de admin ID {decoded_user_id}")
+    
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'No se recibieron datos JSON'}), 400
+    
+    codigo_prefijo = data.get('codigo_prefijo', '').strip().upper()
+    nombre_categoria = data.get('nombre_categoria', '').strip()
+    descripcion = data.get('descripcion', '').strip()
+    
+    # Validaciones
+    if not codigo_prefijo or not nombre_categoria:
+        return jsonify({'error': 'codigo_prefijo y nombre_categoria son requeridos'}), 400
+    
+    if len(codigo_prefijo) < 2 or len(codigo_prefijo) > 10:
+        return jsonify({'error': 'codigo_prefijo debe tener entre 2 y 10 caracteres'}), 400
+    
+    if not codigo_prefijo.isalpha():
+        return jsonify({'error': 'codigo_prefijo solo puede contener letras'}), 400
+    
+    conn = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Verificar que el código no exista
+        cursor.execute("SELECT id_categoria FROM CategoriaMateriales WHERE codigo_prefijo = ?", (codigo_prefijo,))
+        if cursor.fetchone():
+            return jsonify({'error': f'El código prefijo "{codigo_prefijo}" ya existe'}), 409
+        
+        # Insertar categoría
+        cursor.execute("""
+            INSERT INTO CategoriaMateriales (codigo_prefijo, nombre_categoria, descripcion, estado)
+            VALUES (?, ?, ?, 1)
+        """, (codigo_prefijo, nombre_categoria, descripcion))
+        
+        conn.commit()
+        id_categoria = cursor.execute("SELECT @@IDENTITY").fetchone()[0]
+        
+        print(f"API POST /categorias-materiales: Categoría creada con ID {id_categoria}")
+        return jsonify({
+            'message': 'Categoría creada exitosamente',
+            'id_categoria': id_categoria,
+            'codigo_prefijo': codigo_prefijo
+        }), 201
+    
+    except Exception as e:
+        if conn:
+            conn.rollback()
+        print(f"Error en POST /categorias-materiales: {str(e)}")
+        return jsonify({'error': f'Error al crear categoría: {str(e)}'}), 500
+    finally:
+        if conn:
+            conn.close()
+
+
+@app.route('/categorias-materiales/<int:id_categoria>', methods=['PUT'])
+@roles_required('Administrador')
+def actualizar_categoria_material(decoded_user_rol, decoded_user_id, id_categoria):
+    """Actualizar categoría de materiales (solo Administrador)"""
+    print(f"API PUT /categorias-materiales/{id_categoria}: Solicitud de admin ID {decoded_user_id}")
+    
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'No se recibieron datos JSON'}), 400
+    
+    nombre_categoria = data.get('nombre_categoria', '').strip()
+    descripcion = data.get('descripcion', '').strip()
+    estado = data.get('estado', 1)
+    
+    if not nombre_categoria:
+        return jsonify({'error': 'nombre_categoria es requerido'}), 400
+    
+    conn = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Verificar que la categoría existe
+        cursor.execute("SELECT codigo_prefijo FROM CategoriaMateriales WHERE id_categoria = ?", (id_categoria,))
+        row = cursor.fetchone()
+        if not row:
+            return jsonify({'error': f'Categoría con ID {id_categoria} no encontrada'}), 404
+        
+        codigo_prefijo = row[0]
+        
+        # Actualizar categoría (NO se puede cambiar codigo_prefijo)
+        cursor.execute("""
+            UPDATE CategoriaMateriales
+            SET nombre_categoria = ?, descripcion = ?, estado = ?
+            WHERE id_categoria = ?
+        """, (nombre_categoria, descripcion, estado, id_categoria))
+        
+        conn.commit()
+        
+        print(f"API PUT /categorias-materiales/{id_categoria}: Categoría actualizada")
+        return jsonify({
+            'message': 'Categoría actualizada exitosamente',
+            'id_categoria': id_categoria,
+            'codigo_prefijo': codigo_prefijo
+        }), 200
+    
+    except Exception as e:
+        if conn:
+            conn.rollback()
+        print(f"Error en PUT /categorias-materiales/{id_categoria}: {str(e)}")
+        return jsonify({'error': f'Error al actualizar categoría: {str(e)}'}), 500
+    finally:
+        if conn:
+            conn.close()
+
+
+@app.route('/categorias-materiales/<int:id_categoria>', methods=['DELETE'])
+@roles_required('Administrador')
+def eliminar_categoria_material(decoded_user_rol, decoded_user_id, id_categoria):
+    """Eliminar categoría de materiales (solo Administrador)"""
+    print(f"API DELETE /categorias-materiales/{id_categoria}: Solicitud de admin ID {decoded_user_id}")
+    
+    conn = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Verificar que la categoría existe
+        cursor.execute("SELECT codigo_prefijo, nombre_categoria FROM CategoriaMateriales WHERE id_categoria = ?", (id_categoria,))
+        row = cursor.fetchone()
+        if not row:
+            return jsonify({'error': f'Categoría con ID {id_categoria} no encontrada'}), 404
+        
+        codigo_prefijo, nombre_categoria = row
+        
+        # Verificar que no tenga materiales asociados
+        cursor.execute("SELECT COUNT(*) FROM Materiales WHERE id_categoria = ?", (id_categoria,))
+        count = cursor.fetchone()[0]
+        
+        if count > 0:
+            return jsonify({
+                'error': f'No se puede eliminar la categoría "{nombre_categoria}" porque tiene {count} material(es) asociado(s)'
+            }), 409
+        
+        # Eliminar categoría
+        cursor.execute("DELETE FROM CategoriaMateriales WHERE id_categoria = ?", (id_categoria,))
+        conn.commit()
+        
+        print(f"API DELETE /categorias-materiales/{id_categoria}: Categoría '{nombre_categoria}' eliminada")
+        return jsonify({'message': f'Categoría "{nombre_categoria}" eliminada exitosamente'}), 200
+    
+    except Exception as e:
+        if conn:
+            conn.rollback()
+        print(f"Error en DELETE /categorias-materiales/{id_categoria}: {str(e)}")
+        return jsonify({'error': f'Error al eliminar categoría: {str(e)}'}), 500
+    finally:
+        if conn:
+            conn.close()
 
 
 @app.route('/ordenes-trabajo', methods=['POST'])

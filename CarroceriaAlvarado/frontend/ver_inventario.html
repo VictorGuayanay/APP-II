@@ -97,6 +97,12 @@
                             </select>
                         </div>
                         <div class="col-md-2">
+                            <label for="filterCategoria" class="form-label">Categoría</label>
+                            <select id="filterCategoria" class="form-select">
+                                <option value="">Todas</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
                             <label for="filterStock" class="form-label">Stock</label>
                             <select id="filterStock" class="form-select">
                                 <option value="">Todos</option>
@@ -105,7 +111,7 @@
                                 <option value="con-stock">Con Stock</option>
                             </select>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-2">
                             <label for="filterProveedor" class="form-label">Proveedor</label>
                             <select id="filterProveedor" class="form-select">
                                 <option value="">Todos</option>
@@ -131,7 +137,9 @@
                             <thead>
                                 <tr>
                                     <th>ID</th>
+                                    <th>Código</th>
                                     <th>Nombre</th>
+                                    <th>Categoría</th>
                                     <th>Stock Actual (Cantidad)</th>
                                     <th>Unidad</th>
                                     <th>Ubicación</th>
@@ -186,6 +194,30 @@
                         <label for="editMaterialNombre" class="form-label">Nombre <span class="text-danger">*</span></label>
                         <input type="text" class="form-control" id="editMaterialNombre" required>
                     </div>
+                    
+                    <!-- Categoría y Código -->
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="editMaterialCategoria" class="form-label">Categoría <span class="text-danger">*</span></label>
+                            <select class="form-control" id="editMaterialCategoria" required>
+                                <option value="">Cargando categorías...</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="editMaterialCodigoNumero" class="form-label">Código (5 dígitos) <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text" id="editCodigoPrefijo">---</span>
+                                <input type="text" class="form-control" id="editMaterialCodigoNumero" placeholder="00001" maxlength="5" pattern="[0-9]{5}" required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Preview del código completo en edición -->
+                    <div class="alert alert-info mb-3" id="editCodigoPreview" style="display: none;">
+                        <strong><i class="fa fa-barcode"></i> Código completo:</strong> 
+                        <span id="editCodigoCompleto" class="fs-5 fw-bold">---00000</span>
+                    </div>
+                    
                     <div class="mb-3">
                         <label for="editMaterialDescripcion" class="form-label">Descripción</label>
                         <textarea class="form-control" id="editMaterialDescripcion" rows="2"></textarea>
@@ -263,11 +295,11 @@ function loadMateriales(umbralStockBajo) {
     const token = localStorage.getItem('token');
     const materialesTableBody = $('#materialesTableBody'); // Asegúrate que este ID exista en tu HTML
 
-    materialesTableBody.empty().append('<tr><td colspan="7" class="text-center">Cargando materiales...</td></tr>'); // Ajusta colspan según tus columnas
+    materialesTableBody.empty().append('<tr><td colspan="12" class="text-center">Cargando materiales...</td></tr>'); // Ajusta colspan según tus columnas
 
     if (!token) { 
         console.error("loadMateriales() - No hay token. No se puede llamar a la API. Redirigiendo a login.");
-        materialesTableBody.empty().append('<tr><td colspan="7" class="text-center">Error de autenticación. Redirigiendo...</td></tr>');
+        materialesTableBody.empty().append('<tr><td colspan="12" class="text-center">Error de autenticación. Redirigiendo...</td></tr>');
         window.location.href = 'index.html'; 
         return; 
     }
@@ -365,11 +397,22 @@ function mostrarMateriales(materiales) {
         const unidadAbreviatura = material.abreviatura_unidad || 'N/A';
         const ubicacion = material.ubicacion || 'N/A';
         const numeroFactura = material.numero_factura || 'N/A';
+        const codigoMaterial = material.codigo_material || 'N/A';
+        
+        // Determinar badge de categoría con color diferente
+        let categoriaBadge;
+        if (material.nombre_categoria) {
+            categoriaBadge = `<span class="badge bg-primary">${material.nombre_categoria}</span>`;
+        } else {
+            categoriaBadge = `<span class="badge bg-secondary">Sin categoría</span>`;
+        }
 
         materialesTableBody.append(
             `<tr class="${filaClase}"> 
                 <td>${material.id_material}</td>
+                <td><strong>${codigoMaterial}</strong></td>
                 <td>${material.nombre}</td>
+                <td>${categoriaBadge}</td>
                 <td>${material.cantidad}</td>
                 <td>${unidadAbreviatura}</td>
                 <td>${ubicacion}</td>
@@ -395,6 +438,14 @@ function poblarFiltros(materiales) {
         $filterUnidad.append(`<option value="${unidad}">${unidad}</option>`);
     });
     
+    // Poblar filtro de categorías
+    const categoriasUnicas = [...new Set(materiales.map(m => m.nombre_categoria).filter(c => c))];
+    const $filterCategoria = $('#filterCategoria');
+    $filterCategoria.find('option:not(:first)').remove(); // Mantener "Todas"
+    categoriasUnicas.sort().forEach(categoria => {
+        $filterCategoria.append(`<option value="${categoria}">${categoria}</option>`);
+    });
+    
     // Poblar filtro de proveedores
     const proveedoresUnicos = [...new Set(materiales.map(m => m.nombre_proveedor).filter(p => p))];
     const $filterProveedor = $('#filterProveedor');
@@ -414,10 +465,11 @@ function poblarFiltros(materiales) {
 function aplicarFiltros() {
     const searchTerm = $('#searchInput').val().toLowerCase().trim();
     const unidadSeleccionada = $('#filterUnidad').val();
+    const categoriaSeleccionada = $('#filterCategoria').val();
     const stockFilter = $('#filterStock').val();
     const proveedorSeleccionado = $('#filterProveedor').val();
     
-    console.log("Aplicando filtros:", { searchTerm, unidadSeleccionada, stockFilter, proveedorSeleccionado });
+    console.log("Aplicando filtros:", { searchTerm, unidadSeleccionada, categoriaSeleccionada, stockFilter, proveedorSeleccionado });
     
     let filtered = todosLosMateriales;
     
@@ -432,6 +484,11 @@ function aplicarFiltros() {
     // Filtro por unidad
     if (unidadSeleccionada) {
         filtered = filtered.filter(m => m.abreviatura_unidad === unidadSeleccionada);
+    }
+    
+    // Filtro por categoría
+    if (categoriaSeleccionada) {
+        filtered = filtered.filter(m => m.nombre_categoria === categoriaSeleccionada);
     }
     
     // Filtro por stock
@@ -550,6 +607,51 @@ $(document).ready(function () {
     }
     
     cargarProveedoresEnModal(); // Cargar al iniciar
+    
+    // Cargar categorías en el select del modal de edición
+    function cargarCategoriasEnModal() {
+        const $selectCategoria = $('#editMaterialCategoria');
+        $.ajax({
+            url: 'http://127.0.0.1:5000/categorias-materiales',
+            method: 'GET',
+            headers: { 'Authorization': 'Bearer ' + token },
+            success: function(categorias) {
+                $selectCategoria.empty().append('<option value="">Seleccione una categoría...</option>');
+                const categoriasActivas = categorias.filter(cat => cat.estado === 1);
+                categoriasActivas.forEach(function(cat) {
+                    $selectCategoria.append(`<option value="${cat.id_categoria}" data-prefijo="${cat.codigo_prefijo}">${cat.codigo_prefijo} - ${cat.nombre_categoria}</option>`);
+                });
+            },
+            error: function(xhr) {
+                console.error('Error al cargar categorías:', xhr.responseText);
+            }
+        });
+    }
+    
+    cargarCategoriasEnModal(); // Cargar al iniciar
+    
+    // Preview del código en modal de edición
+    function actualizarPreviewCodigoEdicion() {
+        const categoriaSelect = $('#editMaterialCategoria');
+        const prefijo = categoriaSelect.find('option:selected').data('prefijo') || '---';
+        const numero = $('#editMaterialCodigoNumero').val().padStart(5, '0');
+        
+        $('#editCodigoPrefijo').text(prefijo);
+        
+        if (prefijo !== '---' && numero.length === 5) {
+            const codigoCompleto = prefijo + numero;
+            $('#editCodigoCompleto').text(codigoCompleto);
+            $('#editCodigoPreview').slideDown();
+        } else {
+            $('#editCodigoPreview').slideUp();
+        }
+    }
+    
+    $('#editMaterialCategoria').on('change', actualizarPreviewCodigoEdicion);
+    $('#editMaterialCodigoNumero').on('input', function() {
+        this.value = this.value.replace(/[^0-9]/g, '');
+        actualizarPreviewCodigoEdicion();
+    });
 
     // --- Event Listeners para Filtros ---
     
@@ -561,12 +663,13 @@ $(document).ready(function () {
     });
     
     // Filtros de selects
-    $('#filterUnidad, #filterStock, #filterProveedor').on('change', aplicarFiltros);
+    $('#filterUnidad, #filterCategoria, #filterStock, #filterProveedor').on('change', aplicarFiltros);
     
     // Botón limpiar filtros
     $('#btnLimpiarFiltros').on('click', function() {
         $('#searchInput').val('');
         $('#filterUnidad').val('');
+        $('#filterCategoria').val('');
         $('#filterStock').val('');
         $('#filterProveedor').val('');
         aplicarFiltros();
@@ -588,12 +691,25 @@ $(document).ready(function () {
                 // Llenar el formulario
                 $('#editMaterialId').val(material.id_material);
                 $('#editMaterialNombre').val(material.nombre);
+                $('#editMaterialCategoria').val(material.id_categoria || '');
+                
+                // Llenar código (extraer solo los 5 dígitos)
+                if (material.codigo_material && material.codigo_material.length > 3) {
+                    const codigoNumero = material.codigo_material.substring(3); // Quitar prefijo
+                    $('#editMaterialCodigoNumero').val(codigoNumero);
+                } else {
+                    $('#editMaterialCodigoNumero').val('');
+                }
+                
                 $('#editMaterialDescripcion').val(material.descripcion || '');
                 $('#editMaterialUbicacion').val(material.ubicacion || '');
                 $('#editMaterialNumeroFactura').val(material.numero_factura || '');
                 $('#editMaterialPrecioCompra').val(material.precio_compra || material.precio_unitario);
                 $('#editMaterialPorcentajeGanancia').val(material.porcentaje_ganancia || 20);
                 $('#editMaterialProveedor').val(material.id_proveedor || '');
+                
+                // Actualizar preview del código
+                actualizarPreviewCodigoEdicion();
                 
                 // Calcular precio de venta
                 calcularPrecioVentaEdicion();
@@ -616,6 +732,8 @@ $(document).ready(function () {
     $('#btnGuardarEdicion').on('click', function() {
         const materialId = $('#editMaterialId').val();
         const nombre = $('#editMaterialNombre').val().trim();
+        const idCategoria = $('#editMaterialCategoria').val();
+        const codigoNumero = $('#editMaterialCodigoNumero').val().trim();
         const descripcion = $('#editMaterialDescripcion').val().trim();
         const ubicacion = $('#editMaterialUbicacion').val().trim();
         const numeroFactura = $('#editMaterialNumeroFactura').val().trim();
@@ -627,13 +745,21 @@ $(document).ready(function () {
         // Limpiar mensaje al inicio
         mensajeDiv.text('').removeClass('alert alert-success alert-danger');
 
-        if (!nombre || !precioCompra || !porcentajeGanancia) {
-            mensajeDiv.text('El nombre, precio de compra y porcentaje son obligatorios.').removeClass('alert-success').addClass('alert alert-danger');
+        if (!nombre || !idCategoria || !codigoNumero || !precioCompra || !porcentajeGanancia) {
+            mensajeDiv.text('El nombre, categoría, código, precio de compra y porcentaje son obligatorios.').removeClass('alert-success').addClass('alert alert-danger');
+            return;
+        }
+        
+        // Validar código (5 dígitos)
+        if (!/^\d{5}$/.test(codigoNumero)) {
+            mensajeDiv.text('El código debe ser exactamente 5 dígitos numéricos.').removeClass('alert-success').addClass('alert alert-danger');
             return;
         }
 
         const datosActualizados = {
             nombre: nombre,
+            id_categoria: parseInt(idCategoria),
+            codigo_numero: codigoNumero,
             descripcion: descripcion,
             ubicacion: ubicacion || null,
             numero_factura: numeroFactura || null,
