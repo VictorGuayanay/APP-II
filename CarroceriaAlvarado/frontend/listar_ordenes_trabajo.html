@@ -7,6 +7,7 @@
     <link rel="stylesheet" type="text/css" href="vendor/bootstrap/css/bootstrap.min.css">
     <link rel="stylesheet" type="text/css" href="fonts/font-awesome-4.7.0/css/font-awesome.min.css">
     <link rel="stylesheet" type="text/css" href="css/main.css">
+    <link rel="stylesheet" href="css/fixed-layout.css">
 </head>
 <body>
 
@@ -43,12 +44,13 @@
             </li>
             
             <li><a href="ingresar_empleado.html"><i class="fa fa-address-card"></i> Ingreso Empleados</a></li>
+            <li><a href="ver_empleados.html"><i class="fa fa-users"></i> Ver Empleados</a></li>
             <li><a href="ingresar_cliente.html"><i class="fa fa-user-plus"></i> Ingreso Clientes</a></li>
             <li><a href="ingresar_proveedor.html"><i class="fa fa-truck"></i> Ingreso Proveedores</a></li>
             <li><a href="ver_proveedores.html"><i class="fa fa-list"></i> Ver Proveedores</a></li>
             <li><a href="orden_trabajo.html"><i class="fa fa-briefcase"></i> Órdenes de Trabajo</a></li>
             <li class="active"><a href="listar_ordenes_trabajo.html"><i class="fa fa-briefcase"></i> Listar Órdenes de Trabajo</a></li>
-            <li><a href="consultar_comprobantes.html"><i class="fa fa-bar-chart"></i> Comprobante</a></li>
+            <li><a href="consultar_comprobantes.html"><i class="fa fa-money"></i> Comprobante</a></li>
             <li><a href="reportes.html"><i class="fa fa-bar-chart"></i> Reportes</a></li>
             <li><a href="#" data-bs-toggle="modal" data-bs-target="#settingsModal" ><i class="fa fa-cog"></i> Configuración</a></li>
         </ul>
@@ -161,7 +163,8 @@ function loadOrdenesDeTrabajo() {
                     // --- FIN DE LA MODIFICACIÓN ---
 
                     const botonCalcular = `<button class="btn btn-info btn-sm btn-calcular-recursos me-1" data-id="${orden.id_orden}" title="Calcular Recursos"><i class="fa fa-calculator"></i></button>`;
-                    const botonDetalles = `<a href="detalle_orden.html?id=${orden.id_orden}" class="btn btn-primary btn-sm" title="Ver Detalles"><i class="fa fa-eye"></i></a>`;
+                    const botonEditar = `<a href="editar_orden.html?id=${orden.id_orden}" class="btn btn-warning btn-sm me-1" title="Editar Orden"><i class="fa fa-edit"></i></a>`;
+                    const botonDetalles = `<a href="detalle_orden.html?id=${orden.id_orden}" class="btn btn-primary btn-sm me-1" title="Ver Detalles"><i class="fa fa-eye"></i></a>`;
                     const botonImprimir = `<button class="btn btn-danger btn-sm btn-imprimir-orden" data-id="${orden.id_orden}" title="Imprimir PDF"><i class="fa fa-print"></i></button>`;
 
                     const fila = `
@@ -171,10 +174,8 @@ function loadOrdenesDeTrabajo() {
                             <td>${orden.descripcion}</td>
                             <td>${empleadosAsignadosStr}</td> <td>${fechaInicio} - ${fechaFin}</td>
                             <td><span class="badge bg-primary">${orden.estado}</span></td>
-                            <td>
-                                ${botonCalcular}
-                                ${botonDetalles}
-                                ${botonImprimir}
+                            <td class="text-nowrap">
+                                ${botonCalcular}${botonEditar}${botonDetalles}${botonImprimir}
                             </td>
                         </tr>
                     `;

@@ -85,27 +85,65 @@
                             </tfoot>
                         </table>
                     </div>
-                    <hr>
-                    <h5>Añadir Material a la Orden</h5>
-                    <form id="formAnadirMaterialAOrden">
-                        <div class="row align-items-end">
-                            <div class="col-md-6">
-                                <label for="selectMaterial" class="form-label">Material</label>
-                                <select class="form-select" id="selectMaterial" required>
-                                    <option value="">Cargando...</option>
-                                </select>
-                            </div>
-                            <div class="col-md-4">
-                                <label for="cantidadMaterial" class="form-label">Cantidad a Usar</label>
-                                <input type="number" class="form-control" id="cantidadMaterial" min="1" required>
-                            </div>
-                            <div class="col-md-2">
-                                <button type="submit" class="btn btn-success w-100">Añadir</button>
-                            </div>
-                        </div>
-                        <div id="mensajeAnadirMaterial" class="mt-3"></div>
-                    </form>
                     
+                    <!-- Sección de Cálculo de Mano de Obra -->
+                    <hr>
+                    <h5><i class="fa fa-users"></i> Cálculo de Mano de Obra</h5>
+                    <div class="table-responsive mb-4">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Empleado</th>
+                                    <th>Cargo</th>
+                                    <th>Costo/Hora</th>
+                                    <th>Días Laborales</th>
+                                    <th>Horas Totales</th>
+                                    <th>Costo Total</th>
+                                </tr>
+                            </thead>
+                            <tbody id="manoObraTableBody">
+                                <tr><td colspan="6" class="text-center">Cargando...</td></tr>
+                            </tbody>
+                            <tfoot id="manoObraTableFoot">
+                            </tfoot>
+                        </table>
+                    </div>
+
+                    <!-- Sección de Resumen Financiero Total -->
+                    <hr>
+                    <h5><i class="fa fa-calculator"></i> Resumen Financiero Total</h5>
+                    <div class="table-responsive mb-4">
+                        <table class="table table-borderless" style="max-width: 600px; margin-left: auto;">
+                            <colgroup>
+                                <col style="width: 70%;">
+                                <col style="width: 30%;">
+                            </colgroup>
+                            <tbody>
+                                <tr>
+                                    <td class="text-end"><strong>Subtotal Materiales:</strong></td>
+                                    <td class="text-end" id="resumenSubtotalMateriales">$0.00</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-end"><strong>Costo Mano de Obra:</strong></td>
+                                    <td class="text-end" id="resumenCostoManoObra">$0.00</td>
+                                </tr>
+                                <tr class="table-group-divider">
+                                    <td class="text-end"><strong>Subtotal:</strong></td>
+                                    <td class="text-end" id="resumenSubtotalGeneral">$0.00</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-end"><strong>Margen de Ganancia (<span id="resumenMargenPorcentaje">20</span>%):</strong></td>
+                                    <td class="text-end" id="resumenMargenMonto">$0.00</td>
+                                </tr>
+                                <tr class="table-group-divider">
+                                    <td class="text-end"><h5 class="mb-0"><strong>TOTAL A COBRAR:</strong></h5></td>
+                                    <td class="text-end"><h5 class="mb-0 text-success"><strong id="resumenTotalFinal">$0.00</strong></h5></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <hr>
                     <!-- Finalizar Orden -->
                     <h5 class="mt-4">Finalizar Orden</h5>
                     <p>Verifique la cantidad de materiales Utilizados en la oreden de trabajo antes de finalizar</p>
@@ -120,6 +158,7 @@
             </div>
         </div>
     </div>
+
 
     <div class="modal fade" id="reasignarEmpleadoModal" tabindex="-1" aria-labelledby="reasignarModalLabel" aria-hidden="true">
         <div class="modal-dialog">
@@ -274,6 +313,69 @@
         });
     }
 
+    // Función para calcular días laborales entre dos fechas
+    function calcularDiasLaborales(fechaInicio, fechaFin) {
+        const inicio = new Date(fechaInicio);
+        const fin = fechaFin ? new Date(fechaFin) : new Date();
+        const diffTime = Math.abs(fin - inicio);
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        return diffDays;
+    }
+
+    // Función para calcular el costo de mano de obra
+    function calcularManoDeObra(empleados, fechaInicio, fechaFin) {
+        const diasLaborales = calcularDiasLaborales(fechaInicio, fechaFin);
+        const horasPorDia = 8;
+        const horasTotales = diasLaborales * horasPorDia;
+        
+        let costoTotalManoObra = 0;
+        const detalles = [];
+        
+        empleados.forEach(emp => {
+            const costoEmpleado = horasTotales * (emp.costo_hora || 0);
+            costoTotalManoObra += costoEmpleado;
+            
+            detalles.push({
+                nombre: emp.nombre,
+                cargo: emp.cargo_empleado,
+                costo_hora: emp.costo_hora || 0,
+                dias: diasLaborales,
+                horas: horasTotales,
+                costo_total: costoEmpleado
+            });
+        });
+        
+        return { detalles, costoTotalManoObra, diasLaborales, horasTotales };
+    }
+
+    // Función para mostrar el resumen financiero
+    function mostrarResumenFinanciero(orden, costoManoObra) {
+        // Convertir a número y usar 0 si es null/undefined
+        const subtotalMateriales = parseFloat(orden.subtotal_materiales) || 0;
+        const margenPorcentaje = parseInt(orden.margen_ganancia) || 20;
+        const costoManoObraNum = parseFloat(costoManoObra) || 0;
+        
+        const subtotalGeneral = subtotalMateriales + costoManoObraNum;
+        const margenMonto = subtotalGeneral * (margenPorcentaje / 100);
+        const totalFinal = subtotalGeneral + margenMonto;
+        
+        console.log("Mostrando resumen financiero:", {
+            subtotalMateriales,
+            costoManoObra: costoManoObraNum,
+            subtotalGeneral,
+            margenPorcentaje,
+            margenMonto,
+            totalFinal
+        });
+        
+        $('#resumenSubtotalMateriales').text(`$${subtotalMateriales.toFixed(2)}`);
+        $('#resumenCostoManoObra').text(`$${costoManoObraNum.toFixed(2)}`);
+        $('#resumenSubtotalGeneral').text(`$${subtotalGeneral.toFixed(2)}`);
+        $('#resumenMargenPorcentaje').text(margenPorcentaje);
+        $('#resumenMargenMonto').text(`$${margenMonto.toFixed(2)}`);
+        $('#resumenTotalFinal').text(`$${totalFinal.toFixed(2)}`);
+    }
+
     function cargarDetallesDeOrden(idOrden) {
         console.log("Cargando detalles para la orden ID:", idOrden);
         const token = localStorage.getItem('token');
@@ -339,6 +441,62 @@
                     $materialesTableFoot.append(filaTotalHtml);
                 } else {
                     $materialesTableBody.append('<tr><td colspan="5" class="text-center">Aún no se han asignado materiales.</td></tr>');
+                }
+
+                // DEBUG: Verificar datos recibidos
+                console.log("=== DEBUG: Datos de la orden ===");
+                console.log("Empleados asignados:", orden.empleados_asignados);
+                console.log("Datos financieros:", {
+                    subtotal_materiales: orden.subtotal_materiales,
+                    margen_ganancia: orden.margen_ganancia,
+                    total_orden: orden.total_orden
+                });
+                console.log("Fechas:", {
+                    fecha_inicio: orden.fecha_inicio,
+                    fecha_fin: orden.fecha_fin
+                });
+
+                // NUEVO: Calcular y mostrar mano de obra
+                if (orden.empleados_asignados && orden.empleados_asignados.length > 0) {
+                    console.log("Calculando mano de obra...");
+                    const manoObra = calcularManoDeObra(
+                        orden.empleados_asignados,
+                        orden.fecha_inicio,
+                        orden.fecha_fin
+                    );
+                    console.log("Resultado cálculo mano de obra:", manoObra);
+                    
+                    // Llenar tabla de mano de obra
+                    const $manoObraBody = $('#manoObraTableBody');
+                    $manoObraBody.empty();
+                    manoObra.detalles.forEach(detalle => {
+                        $manoObraBody.append(`
+                            <tr>
+                                <td>${detalle.nombre}</td>
+                                <td>${detalle.cargo}</td>
+                                <td>$${detalle.costo_hora.toFixed(2)}</td>
+                                <td>${detalle.dias} días</td>
+                                <td>${detalle.horas} hrs</td>
+                                <td>$${detalle.costo_total.toFixed(2)}</td>
+                            </tr>
+                        `);
+                    });
+                    
+                    // Fila de total
+                    $('#manoObraTableFoot').html(`
+                        <tr class="table-group-divider">
+                            <td colspan="5" class="text-end"><strong>Total Mano de Obra:</strong></td>
+                            <td><strong>$${manoObra.costoTotalManoObra.toFixed(2)}</strong></td>
+                        </tr>
+                    `);
+                    
+                    // Mostrar resumen financiero
+                    mostrarResumenFinanciero(orden, manoObra.costoTotalManoObra);
+                } else {
+                    $('#manoObraTableBody').html('<tr><td colspan="6" class="text-center">No hay empleados asignados.</td></tr>');
+                    $('#manoObraTableFoot').empty();
+                    // Mostrar resumen solo con materiales
+                    mostrarResumenFinanciero(orden, 0);
                 }
 
                 if (orden.estado !== 'Finalizado' && orden.estado !== 'Cancelado') {

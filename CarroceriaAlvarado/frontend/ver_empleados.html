@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <title>Gestión de Empleados - Carrocería Alvarado</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" type="text/css" href="vendor/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="fonts/font-awesome-4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" type="text/css" href="css/main.css">
+    <link rel="stylesheet" href="css/fixed-layout.css">
+</head>
+<body>
+
+<div class="admin-wrapper">
+    <!-- Sidebar -->
+   <nav id="sidebar">
+        <div class="sidebar-header">
+            <h3>Carrocería Alvarado</h3>
+        </div>
+        <ul class="list-unstyled components">
+            <p class="ms-3">Administración</p>
+            <li>
+                <a href="#dashboardSubmenu" data-bs-toggle="collapse" aria-expanded="false" class="dropdown-toggle">
+                    <i class="fa fa-tachometer"></i> Dashboard
+                </a>
+                <ul class="collapse list-unstyled" id="dashboardSubmenu">
+                    <li><a href="vision_general.html">Visión General</a></li>
+                </ul>
+            </li>
+            <li> 
+                <a href="admin.html">
+                    <i class="fa fa-users"></i> Panel Principal
+                </a>
+            </li>
+             <li>
+                <a href="#inventarioSubmenu" data-bs-toggle="collapse" aria-expanded="false" class="dropdown-toggle">
+                    <i class="fa fa-archive"></i> Inventario
+                </a>
+                <ul class="collapse list-unstyled" id="inventarioSubmenu">
+                    <li><a href="ver_inventario.html">Ver Inventario</a></li>
+                    <li><a href="anadir_material.html">Añadir Material</a></li>
+                    <li><a href="entradas_salidas_inventario.html">Entradas/Salidas</a></li>
+                </ul>
+            </li>
+            
+            <li><a href="ingresar_empleado.html"><i class="fa fa-address-card"></i> Ingreso Empleados</a></li>
+            <li class="active"><a href="ver_empleados.html"><i class="fa fa-users"></i> Ver Empleados</a></li>
+            <li><a href="ingresar_cliente.html"><i class="fa fa-user-plus"></i> Ingreso Clientes</a></li>
+            <li><a href="ingresar_proveedor.html"><i class="fa fa-truck"></i> Ingreso Proveedores</a></li>
+            <li><a href="ver_proveedores.html"><i class="fa fa-list"></i> Ver Proveedores</a></li>
+            <li><a href="orden_trabajo.html"><i class="fa fa-briefcase"></i> Órdenes de Trabajo</a></li>
+            <li><a href="listar_ordenes_trabajo.html"><i class="fa fa-briefcase"></i> Listar Órdenes de Trabajo</a></li>
+            <li><a href="consultar_comprobantes.html"><i class="fa fa-money"></i> Comprobante</a></li>
+            <li><a href="reportes.html"><i class="fa fa-bar-chart"></i> Reportes</a></li>
+            <li><a href="#" data-bs-toggle="modal" data-bs-target="#settingsModal" ><i class="fa fa-cog"></i> Configuración</a></li>
+        </ul>
+    </nav>
+
+    <!-- Page Content -->
+    <div id="content">
+        <nav class="navbar navbar-expand-lg navbar-light top-navbar">
+            <div class="container-fluid">
+                <button type="button" id="sidebarCollapse" class="btn btn-info" style="background-color: #0073aa; border-color: #0073aa;">
+                    <i class="fa fa-align-left"></i>
+                    <span>Menú</span>
+                </button>
+                <div class="user-info">
+                    <span>Hola, <strong id="currentUserName">Admin</strong>!</span>
+                    <a href="#" id="logoutButton" class="ms-3">Cerrar Sesión</a>
+                </div>
+            </div>
+        </nav>
+
+        <div class="content-area container-fluid pt-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h2 class="card-header-title">Gestión de Empleados</h2>
+                <button class="btn btn-success" onclick="window.location.href='ingresar_empleado.html'">
+                    <i class="fa fa-plus"></i> Agregar Nuevo Empleado
+                </button>
+            </div>
+
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Nombre</th>
+                                    <th>Cédula</th>
+                                    <th>Rol</th>
+                                    <th>Teléfono</th>
+                                    <th>Costo/Hora</th>
+                                    <th>Estado</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="empleadosTableBody">
+                                <tr><td colspan="8" class="text-center">Cargando empleados...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para editar empleado -->
+<div class="modal fade" id="editarEmpleadoModal" tabindex="-1" aria-labelledby="editarModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editarModalLabel">Editar Empleado</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formEditarEmpleado">
+                    <input type="hidden" id="editEmpleadoId">
+                    <div class="mb-3">
+                        <label for="editNombre" class="form-label">Nombre Completo</label>
+                        <input type="text" class="form-control" id="editNombre" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editRol" class="form-label">Rol / Cargo</label>
+                        <select id="editRol" class="form-control" required>
+                            <option value="">Seleccione un cargo</option>
+                            <option value="electricista">Electricista</option>
+                            <option value="pintor">Pintor</option>
+                            <option value="tapicero">Tapicero</option>
+                            <option value="soldador">Soldador</option>
+                            <option value="enderezador">Enderezador</option>
+                            <option value="mecanico">Mecánico</option>
+                            <option value="laminador">Laminador</option>
+                            <option value="ensamblador">Ensamblador</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editCostoHora" class="form-label">Costo por Hora (USD)</label>
+                        <input type="number" class="form-control" id="editCostoHora" step="0.01" min="0" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editEstado" class="form-label">Estado</label>
+                        <select class="form-select" id="editEstado">
+                            <option value="1">Activo</option>
+                            <option value="0">Inactivo</option>
+                        </select>
+                    </div>
+                    <div id="mensajeEditarEmpleado" class="mt-3"></div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="guardarCambiosEmpleado()">Guardar Cambios</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Scripts -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+$(document).ready(function () {
+    // Lógica estándar
+    $('#sidebarCollapse').on('click', function () { $('#sidebar').toggleClass('active'); });
+    const token = localStorage.getItem('token');
+    if (!token) { window.location.href = 'index.html'; return; }
+    const loggedInUsername = localStorage.getItem('loggedInUsername');
+    if(loggedInUsername) { $('#currentUserName').text(loggedInUsername); }
+    $('#logoutButton').on('click', function(e) { e.preventDefault(); localStorage.clear(); window.location.href = 'index.html'; });
+
+    // Cargar empleados al iniciar
+    cargarEmpleados();
+});
+
+function cargarEmpleados() {
+    const token = localStorage.getItem('token');
+    const tbody = $('#empleadosTableBody');
+    
+    $.ajax({
+        url: 'http://127.0.0.1:5000/empleados',
+        method: 'GET',
+        headers: {'Authorization': 'Bearer ' + token},
+        success: function(empleados) {
+            tbody.empty();
+            if (empleados && empleados.length > 0) {
+                empleados.forEach(emp => {
+                    const estadoBadge = emp.estado === 1 
+                        ? '<span class="badge bg-success">Activo</span>' 
+                        : '<span class="badge bg-secondary">Inactivo</span>';
+                    
+                    const costoHora = emp.costo_hora ? `$${emp.costo_hora.toFixed(2)}` : 'N/A';
+                    
+                    tbody.append(`
+                        <tr>
+                            <td>${emp.id_empleado}</td>
+                            <td>${emp.nombre}</td>
+                            <td>${emp.cedula}</td>
+                            <td>${emp.rol}</td>
+                            <td>${emp.telefono}</td>
+                            <td>${costoHora}</td>
+                            <td>${estadoBadge}</td>
+                            <td>
+                                <button class="btn btn-sm btn-warning" onclick="abrirModalEditar(${emp.id_empleado})" title="Editar">
+                                    <i class="fa fa-edit"></i>
+                                </button>
+                                <button class="btn btn-sm btn-danger" onclick="eliminarEmpleado(${emp.id_empleado}, '${emp.nombre}')" title="Eliminar">
+                                    <i class="fa fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `);
+                });
+            } else {
+                tbody.append('<tr><td colspan="8" class="text-center">No hay empleados registrados</td></tr>');
+            }
+        },
+        error: function(xhr) {
+            tbody.html('<tr><td colspan="8" class="text-center text-danger">Error al cargar empleados</td></tr>');
+            console.error('Error:', xhr);
+        }
+    });
+}
+
+function abrirModalEditar(idEmpleado) {
+    const token = localStorage.getItem('token');
+    
+    console.log('Abriendo modal para empleado ID:', idEmpleado);
+    
+    // Obtener datos del empleado
+    $.ajax({
+        url: 'http://127.0.0.1:5000/empleados',
+        method: 'GET',
+        headers: {'Authorization': 'Bearer ' + token},
+        success: function(empleados) {
+            const empleado = empleados.find(e => e.id_empleado === idEmpleado);
+            if (empleado) {
+                console.log('Datos del empleado:', empleado);
+                $('#editEmpleadoId').val(empleado.id_empleado);
+                $('#editNombre').val(empleado.nombre);
+                $('#editRol').val(empleado.rol);
+                $('#editCostoHora').val(empleado.costo_hora);
+                $('#editEstado').val(empleado.estado);
+                $('#mensajeEditarEmpleado').empty();
+                
+                // Abrir modal usando jQuery/Bootstrap
+                $('#editarEmpleadoModal').modal('show');
+            } else {
+                console.error('Empleado no encontrado');
+                alert('Empleado no encontrado');
+            }
+        },
+        error: function(xhr) {
+            console.error('Error al cargar datos del empleado:', xhr);
+            alert('Error al cargar datos del empleado');
+        }
+    });
+}
+
+function guardarCambiosEmpleado() {
+    const token = localStorage.getItem('token');
+    const idEmpleado = $('#editEmpleadoId').val();
+    const mensajeDiv = $('#mensajeEditarEmpleado');
+    
+    const empleadoData = {
+        nombre: $('#editNombre').val().trim(),
+        rol: $('#editRol').val(),
+        costo_hora: parseFloat($('#editCostoHora').val()),
+        estado: parseInt($('#editEstado').val())
+    };
+    
+    if (!empleadoData.nombre || !empleadoData.rol || isNaN(empleadoData.costo_hora)) {
+        mensajeDiv.html('<div class="alert alert-danger">Todos los campos son requeridos</div>');
+        return;
+    }
+    
+    mensajeDiv.html('<div class="alert alert-info">Guardando cambios...</div>');
+    
+    $.ajax({
+        url: `http://127.0.0.1:5000/empleados/${idEmpleado}`,
+        method: 'PUT',
+        headers: {
+            'Authorization': 'Bearer ' + token,
+            'Content-Type': 'application/json'
+        },
+        data: JSON.stringify(empleadoData),
+        success: function(response) {
+            mensajeDiv.html('<div class="alert alert-success">Empleado actualizado exitosamente</div>');
+            setTimeout(() => {
+                $('#editarEmpleadoModal').modal('hide');
+                cargarEmpleados();
+            }, 1500);
+        },
+        error: function(xhr) {
+            const error = xhr.responseJSON?.error || 'Error al actualizar empleado';
+            mensajeDiv.html(`<div class="alert alert-danger">${error}</div>`);
+        }
+    });
+}
+
+function eliminarEmpleado(idEmpleado, nombreEmpleado) {
+    if (!confirm(`¿Está seguro de eliminar al empleado "${nombreEmpleado}"?\n\nEsta acción desactivará al empleado.`)) {
+        return;
+    }
+    
+    const token = localStorage.getItem('token');
+    
+    $.ajax({
+        url: `http://127.0.0.1:5000/empleados/${idEmpleado}`,
+        method: 'DELETE',
+        headers: {'Authorization': 'Bearer ' + token},
+        success: function(response) {
+            alert(response.message || 'Empleado eliminado exitosamente');
+            cargarEmpleados();
+        },
+        error: function(xhr) {
+            const error = xhr.responseJSON?.error || 'Error al eliminar empleado';
+            alert(error);
+        }
+    });
+}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <title>Editar Orden de Trabajo - Carrocería Alvarado</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" type="text/css" href="vendor/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="fonts/font-awesome-4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" type="text/css" href="css/main.css">
+    <link rel="stylesheet" href="css/fixed-layout.css">
+</head>
+<body>
+
+<div class="admin-wrapper">
+    <!-- Sidebar -->
+    <nav id="sidebar">
+        <div class="sidebar-header">
+            <h3>Carrocería Alvarado</h3>
+        </div>
+        <ul class="list-unstyled components">
+            <p class="ms-3">Administración</p>
+            <li>
+                <a href="#dashboardSubmenu" data-bs-toggle="collapse" aria-expanded="false" class="dropdown-toggle">
+                    <i class="fa fa-tachometer"></i> Dashboard
+                </a>
+                <ul class="collapse list-unstyled" id="dashboardSubmenu">
+                    <li><a href="vision_general.html">Visión General</a></li>
+                </ul>
+            </li>
+            <li> 
+                <a href="admin.html">
+                    <i class="fa fa-users"></i> Panel Principal
+                </a>
+            </li>
+            <li>
+                <a href="#inventarioSubmenu" data-bs-toggle="collapse" aria-expanded="false" class="dropdown-toggle">
+                    <i class="fa fa-archive"></i> Inventario
+                </a>
+                <ul class="collapse list-unstyled" id="inventarioSubmenu">
+                    <li><a href="ver_inventario.html">Ver Inventario</a></li>
+                    <li><a href="anadir_material.html">Añadir Material</a></li>
+                    <li><a href="entradas_salidas_inventario.html">Entradas/Salidas</a></li>
+                </ul>
+            </li>
+            
+            <li><a href="ingresar_empleado.html"><i class="fa fa-address-card"></i> Ingreso Empleados</a></li>
+            <li><a href="ver_empleados.html"><i class="fa fa-users"></i> Ver Empleados</a></li>
+            <li><a href="ingresar_cliente.html"><i class="fa fa-user-plus"></i> Ingreso Clientes</a></li>
+            <li><a href="ingresar_proveedor.html"><i class="fa fa-truck"></i> Ingreso Proveedores</a></li>
+            <li><a href="ver_proveedores.html"><i class="fa fa-list"></i> Ver Proveedores</a></li>
+            <li><a href="orden_trabajo.html"><i class="fa fa-briefcase"></i> Órdenes de Trabajo</a></li>
+            <li class="active"><a href="listar_ordenes_trabajo.html"><i class="fa fa-briefcase"></i> Listar Órdenes de Trabajo</a></li>
+            <li><a href="consultar_comprobantes.html"><i class="fa fa-money"></i> Comprobante</a></li>
+            <li><a href="reportes.html"><i class="fa fa-bar-chart"></i> Reportes</a></li>
+            <li><a href="#" data-bs-toggle="modal" data-bs-target="#settingsModal" ><i class="fa fa-cog"></i> Configuración</a></li>
+        </ul>
+    </nav>
+
+    <!-- Page Content -->
+    <div id="content">
+        <nav class="navbar navbar-expand-lg navbar-light top-navbar">
+            <div class="container-fluid">
+                <button type="button" id="sidebarCollapse" class="btn btn-info">
+                    <i class="fa fa-align-left"></i> <span>Menú</span>
+                </button>
+                <div class="user-info">
+                    <span>Hola, <strong id="currentUserName">Usuario</strong>!</span>
+                    <a href="#" id="logoutButton" class="ms-3">Cerrar Sesión</a>
+                </div>
+            </div>
+        </nav>
+
+        <div class="content-area container-fluid pt-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h2 class="card-header-title">Editar Orden de Trabajo #<span id="ordenId">...</span></h2>
+                <a href="listar_ordenes_trabajo.html" class="btn btn-secondary">
+                    <i class="fa fa-arrow-left"></i> Volver a Lista
+                </a>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    Datos de la Orden
+                </div>
+                <div class="card-body">
+                    <form id="formEditarOrden">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="selectCliente" class="form-label">Cliente <span class="text-danger">*</span></label>
+                                <select class="form-select" id="selectCliente" required>
+                                    <option value="">Cargando clientes...</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Estado Actual</label>
+                                <input type="text" id="estadoActual" class="form-control" readonly>
+                                <small class="text-muted">El estado no se puede editar desde aquí</small>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="fechaInicio" class="form-label">Fecha de Inicio <span class="text-danger">*</span></label>
+                                <input type="date" class="form-control" id="fechaInicio" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="fechaFin" class="form-label">Fecha de Finalización <span class="text-danger">*</span></label>
+                                <input type="date" class="form-control" id="fechaFin" required>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="descripcionOrden" class="form-label">Descripción del Trabajo <span class="text-danger">*</span></label>
+                            <textarea class="form-control" id="descripcionOrden" rows="4" required></textarea>
+                        </div>
+                        
+                        <hr>
+                        
+                        <div class="alert alert-info">
+                            <i class="fa fa-info-circle"></i> <strong>Nota:</strong> Los materiales y empleados asignados no se pueden editar desde aquí. Use las funciones específicas para gestionar esos aspectos.
+                        </div>
+                        
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fa fa-save"></i> Guardar Cambios
+                            </button>
+                            <a href="listar_ordenes_trabajo.html" class="btn btn-secondary">
+                                <i class="fa fa-times"></i> Cancelar
+                            </a>
+                            <button type="button" id="btnVerDetalle" class="btn btn-info ms-auto">
+                                <i class="fa fa-eye"></i> Ver Detalle Completo
+                            </button>
+                        </div>
+                        
+                        <div id="mensajeEditarOrden" class="mt-3"></div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Scripts -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+$(document).ready(function() {
+    // Lógica estándar
+    $('#sidebarCollapse').on('click', function() { $('#sidebar').toggleClass('active'); });
+    const token = localStorage.getItem('token');
+    if (!token) { window.location.href = 'index.html'; return; }
+    const loggedInUsername = localStorage.getItem('loggedInUsername');
+    if (loggedInUsername) { $('#currentUserName').text(loggedInUsername); }
+    $('#logoutButton').on('click', function(e) { e.preventDefault(); localStorage.clear(); window.location.href = 'index.html'; });
+
+    // Obtener ID de orden de la URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const idOrden = urlParams.get('id');
+    
+    if (!idOrden) {
+        alert('No se especificó ID de orden');
+        window.location.href = 'listar_ordenes_trabajo.html';
+        return;
+    }
+    
+    $('#ordenId').text(idOrden);
+    
+    // Cargar clientes
+    function cargarClientes() {
+        $.ajax({
+            url: 'http://127.0.0.1:5000/clientes',
+            method: 'GET',
+            headers: { 'Authorization': 'Bearer ' + token },
+            success: function(clientes) {
+                const $select = $('#selectCliente');
+                $select.empty().append('<option value="">Seleccione un cliente...</option>');
+                clientes.forEach(function(cliente) {
+                    $select.append(`<option value="${cliente.id_cliente}">${cliente.nombre}</option>`);
+                });
+            },
+            error: function(xhr) {
+                console.error('Error al cargar clientes:', xhr);
+                alert('Error al cargar la lista de clientes');
+            }
+        });
+    }
+    
+    // Cargar datos de la orden
+    function cargarDatosOrden() {
+        $.ajax({
+            url: `http://127.0.0.1:5000/ordenes-trabajo/${idOrden}`,
+            method: 'GET',
+            headers: { 'Authorization': 'Bearer ' + token },
+            success: function(orden) {
+                console.log('Datos de la orden:', orden);
+                
+                // Prellenar formulario
+                $('#selectCliente').val(orden.id_cliente);
+                $('#estadoActual').val(orden.estado);
+                $('#fechaInicio').val(orden.fecha_inicio.split('T')[0]); // Formato YYYY-MM-DD
+                $('#fechaFin').val(orden.fecha_fin ? orden.fecha_fin.split('T')[0] : '');
+                $('#descripcionOrden').val(orden.descripcion);
+                
+                // Verificar si se puede editar
+                if (orden.estado === 'Finalizado' || orden.estado === 'Cancelado') {
+                    $('#formEditarOrden :input').prop('disabled', true);
+                    $('#mensajeEditarOrden').html('<div class="alert alert-warning"><i class="fa fa-exclamation-triangle"></i> Esta orden no se puede editar porque está en estado ' + orden.estado + '</div>');
+                }
+            },
+            error: function(xhr) {
+                console.error('Error al cargar orden:', xhr);
+                alert('Error al cargar los datos de la orden');
+                window.location.href = 'listar_ordenes_trabajo.html';
+            }
+        });
+    }
+    
+    // Guardar cambios
+    $('#formEditarOrden').on('submit', function(e) {
+        e.preventDefault();
+        
+        const mensajeDiv = $('#mensajeEditarOrden');
+        mensajeDiv.html('<div class="alert alert-info">Guardando cambios...</div>');
+        
+        const ordenData = {
+            id_cliente: parseInt($('#selectCliente').val()),
+            fecha_inicio: $('#fechaInicio').val(),
+            fecha_fin: $('#fechaFin').val(),
+            descripcion: $('#descripcionOrden').val().trim()
+        };
+        
+        // Validación de fechas
+        if (ordenData.fecha_fin && ordenData.fecha_fin < ordenData.fecha_inicio) {
+            mensajeDiv.html('<div class="alert alert-danger">La fecha de fin no puede ser anterior a la fecha de inicio</div>');
+            return;
+        }
+        
+        console.log('Enviando datos:', ordenData);
+        
+        $.ajax({
+            url: `http://127.0.0.1:5000/ordenes-trabajo/${idOrden}`,
+            method: 'PUT',
+            headers: {
+                'Authorization': 'Bearer ' + token,
+                'Content-Type': 'application/json'
+            },
+            data: JSON.stringify(ordenData),
+            success: function(response) {
+                console.log('Respuesta:', response);
+                mensajeDiv.html('<div class="alert alert-success"><i class="fa fa-check"></i> ' + response.message + '</div>');
+                
+                // Redirigir después de 2 segundos
+                setTimeout(function() {
+                    window.location.href = `detalle_orden.html?id=${idOrden}`;
+                }, 2000);
+            },
+            error: function(xhr) {
+                console.error('Error:', xhr);
+                const error = xhr.responseJSON?.error || 'Error al actualizar la orden';
+                mensajeDiv.html('<div class="alert alert-danger"><i class="fa fa-exclamation-circle"></i> ' + error + '</div>');
+            }
+        });
+    });
+    
+    // Botón ver detalle
+    $('#btnVerDetalle').on('click', function() {
+        window.location.href = `detalle_orden.html?id=${idOrden}`;
+    });
+    
+    // Inicializar
+    cargarClientes();
+    cargarDatosOrden();
+});
+</script>
+
+</body>
+</html>

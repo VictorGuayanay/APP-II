@@ -1,0 +1,38 @@
+<!-- Modal de Configuraciones Generales -->
+<div class="modal fade" id="settingsModal" tabindex="-1" aria-labelledby="settingsModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="settingsModalLabel">Configuraciones Generales</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="settingsForm">
+                    <div class="mb-3">
+                        <label for="settingResetTokenExpiry" class="form-label">Duración del Token de Reseteo de Contraseña (minutos)</label>
+                        <input type="number" class="form-control" id="settingResetTokenExpiry" min="1" required>
+                        <div class="form-text">Tiempo que el enlace de reseteo de contraseña será válido.</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="settingMaxLoginAttempts" class="form-label">Máximos Intentos de Login Fallidos</label>
+                        <input type="number" class="form-control" id="settingMaxLoginAttempts" min="1" required>
+                        <div class="form-text">Número de intentos antes de bloquear la cuenta o tomar otra acción.</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="settingGlobalLowStockThreshold" class="form-label">Limite Global de Stock Bajo</label>
+                        <input type="number" class="form-control" id="settingGlobalLowStockThreshold" min="0" required>
+                        <div class="form-text">Cantidad mínima de stock. Materiales con stock igual o inferior a este valor se resaltarán. (Ej: 5, 10). Un valor de 0 puede usarse si no se desea resaltado o solo para stock cero.</div>
+                    </div>
+                    
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Guardar Configuraciones</button>
+                    </div>
+                </form>
+                <div id="settingsMessage" class="mt-3"></div>
+            </div>
+        </div>
+    </div>
+</div>

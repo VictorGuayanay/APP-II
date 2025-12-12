@@ -31,17 +31,17 @@
                     <li><a href="vision_general.html">Visión General</a></li>
                 </ul>
             </li>
-            <li class="active"> 
+            <li> 
                 <a href="admin.html">
                     <i class="fa fa-users"></i> Panel Principal
                 </a>
             </li>
-            <li>
-                <a href="#inventarioSubmenu" data-bs-toggle="collapse" aria-expanded="false" class="dropdown-toggle">
-                    <i class="fa fa-archive"></i> Inventario
+            <li class="active">
+                <a href="#inventarioSubmenu" data-bs-toggle="collapse" aria-expanded="true" class="dropdown-toggle">
+                    <i class="fa fa-cubes"></i> Inventario
                 </a>
-                <ul class="collapse list-unstyled" id="inventarioSubmenu">
-                    <li><a href="ver_inventario.html">Ver Inventario</a></li>
+                <ul class="collapse show list-unstyled" id="inventarioSubmenu">
+                    <li class="active"><a href="ver_inventario.html">Ver Inventario</a></li>
                     <li><a href="anadir_material.html">Añadir Material</a></li>
                     <li><a href="entradas_salidas_inventario.html">Entradas/Salidas</a></li>
                 </ul>
@@ -49,9 +49,11 @@
             
             <li><a href="ingresar_empleado.html"><i class="fa fa-address-card"></i> Ingreso Empleados</a></li>
             <li><a href="ingresar_cliente.html"><i class="fa fa-user-plus"></i> Ingreso Clientes</a></li>
+            <li><a href="ingresar_proveedor.html"><i class="fa fa-truck"></i> Ingreso Proveedores</a></li>
+            <li><a href="ver_proveedores.html"><i class="fa fa-list"></i> Ver Proveedores</a></li>
             <li><a href="orden_trabajo.html"><i class="fa fa-briefcase"></i> Órdenes de Trabajo</a></li>
             <li><a href="listar_ordenes_trabajo.html"><i class="fa fa-briefcase"></i> Listar Órdenes de Trabajo</a></li>
-            <li><a href="consultar_comprobantes.html"><i class="fa fa-bar-chart"></i> Comprobante</a></li>
+            <li><a href="consultar_comprobantes.html"><i class="fa fa-money"></i> Comprobante</a></li>
             <li><a href="reportes.html"><i class="fa fa-bar-chart"></i> Reportes</a></li>
             <li><a href="#" data-bs-toggle="modal" data-bs-target="#settingsModal" ><i class="fa fa-cog"></i> Configuración</a></li>
         </ul>
@@ -187,6 +189,17 @@
                     <div class="mb-3">
                         <label for="editMaterialDescripcion" class="form-label">Descripción</label>
                         <textarea class="form-control" id="editMaterialDescripcion" rows="2"></textarea>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="editMaterialUbicacion" class="form-label">Ubicación</label>
+                            <input type="text" class="form-control" id="editMaterialUbicacion" placeholder="Ej: Bodega A, Estante 3">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="editMaterialNumeroFactura" class="form-label">Nº Factura</label>
+                            <input type="text" class="form-control" id="editMaterialNumeroFactura" placeholder="Ej: FAC-001234">
+                        </div>
                     </div>
                     
                     <div class="row">
@@ -576,6 +589,8 @@ $(document).ready(function () {
                 $('#editMaterialId').val(material.id_material);
                 $('#editMaterialNombre').val(material.nombre);
                 $('#editMaterialDescripcion').val(material.descripcion || '');
+                $('#editMaterialUbicacion').val(material.ubicacion || '');
+                $('#editMaterialNumeroFactura').val(material.numero_factura || '');
                 $('#editMaterialPrecioCompra').val(material.precio_compra || material.precio_unitario);
                 $('#editMaterialPorcentajeGanancia').val(material.porcentaje_ganancia || 20);
                 $('#editMaterialProveedor').val(material.id_proveedor || '');
@@ -602,6 +617,8 @@ $(document).ready(function () {
         const materialId = $('#editMaterialId').val();
         const nombre = $('#editMaterialNombre').val().trim();
         const descripcion = $('#editMaterialDescripcion').val().trim();
+        const ubicacion = $('#editMaterialUbicacion').val().trim();
+        const numeroFactura = $('#editMaterialNumeroFactura').val().trim();
         const precioCompra = $('#editMaterialPrecioCompra').val();
         const porcentajeGanancia = $('#editMaterialPorcentajeGanancia').val();
         const idProveedor = $('#editMaterialProveedor').val();
@@ -618,6 +635,8 @@ $(document).ready(function () {
         const datosActualizados = {
             nombre: nombre,
             descripcion: descripcion,
+            ubicacion: ubicacion || null,
+            numero_factura: numeroFactura || null,
             precio_compra: parseFloat(precioCompra),
             porcentaje_ganancia: parseInt(porcentajeGanancia),
             id_proveedor: idProveedor || null
