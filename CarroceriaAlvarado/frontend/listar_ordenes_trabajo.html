@@ -151,8 +151,9 @@ function loadOrdenesDeTrabajo() {
             $tableBody.empty();
             if (ordenes && ordenes.length > 0) {
                 ordenes.forEach(function(orden) {
-                    const fechaInicio = orden.fecha_inicio ? new Date(orden.fecha_inicio).toLocaleDateString('es-EC') : 'N/A';
-                    const fechaFin = orden.fecha_fin ? new Date(orden.fecha_fin).toLocaleDateString('es-EC') : 'N/A';
+                    // Formatear fechas sin conversión de zona horaria
+                    const fechaInicio = orden.fecha_inicio ? orden.fecha_inicio.split('T')[0].split('-').reverse().join('/') : 'N/A';
+                    const fechaFin = orden.fecha_fin ? orden.fecha_fin.split('T')[0].split('-').reverse().join('/') : 'N/A';
                     
                     // --- INICIO DE LA MODIFICACIÓN ---
                     // Convertir la lista de empleados en un string separado por comas
@@ -223,8 +224,9 @@ function generarPDFDeOrden(orden) {
         doc.text(`Cliente: ${orden.nombre_cliente}`, 40, currentY);
         doc.text(`Estado: ${orden.estado}`, 350, currentY);
         currentY += 20;
-        const fechaInicio = new Date(orden.fecha_inicio).toLocaleDateString('es-EC');
-        const fechaFin = orden.fecha_fin ? new Date(orden.fecha_fin).toLocaleDateString('es-EC') : 'Pendiente';
+        // Formatear fechas sin conversión de zona horaria
+        const fechaInicio = orden.fecha_inicio ? orden.fecha_inicio.split('T')[0].split('-').reverse().join('/') : 'N/A';
+        const fechaFin = orden.fecha_fin ? orden.fecha_fin.split('T')[0].split('-').reverse().join('/') : 'Pendiente';
         doc.text(`Fechas: ${fechaInicio} a ${fechaFin}`, 40, currentY);
         currentY += 20;
         doc.text("Descripción del Trabajo:", 40, currentY);
@@ -234,34 +236,55 @@ function generarPDFDeOrden(orden) {
         doc.text(descripcionLines, 40, currentY);
         currentY += (descripcionLines.length * 12) + 10; // Incrementar Y basado en el número de líneas
 
-        // --- EMPLEADOS ASIGNADOS ---
-        if (orden.empleados_asignados && orden.empleados_asignados.length > 0) {
-            doc.autoTable({
-                head: [['Personal Asignado', 'Cargo']],
-                body: orden.empleados_asignados.map(emp => [emp.nombre, emp.cargo_empleado]),
-                startY: currentY,
-                theme: 'striped'
+
+        // --- CALCULAR MANO DE OBRA ---
+        let costoTotalManoObra = 0;
+        if (orden.empleados_asignados && orden.empleados_asignados.length > 0 && orden.fecha_inicio && orden.fecha_fin) {
+            // Calcular días laborales
+            const fechaInicioDate = new Date(orden.fecha_inicio);
+            const fechaFinDate = new Date(orden.fecha_fin);
+            const diffTime = Math.abs(fechaFinDate - fechaInicioDate);
+            const diasLaborales = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+            const horasPorDia = 8;
+            const horasTotales = diasLaborales * horasPorDia;
+            
+            // Calcular costo total de mano de obra
+            orden.empleados_asignados.forEach(emp => {
+                costoTotalManoObra += horasTotales * (emp.costo_hora || 0);
             });
-            currentY = doc.lastAutoTable.finalY + 20; // Actualizar Y a la posición después de la tabla
         }
 
         // --- MATERIALES UTILIZADOS ---
+        let costoTotalMateriales = 0;
         if (orden.materiales_asignados && orden.materiales_asignados.length > 0) {
-            let costoTotalMateriales = 0;
             const bodyMateriales = orden.materiales_asignados.map(mat => {
                 costoTotalMateriales += mat.costo_total;
                 return [mat.nombre_material, mat.cantidad_usada, `$${parseFloat(mat.costo_total).toFixed(2)}`];
             });
-            // Añadir fila de total
-            bodyMateriales.push([{content: 'Costo Total de Materiales', colSpan: 2, styles: {halign: 'right', fontStyle: 'bold'}}, {content: `$${costoTotalMateriales.toFixed(2)}`, styles: {fontStyle: 'bold'}}] );
 
             doc.autoTable({
                 head: [['Material Utilizado', 'Cantidad', 'Costo']],
                 body: bodyMateriales,
                 startY: currentY,
-                theme: 'grid'
+                theme: 'grid',
+                margin: { left: 40, right: 40 }
             });
+            currentY = doc.lastAutoTable.finalY + 10;
         }
+
+        // --- RESUMEN FINANCIERO ---
+        const totalGeneral = costoTotalMateriales + costoTotalManoObra;
+        
+        doc.autoTable({
+            body: [
+                [{content: 'Costo Total de Materiales', styles: {halign: 'right', fontStyle: 'bold'}}, {content: `$${costoTotalMateriales.toFixed(2)}`, styles: {fontStyle: 'bold', halign: 'right'}}],
+                [{content: 'Total Mano de Obra', styles: {halign: 'right', fontStyle: 'bold'}}, {content: `$${costoTotalManoObra.toFixed(2)}`, styles: {fontStyle: 'bold', halign: 'right'}}],
+                [{content: 'TOTAL A COBRAR AL CLIENTE', styles: {halign: 'right', fontStyle: 'bold', fontSize: 14, fillColor: [45, 45, 45], textColor: [255, 255, 255]}}, {content: `$${totalGeneral.toFixed(2)}`, styles: {fontStyle: 'bold', fontSize: 14, fillColor: [45, 45, 45], textColor: [255, 255, 255], halign: 'right'}}]
+            ],
+            startY: currentY,
+            theme: 'grid',
+            margin: { left: 40, right: 40 }
+        });
 
         // Guardar el PDF
         doc.save(`orden_de_trabajo_${orden.id_orden}.pdf`);

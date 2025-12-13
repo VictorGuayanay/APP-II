@@ -340,8 +340,8 @@ $(document).ready(function() {
                     
                     if (materiales && materiales.length > 0) {
                         materiales.forEach(function(m) {
-                            const precioFormat = m.precio_unitario ? `$${parseFloat(m.precio_unitario).toFixed(2)}` : 'N/A';
-                            $selectMaterial.append(`<option value="${m.id_material}" data-nombre="${m.nombre}" data-precio="${m.precio_unitario}">${m.nombre} - ${precioFormat} (Stock: ${m.cantidad})</option>`);
+                            const precioFormat = m.precio_venta ? `$${parseFloat(m.precio_venta).toFixed(2)}` : 'N/A';
+                            $selectMaterial.append(`<option value="${m.id_material}" data-nombre="${m.nombre}" data-precio="${m.precio_venta}">${m.nombre} - ${precioFormat} (Stock: ${m.cantidad})</option>`);
                         });
                     } else {
                         $selectMaterial.append('<option value="">No hay materiales disponibles</option>');

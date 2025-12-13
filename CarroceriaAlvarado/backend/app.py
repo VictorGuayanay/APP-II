@@ -3023,8 +3023,8 @@ def get_detalles_orden(decoded_user_rol, decoded_user_id, id_orden):
 @roles_required('Administrador', 'Supervisor')
 def actualizar_orden_trabajo(decoded_user_rol, decoded_user_id, id_orden):
     """
-    Endpoint para actualizar datos básicos de una orden de trabajo.
-    Solo permite editar: cliente, fechas, descripción
+    Endpoint para actualizar una orden de trabajo completa.
+    Permite editar: cliente, fechas, descripción, empleados asignados y materiales
     No permite editar órdenes finalizadas o canceladas.
     """
     print(f"API PUT /ordenes-trabajo/{id_orden}: Solicitud de usuario ID {decoded_user_id}")
@@ -3039,6 +3039,11 @@ def actualizar_orden_trabajo(decoded_user_rol, decoded_user_id, id_orden):
         fecha_inicio_str = data.get('fecha_inicio')
         fecha_fin_str = data.get('fecha_fin')
         descripcion = data.get('descripcion')
+        empleados_asignados = data.get('empleados_asignados', [])  # Lista de IDs de empleados
+        materiales = data.get('materiales', [])  # Lista de materiales
+        subtotal_materiales = data.get('subtotal_materiales', 0.0)
+        margen_ganancia = data.get('margen_ganancia', 20)
+        total_orden = data.get('total_orden', 0.0)
         
         # Validaciones básicas
         if not id_cliente or not fecha_inicio_str or not fecha_fin_str or not descripcion:
@@ -3059,6 +3064,7 @@ def actualizar_orden_trabajo(decoded_user_rol, decoded_user_id, id_orden):
         try:
             conn = get_db_connection()
             cursor = conn.cursor()
+            conn.autocommit = False  # Iniciar transacción
             
             # Verificar que la orden existe y obtener su estado
             cursor.execute("SELECT estado FROM OrdenesTrabajo WHERE id_orden = ?", (id_orden,))
@@ -3078,23 +3084,70 @@ def actualizar_orden_trabajo(decoded_user_rol, decoded_user_id, id_orden):
             if not cursor.fetchone():
                 return jsonify({'error': f'Cliente con ID {id_cliente} no encontrado'}), 404
             
-            # Actualizar la orden
+            # 1. Actualizar datos básicos de la orden
             sql_update = """
                 UPDATE OrdenesTrabajo 
                 SET id_cliente = ?, 
                     fecha_inicio = ?, 
                     fecha_fin = ?, 
                     descripcion = ?,
-                    fecha_ultima_actualizacion = GETDATE()
+                    subtotal_materiales = ?,
+                    margen_ganancia = ?,
+                    total_orden = ?,
+                    fecha_ultima_actualizacion = GETDATE(),
+                    id_usuario_ultima_actualizacion = ?
                 WHERE id_orden = ?
             """
-            cursor.execute(sql_update, (id_cliente, fecha_inicio, fecha_fin, descripcion, id_orden))
+            cursor.execute(sql_update, (id_cliente, fecha_inicio, fecha_fin, descripcion, 
+                                       subtotal_materiales, margen_ganancia, total_orden,
+                                       decoded_user_id, id_orden))
+            
+            # 2. Actualizar empleados asignados
+            # Eliminar asignaciones actuales
+            cursor.execute("DELETE FROM AsignacionesOrdenEmpleado WHERE id_orden = ?", (id_orden,))
+            
+            # Insertar nuevas asignaciones
+            if empleados_asignados and len(empleados_asignados) > 0:
+                for id_empleado in empleados_asignados:
+                    cursor.execute("INSERT INTO AsignacionesOrdenEmpleado (id_orden, id_empleado) VALUES (?, ?)", 
+                                 (id_orden, id_empleado))
+                print(f"Asignados {len(empleados_asignados)} empleados a la orden {id_orden}")
+            
+            # 3. Actualizar materiales
+            # Eliminar materiales actuales
+            cursor.execute("DELETE FROM DetalleOrdenMateriales WHERE id_orden = ?", (id_orden,))
+            
+            # Insertar nuevos materiales
+            if materiales and len(materiales) > 0:
+                print(f"Guardando {len(materiales)} materiales para la orden {id_orden}")
+                for material in materiales:
+                    id_material = material.get('id_material')
+                    cantidad = material.get('cantidad')
+                    precio_unitario = material.get('precio_unitario', 0)
+                    
+                    if not id_material or not cantidad:
+                        print(f"Material inválido, saltando: {material}")
+                        continue
+                    
+                    # Calcular costo total del material
+                    costo_total = cantidad * precio_unitario
+                    
+                    # Insertar en DetalleOrdenMateriales
+                    sql_insert_material = """
+                        INSERT INTO DetalleOrdenMateriales (id_orden, id_material, cantidad_usada, costo_total)
+                        VALUES (?, ?, ?, ?)
+                    """
+                    cursor.execute(sql_insert_material, (id_orden, id_material, cantidad, costo_total))
+                    print(f"Material {id_material} guardado: cantidad={cantidad}, costo_total=${costo_total}")
+            
             conn.commit()
             
-            print(f"API PUT /ordenes-trabajo/{id_orden}: Orden actualizada exitosamente")
+            print(f"API PUT /ordenes-trabajo/{id_orden}: Orden actualizada exitosamente con {len(empleados_asignados)} empleados y {len(materiales)} materiales")
             return jsonify({
                 'message': 'Orden de trabajo actualizada exitosamente',
-                'id_orden': id_orden
+                'id_orden': id_orden,
+                'empleados_asignados': len(empleados_asignados),
+                'materiales_asignados': len(materiales)
             }), 200
             
         except Exception as db_e:
@@ -3104,6 +3157,7 @@ def actualizar_orden_trabajo(decoded_user_rol, decoded_user_id, id_orden):
             return jsonify({'error': f'Error de base de datos: {str(db_e)}'}), 500
         finally:
             if conn:
+                conn.autocommit = True
                 conn.close()
                 
     except Exception as e:

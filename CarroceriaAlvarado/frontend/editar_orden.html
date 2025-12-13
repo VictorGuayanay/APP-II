@@ -39,6 +39,7 @@
                 <ul class="collapse list-unstyled" id="inventarioSubmenu">
                     <li><a href="ver_inventario.html">Ver Inventario</a></li>
                     <li><a href="anadir_material.html">Añadir Material</a></li>
+                    <li><a href="gestion_categorias.html">Gestión de Categorías</a></li>
                     <li><a href="entradas_salidas_inventario.html">Entradas/Salidas</a></li>
                 </ul>
             </li>
@@ -84,6 +85,7 @@
                 </div>
                 <div class="card-body">
                     <form id="formEditarOrden">
+                        <!-- Datos Básicos -->
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label for="selectCliente" class="form-label">Cliente <span class="text-danger">*</span></label>
@@ -112,10 +114,81 @@
                             <textarea class="form-control" id="descripcionOrden" rows="4" required></textarea>
                         </div>
                         
+                        <!-- Empleados Asignados -->
                         <hr>
+                        <h5>Empleados Asignados</h5>
+                        <div id="empleadosAsignadosContainer" class="mb-3">
+                            <!-- Se llenará dinámicamente -->
+                        </div>
                         
-                        <div class="alert alert-info">
-                            <i class="fa fa-info-circle"></i> <strong>Nota:</strong> Los materiales y empleados asignados no se pueden editar desde aquí. Use las funciones específicas para gestionar esos aspectos.
+                        <!-- Materiales -->
+                        <hr>
+                        <h5>Materiales Necesarios</h5>
+                        <p class="text-muted">Seleccione un proveedor para ver sus materiales disponibles</p>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="selectProveedor" class="form-label">Proveedor</label>
+                                <select class="form-select" id="selectProveedor">
+                                    <option value="">Seleccione un proveedor...</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="selectMaterialProveedor" class="form-label">Material</label>
+                                <select class="form-select" id="selectMaterialProveedor" disabled>
+                                    <option value="">Primero seleccione un proveedor</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="cantidadMaterial" class="form-label">Cantidad</label>
+                                <input type="number" class="form-control" id="cantidadMaterial" min="1" placeholder="Ej: 5" disabled>
+                            </div>
+                            <div class="col-md-6 mb-3 d-flex align-items-end">
+                                <button type="button" id="btnAgregarMaterial" class="btn btn-secondary" disabled>
+                                    <i class="fa fa-plus"></i> Agregar Material
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Lista de materiales agregados -->
+                        <div id="listaMaterialesAgregados" class="mb-3" style="display: none;">
+                            <h6>Materiales Agregados:</h6>
+                            <ul id="materialesListaUl" class="list-group">
+                            </ul>
+                        </div>
+                        
+                        <!-- Resumen Financiero -->
+                        <div class="card bg-light mb-3">
+                            <div class="card-header bg-info text-white">
+                                <i class="fa fa-calculator"></i> Resumen Financiero
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <label class="form-label">Subtotal (Materiales)</label>
+                                        <input type="text" id="subtotalMateriales" class="form-control" readonly value="$0.00">
+                                        <small class="text-muted">Suma de todos los materiales</small>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">Margen de Ganancia (%)</label>
+                                        <select id="margenGanancia" class="form-select">
+                                            <option value="">Seleccione el margen de ganancia</option>
+                                            <option value="10">10%</option>
+                                            <option value="15">15%</option>
+                                            <option value="20" selected>20%</option>
+                                            <option value="25">25%</option>
+                                            <option value="30">30%</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">Total</label>
+                                        <input type="text" id="totalOrden" class="form-control" readonly value="$0.00">
+                                        <small class="text-muted">Subtotal + Margen</small>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                         
                         <div class="d-flex gap-2">
@@ -138,9 +211,14 @@
     </div>
 </div>
 
+<!-- Modal de Configuración -->
+<div id="settingsModalPlaceholder"></div>
+
 <!-- Scripts -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="js/settings_modal.js"></script>
+
 <script>
 $(document).ready(function() {
     // Lógica estándar
@@ -150,6 +228,9 @@ $(document).ready(function() {
     const loggedInUsername = localStorage.getItem('loggedInUsername');
     if (loggedInUsername) { $('#currentUserName').text(loggedInUsername); }
     $('#logoutButton').on('click', function(e) { e.preventDefault(); localStorage.clear(); window.location.href = 'index.html'; });
+
+    // Cargar modal de configuración
+    $('#settingsModalPlaceholder').load('settings_modal.html');
 
     // Obtener ID de orden de la URL
     const urlParams = new URLSearchParams(window.location.search);
@@ -162,6 +243,11 @@ $(document).ready(function() {
     }
     
     $('#ordenId').text(idOrden);
+    
+    // Variables globales
+    let empleadosSeleccionados = [];
+    let materialesAgregados = [];
+    let subtotalMateriales = 0;
     
     // Cargar clientes
     function cargarClientes() {
@@ -178,40 +264,325 @@ $(document).ready(function() {
             },
             error: function(xhr) {
                 console.error('Error al cargar clientes:', xhr);
-                alert('Error al cargar la lista de clientes');
             }
         });
     }
     
-    // Cargar datos de la orden
-    function cargarDatosOrden() {
+    // Variables globales para empleados
+    let empleadosAsignados = [];  // Array de objetos {id_empleado, nombre, cargo}
+    let todosLosEmpleados = [];   // Todos los empleados del sistema
+    
+    // Cargar todos los empleados del sistema
+    function cargarTodosLosEmpleados() {
         $.ajax({
-            url: `http://127.0.0.1:5000/ordenes-trabajo/${idOrden}`,
+            url: 'http://127.0.0.1:5000/empleados',
             method: 'GET',
             headers: { 'Authorization': 'Bearer ' + token },
-            success: function(orden) {
-                console.log('Datos de la orden:', orden);
-                
-                // Prellenar formulario
-                $('#selectCliente').val(orden.id_cliente);
-                $('#estadoActual').val(orden.estado);
-                $('#fechaInicio').val(orden.fecha_inicio.split('T')[0]); // Formato YYYY-MM-DD
-                $('#fechaFin').val(orden.fecha_fin ? orden.fecha_fin.split('T')[0] : '');
-                $('#descripcionOrden').val(orden.descripcion);
-                
-                // Verificar si se puede editar
-                if (orden.estado === 'Finalizado' || orden.estado === 'Cancelado') {
-                    $('#formEditarOrden :input').prop('disabled', true);
-                    $('#mensajeEditarOrden').html('<div class="alert alert-warning"><i class="fa fa-exclamation-triangle"></i> Esta orden no se puede editar porque está en estado ' + orden.estado + '</div>');
-                }
+            success: function(empleados) {
+                todosLosEmpleados = empleados || [];
             },
             error: function(xhr) {
-                console.error('Error al cargar orden:', xhr);
-                alert('Error al cargar los datos de la orden');
-                window.location.href = 'listar_ordenes_trabajo.html';
+                console.error('Error al cargar empleados:', xhr);
             }
         });
     }
+    
+    // Mostrar empleados asignados con botón Cambiar
+    function mostrarEmpleadosAsignados() {
+        const $container = $('#empleadosAsignadosContainer');
+        $container.empty();
+        
+        if (empleadosAsignados.length === 0) {
+            $container.html('<p class="text-muted">No hay empleados asignados. <button type="button" class="btn btn-sm btn-primary" id="btnAgregarPrimerEmpleado"><i class="fa fa-plus"></i> Agregar Empleado</button></p>');
+            return;
+        }
+        
+        empleadosAsignados.forEach(function(emp, index) {
+            const empleadoCard = `
+                <div class="card mb-2">
+                    <div class="card-body d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>${emp.nombre}</strong>
+                            <span class="text-muted"> - ${emp.cargo || 'Sin cargo'}</span>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-warning btn-cambiar-empleado" data-index="${index}">
+                            <i class="fa fa-exchange"></i> Cambiar
+                        </button>
+                    </div>
+                </div>
+            `;
+            $container.append(empleadoCard);
+        });
+        
+        // Botón para agregar más empleados
+        $container.append('<button type="button" class="btn btn-sm btn-primary mt-2" id="btnAgregarMasEmpleados"><i class="fa fa-plus"></i> Agregar Otro Empleado</button>');
+    }
+    
+    // Obtener empleados disponibles (excluyendo los que están en otras órdenes activas)
+    function obtenerEmpleadosDisponibles(callback) {
+        $.ajax({
+            url: 'http://127.0.0.1:5000/empleados/disponibles',
+            method: 'GET',
+            headers: { 'Authorization': 'Bearer ' + token },
+            success: function(empleados) {
+                callback(empleados || []);
+            },
+            error: function(xhr) {
+                console.error('Error al cargar empleados disponibles:', xhr);
+                // Si el endpoint no existe, usar todos los empleados
+                callback(todosLosEmpleados);
+            }
+        });
+    }
+    
+    // Mostrar modal para seleccionar empleado
+    function mostrarModalSeleccionEmpleado(indexACambiar) {
+        obtenerEmpleadosDisponibles(function(empleadosDisponibles) {
+            // Filtrar empleados que ya están asignados a esta orden
+            const idsAsignados = empleadosAsignados.map(e => e.id_empleado);
+            const disponibles = empleadosDisponibles.filter(e => !idsAsignados.includes(e.id_empleado));
+            
+            if (disponibles.length === 0) {
+                alert('No hay empleados disponibles para asignar.');
+                return;
+            }
+            
+            let opciones = '<option value="">Seleccione un empleado...</option>';
+            disponibles.forEach(function(emp) {
+                opciones += `<option value="${emp.id_empleado}" data-nombre="${emp.nombre}" data-cargo="${emp.rol || emp.cargo_empleado || ''}">${emp.nombre} - ${emp.rol || emp.cargo_empleado || 'Sin cargo'}</option>`;
+            });
+            
+            const modalHTML = `
+                <div class="modal fade" id="modalSeleccionEmpleado" tabindex="-1">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">${indexACambiar !== null ? 'Cambiar Empleado' : 'Agregar Empleado'}</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <label class="form-label">Seleccione un empleado disponible:</label>
+                                <select class="form-select" id="selectNuevoEmpleado">
+                                    ${opciones}
+                                </select>
+                                <small class="text-muted">Solo se muestran empleados que no están asignados a otras órdenes activas.</small>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                <button type="button" class="btn btn-primary" id="btnConfirmarEmpleado">Confirmar</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Remover modal anterior si existe
+            $('#modalSeleccionEmpleado').remove();
+            $('body').append(modalHTML);
+            
+            const modal = new bootstrap.Modal(document.getElementById('modalSeleccionEmpleado'));
+            modal.show();
+            
+            // Confirmar selección
+            $('#btnConfirmarEmpleado').on('click', function() {
+                const $select = $('#selectNuevoEmpleado');
+                const idEmpleado = parseInt($select.val());
+                const $option = $select.find('option:selected');
+                const nombre = $option.data('nombre');
+                const cargo = $option.data('cargo');
+                
+                if (!idEmpleado) {
+                    alert('Por favor seleccione un empleado');
+                    return;
+                }
+                
+                if (indexACambiar !== null) {
+                    // Cambiar empleado existente
+                    empleadosAsignados[indexACambiar] = {
+                        id_empleado: idEmpleado,
+                        nombre: nombre,
+                        cargo: cargo
+                    };
+                } else {
+                    // Agregar nuevo empleado
+                    empleadosAsignados.push({
+                        id_empleado: idEmpleado,
+                        nombre: nombre,
+                        cargo: cargo
+                    });
+                }
+                
+                mostrarEmpleadosAsignados();
+                modal.hide();
+            });
+        });
+    }
+    
+    // Event handlers para botones de empleados
+    $(document).on('click', '.btn-cambiar-empleado', function() {
+        const index = $(this).data('index');
+        mostrarModalSeleccionEmpleado(index);
+    });
+    
+    $(document).on('click', '#btnAgregarPrimerEmpleado, #btnAgregarMasEmpleados', function() {
+        mostrarModalSeleccionEmpleado(null);
+    });
+    
+    // Cargar proveedores
+    function cargarProveedores() {
+        const $selectProveedor = $('#selectProveedor');
+        $.ajax({
+            url: 'http://127.0.0.1:5000/proveedores',
+            method: 'GET',
+            headers: { 'Authorization': 'Bearer ' + token },
+            success: function(proveedores) {
+                $selectProveedor.empty().append('<option value="">Seleccione un proveedor...</option>');
+                proveedores.forEach(function(p) {
+                    if (p.estado === 'Activo') {
+                        $selectProveedor.append(`<option value="${p.id_proveedor}">${p.nombre_proveedor}</option>`);
+                    }
+                });
+            },
+            error: function(xhr) {
+                console.error('Error al cargar proveedores:', xhr.responseText);
+            }
+        });
+    }
+    
+    // Cuando se selecciona un proveedor
+    $('#selectProveedor').on('change', function() {
+        const idProveedor = $(this).val();
+        const $selectMaterial = $('#selectMaterialProveedor');
+        
+        if (!idProveedor) {
+            $selectMaterial.prop('disabled', true).empty().append('<option value="">Primero seleccione un proveedor</option>');
+            $('#cantidadMaterial').prop('disabled', true);
+            $('#btnAgregarMaterial').prop('disabled', true);
+            return;
+        }
+        
+        $.ajax({
+            url: `http://127.0.0.1:5000/proveedores/${idProveedor}/materiales`,
+            method: 'GET',
+            headers: { 'Authorization': 'Bearer ' + token },
+            success: function(materiales) {
+                $selectMaterial.empty().prop('disabled', false);
+                $selectMaterial.append('<option value="">Seleccione un material...</option>');
+                
+                if (materiales && materiales.length > 0) {
+                    materiales.forEach(function(m) {
+                        // El backend devuelve precio_unitario, no precio_venta
+                        const precio = m.precio_unitario || m.precio_venta || 0;
+                        const precioFormat = precio ? `$${parseFloat(precio).toFixed(2)}` : 'N/A';
+                        $selectMaterial.append(`<option value="${m.id_material}" data-nombre="${m.nombre}" data-precio="${precio}">${m.nombre} - ${precioFormat} (Stock: ${m.cantidad})</option>`);
+                    });
+                } else {
+                    $selectMaterial.append('<option value="">No hay materiales disponibles</option>');
+                }
+            },
+            error: function(xhr) {
+                console.error('Error al cargar materiales:', xhr.responseText);
+                $selectMaterial.empty().append('<option value="">Error al cargar materiales</option>');
+            }
+        });
+    });
+    
+    // Cuando se selecciona un material
+    $('#selectMaterialProveedor').on('change', function() {
+        if ($(this).val()) {
+            $('#cantidadMaterial').prop('disabled', false);
+            $('#btnAgregarMaterial').prop('disabled', false);
+        } else {
+            $('#cantidadMaterial').prop('disabled', true);
+            $('#btnAgregarMaterial').prop('disabled', true);
+        }
+    });
+    
+    // Agregar material
+    $('#btnAgregarMaterial').on('click', function() {
+        const $selectMaterial = $('#selectMaterialProveedor');
+        const $selectedOption = $selectMaterial.find('option:selected');
+        const idMaterial = $selectMaterial.val();
+        const nombreMaterial = $selectedOption.data('nombre');
+        const precioUnitario = parseFloat($selectedOption.data('precio'));
+        const cantidad = parseInt($('#cantidadMaterial').val());
+        
+        if (!idMaterial || !cantidad || cantidad <= 0) {
+            alert('Por favor, seleccione un material y una cantidad válida');
+            return;
+        }
+        
+        // Verificar si ya existe
+        const existe = materialesAgregados.find(m => m.id_material === parseInt(idMaterial));
+        if (existe) {
+            alert('Este material ya fue agregado. Elimínelo primero si desea cambiar la cantidad.');
+            return;
+        }
+        
+        const costoTotal = precioUnitario * cantidad;
+        
+        materialesAgregados.push({
+            id_material: parseInt(idMaterial),
+            nombre: nombreMaterial,
+            cantidad: cantidad,
+            precio_unitario: precioUnitario,
+            costo_total: costoTotal
+        });
+        
+        actualizarListaMateriales();
+        actualizarResumenFinanciero();
+        
+        // Limpiar selección
+        $('#cantidadMaterial').val('');
+        $selectMaterial.val('');
+        $('#cantidadMaterial').prop('disabled', true);
+        $('#btnAgregarMaterial').prop('disabled', true);
+    });
+    
+    // Actualizar lista de materiales
+    function actualizarListaMateriales() {
+        const $lista = $('#materialesListaUl');
+        $lista.empty();
+        
+        if (materialesAgregados.length === 0) {
+            $('#listaMaterialesAgregados').hide();
+            return;
+        }
+        
+        $('#listaMaterialesAgregados').show();
+        materialesAgregados.forEach(function(mat, index) {
+            const item = `
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <span><strong>${mat.nombre}</strong> - Cantidad: ${mat.cantidad} - Precio Unit: $${mat.precio_unitario.toFixed(2)} - Total: $${mat.costo_total.toFixed(2)}</span>
+                    <button type="button" class="btn btn-danger btn-sm btn-eliminar-material" data-index="${index}">
+                        <i class="fa fa-trash"></i>
+                    </button>
+                </li>
+            `;
+            $lista.append(item);
+        });
+    }
+    
+    // Eliminar material
+    $(document).on('click', '.btn-eliminar-material', function() {
+        const index = $(this).data('index');
+        materialesAgregados.splice(index, 1);
+        actualizarListaMateriales();
+        actualizarResumenFinanciero();
+    });
+    
+    // Actualizar resumen financiero
+    function actualizarResumenFinanciero() {
+        subtotalMateriales = materialesAgregados.reduce((sum, mat) => sum + mat.costo_total, 0);
+        const margen = parseInt($('#margenGanancia').val()) || 0;
+        const total = subtotalMateriales * (1 + margen / 100);
+        
+        $('#subtotalMateriales').val('$' + subtotalMateriales.toFixed(2));
+        $('#totalOrden').val('$' + total.toFixed(2));
+    }
+    
+    $('#margenGanancia').on('change', actualizarResumenFinanciero);
+    
     
     // Guardar cambios
     $('#formEditarOrden').on('submit', function(e) {
@@ -220,14 +591,22 @@ $(document).ready(function() {
         const mensajeDiv = $('#mensajeEditarOrden');
         mensajeDiv.html('<div class="alert alert-info">Guardando cambios...</div>');
         
+        // Obtener IDs de empleados asignados
+        const empleadosSeleccionados = empleadosAsignados.map(e => e.id_empleado);
+        
         const ordenData = {
             id_cliente: parseInt($('#selectCliente').val()),
             fecha_inicio: $('#fechaInicio').val(),
             fecha_fin: $('#fechaFin').val(),
-            descripcion: $('#descripcionOrden').val().trim()
+            descripcion: $('#descripcionOrden').val().trim(),
+            empleados_asignados: empleadosSeleccionados,
+            materiales: materialesAgregados,
+            subtotal_materiales: subtotalMateriales,
+            margen_ganancia: parseInt($('#margenGanancia').val()) || 20,
+            total_orden: subtotalMateriales * (1 + (parseInt($('#margenGanancia').val()) || 20) / 100)
         };
         
-        // Validación de fechas
+        // Validación
         if (ordenData.fecha_fin && ordenData.fecha_fin < ordenData.fecha_inicio) {
             mensajeDiv.html('<div class="alert alert-danger">La fecha de fin no puede ser anterior a la fecha de inicio</div>');
             return;
@@ -267,7 +646,65 @@ $(document).ready(function() {
     
     // Inicializar
     cargarClientes();
-    cargarDatosOrden();
+    cargarTodosLosEmpleados();
+    cargarProveedores();
+    
+    // Cargar datos de la orden (esto llamará a mostrarEmpleadosAsignados internamente)
+    $.ajax({
+        url: `http://127.0.0.1:5000/ordenes-trabajo/${idOrden}`,
+        method: 'GET',
+        headers: { 'Authorization': 'Bearer ' + token },
+        success: function(orden) {
+            console.log('Datos de la orden:', orden);
+            
+            // Prellenar formulario
+            $('#selectCliente').val(orden.id_cliente);
+            $('#estadoActual').val(orden.estado);
+            $('#fechaInicio').val(orden.fecha_inicio.split('T')[0]);
+            $('#fechaFin').val(orden.fecha_fin ? orden.fecha_fin.split('T')[0] : '');
+            $('#descripcionOrden').val(orden.descripcion);
+            
+            // Cargar empleados asignados
+            if (orden.empleados_asignados && orden.empleados_asignados.length > 0) {
+                empleadosAsignados = orden.empleados_asignados.map(function(emp) {
+                    return {
+                        id_empleado: emp.id_empleado,
+                        nombre: emp.nombre,
+                        cargo: emp.cargo_empleado || emp.rol || ''
+                    };
+                });
+                mostrarEmpleadosAsignados();
+            } else {
+                mostrarEmpleadosAsignados(); // Mostrar botón "Agregar Empleado"
+            }
+            
+            // Cargar materiales asignados
+            if (orden.materiales_asignados && orden.materiales_asignados.length > 0) {
+                materialesAgregados = orden.materiales_asignados.map(function(mat) {
+                    return {
+                        id_material: mat.id_material,
+                        nombre: mat.nombre_material,
+                        cantidad: mat.cantidad_usada,
+                        precio_unitario: mat.costo_total / mat.cantidad_usada,
+                        costo_total: mat.costo_total
+                    };
+                });
+                actualizarListaMateriales();
+                actualizarResumenFinanciero();
+            }
+            
+            // Verificar si se puede editar
+            if (orden.estado === 'Finalizado' || orden.estado === 'Cancelado') {
+                $('#formEditarOrden :input').prop('disabled', true);
+                $('#mensajeEditarOrden').html('<div class="alert alert-warning"><i class="fa fa-exclamation-triangle"></i> Esta orden no se puede editar porque está en estado ' + orden.estado + '</div>');
+            }
+        },
+        error: function(xhr) {
+            console.error('Error al cargar orden:', xhr);
+            alert('Error al cargar los datos de la orden');
+            window.location.href = 'listar_ordenes_trabajo.html';
+        }
+    });
 });
 </script>
 

@@ -144,15 +144,42 @@
                     </div>
                     
                     <hr>
-                    <!-- Finalizar Orden -->
-                    <h5 class="mt-4">Finalizar Orden</h5>
-                    <p>Verifique la cantidad de materiales Utilizados en la oreden de trabajo antes de finalizar</p>
-                    <button class="btn btn-danger" id="finalizeOrderButton">Confirmar Uso y Finalizar</button>
+                    <!-- Acciones de la Orden -->
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <h5><i class="fa fa-cogs"></i> Acciones de la Orden</h5>
+                        </div>
+                    </div>
                     
-                    <!-- Generar Comprobante de Pago -->
-                    <h5 class="mt-4">Generar Comprobante de Pago</h5>
-                    <p>Confirme el método de pago antes de generar el comprobante</p>
-                    <button class="btn btn-success" id="generatePaymentButton">Generar Comprobante</button>
+                    <div class="row mt-3">
+                        <!-- Finalizar Orden -->
+                        <div class="col-md-6 mb-3">
+                            <div class="card border-danger h-100">
+                                <div class="card-body text-center">
+                                    <i class="fa fa-check-circle fa-3x text-danger mb-3"></i>
+                                    <h5 class="card-title">Finalizar Orden</h5>
+                                    <p class="card-text text-muted">Confirme los materiales utilizados y finalice la orden de trabajo</p>
+                                    <button class="btn btn-danger btn-lg w-100" id="finalizeOrderButton">
+                                        <i class="fa fa-check"></i> Finalizar Orden
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Generar Comprobante -->
+                        <div class="col-md-6 mb-3">
+                            <div class="card border-success h-100">
+                                <div class="card-body text-center">
+                                    <i class="fa fa-file-text fa-3x text-success mb-3"></i>
+                                    <h5 class="card-title">Generar Comprobante</h5>
+                                    <p class="card-text text-muted">Genere el comprobante de pago para el cliente</p>
+                                    <button class="btn btn-success btn-lg w-100" id="generatePaymentButton">
+                                        <i class="fa fa-file-pdf-o"></i> Generar Comprobante
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
                 </div>
             </div>
@@ -212,24 +239,138 @@
         </div>
     </div>
 
-    <!-- Modal para Confirmar Uso de Materiales y Finalizar Orden -->
+    <!-- Modal para Confirmar Finalización de Orden -->
     <div class="modal fade" id="confirmMaterialUsageModal" tabindex="-1" aria-labelledby="confirmMaterialUsageModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
+        <div class="modal-dialog modal-xl">
             <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="confirmMaterialUsageModalLabel">Confirmar Uso de Materiales y Finalizar Orden</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title" id="confirmMaterialUsageModalLabel">
+                        <i class="fa fa-check-circle"></i> Resumen y Finalización de Orden #<span id="modalOrdenId"></span>
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <p>Por favor, verifique o corrija la cantidad final utilizada para cada material. El stock sobrante será devuelto al inventario.</p>
-                    <form id="finalizeOrderForm">
-                        <div id="materialesConfirmacion">
+                    <!-- Información General -->
+                    <div class="alert alert-info">
+                        <i class="fa fa-info-circle"></i> <strong>Importante:</strong> Revise cuidadosamente el resumen antes de finalizar. Esta acción no se puede deshacer.
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h6><i class="fa fa-user"></i> Cliente</h6>
+                            <p class="mb-2" id="modalCliente">-</p>
                         </div>
-                    </form>
+                        <div class="col-md-3">
+                            <h6><i class="fa fa-calendar"></i> Fecha Inicio</h6>
+                            <p class="mb-2" id="modalFechaInicio">-</p>
+                        </div>
+                        <div class="col-md-3">
+                            <h6><i class="fa fa-calendar-check-o"></i> Fecha Fin</h6>
+                            <p class="mb-2" id="modalFechaFin">-</p>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h6><i class="fa fa-file-text-o"></i> Descripción</h6>
+                            <p class="mb-2" id="modalDescripcion">-</p>
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <!-- Empleados Asignados -->
+                    <h6><i class="fa fa-users"></i> Empleados Asignados</h6>
+                    <div class="table-responsive mb-4">
+                        <table class="table table-sm table-bordered">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Empleado</th>
+                                    <th>Cargo</th>
+                                    <th>Costo/Hora</th>
+                                    <th>Horas Totales</th>
+                                    <th>Costo Total</th>
+                                </tr>
+                            </thead>
+                            <tbody id="modalEmpleadosBody">
+                            </tbody>
+                            <tfoot class="table-light">
+                                <tr>
+                                    <td colspan="4" class="text-end"><strong>Total Mano de Obra:</strong></td>
+                                    <td><strong id="modalTotalManoObra">$0.00</strong></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                    
+                    <!-- Materiales Utilizados -->
+                    <h6><i class="fa fa-cubes"></i> Materiales Utilizados</h6>
+                    <div class="table-responsive mb-4">
+                        <table class="table table-sm table-bordered">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Material</th>
+                                    <th>Cantidad</th>
+                                    <th>Costo Total</th>
+                                </tr>
+                            </thead>
+                            <tbody id="modalMaterialesBody">
+                            </tbody>
+                            <tfoot class="table-light">
+                                <tr>
+                                    <td colspan="2" class="text-end"><strong>Subtotal Materiales:</strong></td>
+                                    <td><strong id="modalSubtotalMateriales">$0.00</strong></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                    
+                    <hr>
+                    
+                    <!-- Resumen Financiero -->
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <h5 class="card-title"><i class="fa fa-calculator"></i> Resumen Financiero</h5>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <table class="table table-sm table-borderless">
+                                        <tr>
+                                            <td>Subtotal Materiales:</td>
+                                            <td class="text-end" id="modalResumenSubtotalMateriales">$0.00</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Costo Mano de Obra:</td>
+                                            <td class="text-end" id="modalResumenManoObra">$0.00</td>
+                                        </tr>
+                                        <tr class="table-group-divider">
+                                            <td><strong>Subtotal:</strong></td>
+                                            <td class="text-end"><strong id="modalResumenSubtotal">$0.00</strong></td>
+                                        </tr>
+                                    </table>
+                                </div>
+                                <div class="col-md-6">
+                                    <table class="table table-sm table-borderless">
+                                        <tr>
+                                            <td>Margen de Ganancia (<span id="modalMargenPorcentaje">20</span>%):</td>
+                                            <td class="text-end" id="modalMargenMonto">$0.00</td>
+                                        </tr>
+                                        <tr class="table-group-divider">
+                                            <td><h5 class="mb-0"><strong>TOTAL A COBRAR:</strong></h5></td>
+                                            <td class="text-end"><h5 class="mb-0 text-success"><strong id="modalTotalFinal">$0.00</strong></h5></td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="button" class="btn btn-danger" id="confirmFinalizeOrderButton">Confirmar y Finalizar Orden</button>
+                    <button type="button" class="btn btn-secondary btn-lg" data-bs-dismiss="modal">
+                        <i class="fa fa-times"></i> Cancelar
+                    </button>
+                    <button type="button" class="btn btn-danger btn-lg" id="confirmFinalizeOrderButton">
+                        <i class="fa fa-check"></i> Confirmar y Finalizar Orden
+                    </button>
                 </div>
             </div>
         </div>
@@ -677,9 +818,9 @@
             });
         });
 
-        // Abrir modal para finalizar orden
+        // Abrir modal para finalizar orden con resumen completo
         $('#finalizeOrderButton').on('click', function() {
-            console.log('Clic en Confirmar Uso y Finalizar, orden ID:', idOrden);
+            console.log('Clic en Finalizar Orden, orden ID:', idOrden);
             if (!$(this).is(':visible')) {
                 console.error('Botón Finalizar Orden no está visible o accesible');
                 return;
@@ -689,32 +830,97 @@
                     url: `${API_BASE_URL}/ordenes-trabajo/${idOrden}`,
                     method: 'GET',
                     headers: getAuthHeaders(),
-                    success: function(data) {
-                        console.log('Materiales cargados para finalizar:', data.materiales_asignados);
-                        const materialesConfirmacion = $('#materialesConfirmacion');
-                        materialesConfirmacion.empty();
-                        if (data.materiales_asignados && data.materiales_asignados.length > 0) {
-                            data.materiales_asignados.forEach(material => {
-                                materialesConfirmacion.append(`
-                                    <div class="form-group mb-3">
-                                        <label>${material.nombre_material} (Asignado: ${material.cantidad_usada})</label>
-                                        <input type="number" class="form-control material-final" 
-                                               data-id-detalle="${material.id_detalle}" 
-                                               value="${material.cantidad_usada}" 
-                                               min="0" max="${material.cantidad_usada}" required>
-                                    </div>
+                    success: function(orden) {
+                        console.log('Datos de la orden para finalizar:', orden);
+                        
+                        // Llenar información general
+                        $('#modalOrdenId').text(idOrden);
+                        $('#modalCliente').text(orden.nombre_cliente || '-');
+                        $('#modalFechaInicio').text(orden.fecha_inicio ? new Date(orden.fecha_inicio).toLocaleDateString('es-EC') : '-');
+                        $('#modalFechaFin').text(orden.fecha_fin ? new Date(orden.fecha_fin).toLocaleDateString('es-EC') : '-');
+                        $('#modalDescripcion').text(orden.descripcion || '-');
+                        
+                        // Calcular días laborales y horas
+                        let diasLaborales = 0;
+                        let horasTotales = 0;
+                        if (orden.fecha_inicio && orden.fecha_fin) {
+                            const fechaInicio = new Date(orden.fecha_inicio);
+                            const fechaFin = new Date(orden.fecha_fin);
+                            const diffTime = Math.abs(fechaFin - fechaInicio);
+                            diasLaborales = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+                            horasTotales = diasLaborales * 8; // 8 horas por día
+                        }
+                        
+                        // Llenar empleados asignados
+                        const $modalEmpleadosBody = $('#modalEmpleadosBody');
+                        $modalEmpleadosBody.empty();
+                        let costoTotalManoObra = 0;
+                        
+                        if (orden.empleados_asignados && orden.empleados_asignados.length > 0) {
+                            orden.empleados_asignados.forEach(function(emp) {
+                                const costoHora = emp.costo_hora || 0;
+                                const costoTotal = horasTotales * costoHora;
+                                costoTotalManoObra += costoTotal;
+                                
+                                $modalEmpleadosBody.append(`
+                                    <tr>
+                                        <td>${emp.nombre}</td>
+                                        <td>${emp.cargo_empleado || emp.rol || '-'}</td>
+                                        <td>$${costoHora.toFixed(2)}</td>
+                                        <td>${horasTotales}</td>
+                                        <td>$${costoTotal.toFixed(2)}</td>
+                                    </tr>
                                 `);
                             });
                         } else {
-                            materialesConfirmacion.append('<p>No hay materiales asignados para confirmar.</p>');
+                            $modalEmpleadosBody.append('<tr><td colspan="5" class="text-center">No hay empleados asignados</td></tr>');
                         }
+                        
+                        $('#modalTotalManoObra').text('$' + costoTotalManoObra.toFixed(2));
+                        
+                        // Llenar materiales utilizados
+                        const $modalMaterialesBody = $('#modalMaterialesBody');
+                        $modalMaterialesBody.empty();
+                        let subtotalMateriales = 0;
+                        
+                        if (orden.materiales_asignados && orden.materiales_asignados.length > 0) {
+                            orden.materiales_asignados.forEach(function(mat) {
+                                subtotalMateriales += mat.costo_total;
+                                $modalMaterialesBody.append(`
+                                    <tr>
+                                        <td>${mat.nombre_material}</td>
+                                        <td>${mat.cantidad_usada}</td>
+                                        <td>$${mat.costo_total.toFixed(2)}</td>
+                                    </tr>
+                                `);
+                            });
+                        } else {
+                            $modalMaterialesBody.append('<tr><td colspan="3" class="text-center">No hay materiales asignados</td></tr>');
+                        }
+                        
+                        $('#modalSubtotalMateriales').text('$' + subtotalMateriales.toFixed(2));
+                        
+                        // Calcular resumen financiero
+                        const subtotalGeneral = subtotalMateriales + costoTotalManoObra;
+                        const margenPorcentaje = orden.margen_ganancia || 20;
+                        const margenMonto = subtotalGeneral * (margenPorcentaje / 100);
+                        const totalFinal = subtotalGeneral + margenMonto;
+                        
+                        $('#modalResumenSubtotalMateriales').text('$' + subtotalMateriales.toFixed(2));
+                        $('#modalResumenManoObra').text('$' + costoTotalManoObra.toFixed(2));
+                        $('#modalResumenSubtotal').text('$' + subtotalGeneral.toFixed(2));
+                        $('#modalMargenPorcentaje').text(margenPorcentaje);
+                        $('#modalMargenMonto').text('$' + margenMonto.toFixed(2));
+                        $('#modalTotalFinal').text('$' + totalFinal.toFixed(2));
+                        
+                        // Mostrar modal
                         const myModal = new bootstrap.Modal(document.getElementById('confirmMaterialUsageModal'), {});
-                        console.log('Intentando mostrar modal de finalización');
+                        console.log('Mostrando modal de finalización con resumen');
                         myModal.show();
                     },
                     error: function(xhr) {
-                        console.error('Error al cargar materiales para finalizar:', xhr.responseText);
-                        showError(xhr.responseJSON?.error || "Error al cargar los materiales para finalizar.");
+                        console.error('Error al cargar datos para finalizar:', xhr.responseText);
+                        showError(xhr.responseJSON?.error || "Error al cargar los datos de la orden.");
                     }
                 });
             } catch (e) {
@@ -722,44 +928,28 @@
             }
         });
 
-        // Confirmar y finalizar orden
+        // Confirmar y finalizar orden (sin edición de cantidades)
         $('#confirmFinalizeOrderButton').on('click', function() {
             console.log('Clic en Confirmar y Finalizar Orden');
-            const materialesConfirmados = [];
-            let valid = true;
-            $('.material-final').each(function() {
-                const idDetalle = $(this).data('id-detalle');
-                const cantidadFinal = parseInt($(this).val());
-                if (isNaN(cantidadFinal) || cantidadFinal < 0 || cantidadFinal > parseInt($(this).attr('max'))) {
-                    showError('Las cantidades finales deben ser números no negativos y no exceder la cantidad asignada.');
-                    valid = false;
-                    return false;
+            
+            // Simplemente finalizar la orden con los datos actuales
+            $.ajax({
+                url: `${API_BASE_URL}/ordenes-trabajo/${idOrden}/confirmar-uso-y-finalizar`,
+                method: 'PUT',
+                headers: getAuthHeaders(),
+                data: JSON.stringify([]), // Enviar array vacío ya que no hay cambios en cantidades
+                success: function(response) {
+                    console.log('Orden finalizada:', response);
+                    $('#mensajeAnadirMaterial').text(response.message || "Orden finalizada con éxito.").removeClass('alert-info alert-danger').addClass('alert alert-success show');
+                    $('#finalizeOrderButton').prop('disabled', true); // Deshabilitar botón tras éxito
+                    bootstrap.Modal.getInstance(document.getElementById('confirmMaterialUsageModal')).hide();
+                    cargarDetallesDeOrden(idOrden);
+                },
+                error: function(xhr) {
+                    console.error('Error al finalizar orden:', xhr.responseText);
+                    showError(xhr.responseJSON?.error || "Error al finalizar la orden.");
                 }
-                materialesConfirmados.push({
-                    id_detalle: idDetalle,
-                    cantidad_usada_final: cantidadFinal
-                });
             });
-            if (valid && materialesConfirmados.length === $('.material-final').length) {
-                console.log('Enviando solicitud para finalizar orden:', materialesConfirmados);
-                $.ajax({
-                    url: `${API_BASE_URL}/ordenes-trabajo/${idOrden}/confirmar-uso-y-finalizar`,
-                    method: 'PUT',
-                    headers: getAuthHeaders(),
-                    data: JSON.stringify(materialesConfirmados),
-                    success: function(response) {
-                        console.log('Orden finalizada:', response);
-                        $('#mensajeAnadirMaterial').text(response.message || "Orden finalizada con éxito.").removeClass('alert-info alert-danger').addClass('alert alert-success show');
-                        $('#finalizeOrderButton').prop('disabled', true); // Deshabilitar botón tras éxito
-                        bootstrap.Modal.getInstance(document.getElementById('confirmMaterialUsageModal')).hide();
-                        cargarDetallesDeOrden(idOrden);
-                    },
-                    error: function(xhr) {
-                        console.error('Error al finalizar orden:', xhr.responseText);
-                        showError(xhr.responseJSON?.error || "Error al finalizar la orden.");
-                    }
-                });
-            }
         });
     });
 

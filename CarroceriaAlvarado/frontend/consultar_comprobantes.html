@@ -97,7 +97,7 @@
                             <thead>
                                 <tr>
                                     <th>ID Comp.</th><th>ID Orden</th><th>Cliente</th><th>Monto</th>
-                                    <th>Fecha Emisión</th><th>Método Pago</th><th>Estado</th><th>Registrado Por</th>
+                                    <th>Fecha Emisión</th><th>Método Pago</th><th>Estado</th><th>Registrado Por</th><th>Acciones</th>
                                 </tr>
                             </thead>
                             <tbody id="comprobantesTableBody"></tbody>
@@ -170,6 +170,14 @@ $(document).ready(function() {
                                 <td>${item.metodo_pago}</td>
                                 <td><span class="badge bg-success">${item.estado_pago}</span></td>
                                 <td>${item.nombre_usuario_registrador}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-danger btn-imprimir-comprobante" 
+                                            data-id-comprobante="${item.id_comprobante}"
+                                            data-id-orden="${item.id_orden}"
+                                            title="Imprimir Comprobante">
+                                        <i class="fa fa-print"></i>
+                                    </button>
+                                </td>
                             </tr>
                         `;
                         $tableBody.append(fila);
@@ -251,6 +259,209 @@ $(document).ready(function() {
             doc.save(`comprobantes_pago_${fechaDesde}_al_${fechaHasta}.pdf`);
         };
     });
+    
+    // Función para imprimir comprobante individual
+    $(document).on('click', '.btn-imprimir-comprobante', function() {
+        const $row = $(this).closest('tr');
+        const idComprobante = $(this).data('id-comprobante');
+        const idOrden = $(this).data('id-orden');
+        
+        // Obtener datos del comprobante desde la fila de la tabla
+        const comprobante = {
+            id_comprobante: idComprobante,
+            id_orden: idOrden,
+            monto: $row.find('td:eq(3)').text().replace('$', ''),
+            fecha_emision: $row.find('td:eq(4)').text(),
+            metodo_pago: $row.find('td:eq(5)').text(),
+            estado_pago: $row.find('td:eq(6)').text().trim(),
+            nombre_cliente: $row.find('td:eq(2)').text()
+        };
+        
+        console.log(`Imprimiendo comprobante ${idComprobante} de orden ${idOrden}`);
+        
+        // Cargar datos de la orden
+        $.ajax({
+            url: `http://127.0.0.1:5000/ordenes-trabajo/${idOrden}`,
+            method: 'GET',
+            headers: { 'Authorization': 'Bearer ' + token },
+            success: function(orden) {
+                generarPDFComprobante(orden, comprobante);
+            },
+            error: function(xhr) {
+                console.error('Error al cargar orden:', xhr);
+                alert('Error al cargar los datos de la orden');
+            }
+        });
+    });
+    
+    // Función para generar PDF del comprobante
+    function generarPDFComprobante(orden, comprobante) {
+        var logo = new Image();
+        logo.src = 'images/logo.jpg';
+        
+        logo.onload = function() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({
+                orientation: 'portrait',
+                unit: 'pt',
+                format: 'a4'
+            });
+            
+            const pageWidth = doc.internal.pageSize.getWidth();
+            const pageHeight = doc.internal.pageSize.getHeight();
+            
+            // --- ENCABEZADO ---
+            doc.addImage(this, 'JPG', 40, 20, 60, 60);
+            
+            doc.setFontSize(18);
+            doc.setTextColor(40);
+            doc.text("Carrocería Alvarado", 120, 35);
+            
+            doc.setFontSize(9);
+            doc.text("Dirección: Av. Monseñor Leonidas Proaño", 120, 50);
+            doc.text("(a pocos metros de la línea férrea), Riobamba, Ecuador", 120, 62);
+            doc.text("Teléfono: 099 991 1866 | Email: carroceriasalvarado@hotmail.com", 120, 74);
+            
+            // --- TÍTULO DEL COMPROBANTE ---
+            let currentY = 100;
+            doc.setFontSize(16);
+            doc.setFont(undefined, 'bold');
+            doc.text("COMPROBANTE DE PAGO", pageWidth / 2, currentY, { align: 'center' });
+            
+            currentY += 20;
+            doc.setFontSize(10);
+            doc.setFont(undefined, 'normal');
+            doc.setTextColor(200, 0, 0);
+            doc.text("DOCUMENTO SIN VALOR TRIBUTARIO", pageWidth / 2, currentY, { align: 'center' });
+            doc.setTextColor(40);
+            
+            // --- INFORMACIÓN DEL COMPROBANTE ---
+            currentY += 25;
+            doc.setFontSize(11);
+            doc.setFont(undefined, 'bold');
+            doc.text(`Comprobante N°: ${comprobante.id_comprobante}`, 40, currentY);
+            doc.text(`Orden N°: ${orden.id_orden}`, pageWidth - 40, currentY, { align: 'right' });
+            
+            currentY += 20;
+            doc.setFont(undefined, 'normal');
+            doc.text(`Cliente: ${orden.nombre_cliente}`, 40, currentY);
+            
+            currentY += 15;
+            // La fecha ya viene formateada desde la tabla
+            doc.text(`Fecha de Emisión: ${comprobante.fecha_emision}`, 40, currentY);
+            doc.text(`Método de Pago: ${comprobante.metodo_pago}`, pageWidth - 40, currentY, { align: 'right' });
+            
+            currentY += 15;
+            const fechaInicio = orden.fecha_inicio ? new Date(orden.fecha_inicio).toLocaleDateString('es-EC') : '-';
+            const fechaFin = orden.fecha_fin ? new Date(orden.fecha_fin).toLocaleDateString('es-EC') : '-';
+            doc.text(`Período de Trabajo: ${fechaInicio} a ${fechaFin}`, 40, currentY);
+            
+            // --- DESCRIPCIÓN DEL TRABAJO ---
+            currentY += 25;
+            doc.setFont(undefined, 'bold');
+            doc.text("Descripción del Trabajo:", 40, currentY);
+            currentY += 15;
+            doc.setFont(undefined, 'normal');
+            const descripcionLines = doc.splitTextToSize(orden.descripcion || 'Sin descripción', pageWidth - 80);
+            doc.text(descripcionLines, 40, currentY);
+            currentY += (descripcionLines.length * 12) + 15;
+            
+            // --- CÁLCULO DE MANO DE OBRA ---
+            let costoTotalManoObra = 0;
+            let diasLaborales = 0;
+            let horasTotales = 0;
+            
+            if (orden.fecha_inicio && orden.fecha_fin) {
+                const fechaInicioDate = new Date(orden.fecha_inicio);
+                const fechaFinDate = new Date(orden.fecha_fin);
+                const diffTime = Math.abs(fechaFinDate - fechaInicioDate);
+                diasLaborales = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+                horasTotales = diasLaborales * 8;
+            }
+            
+            if (orden.empleados_asignados && orden.empleados_asignados.length > 0) {
+                orden.empleados_asignados.forEach(emp => {
+                    const costoHora = emp.costo_hora || 0;
+                    const costoTotal = horasTotales * costoHora;
+                    costoTotalManoObra += costoTotal;
+                });
+            }
+            
+            // Mostrar solo el total de mano de obra (sin detallar empleados)
+            doc.setFont(undefined, 'bold');
+            doc.text("Mano de Obra:", 40, currentY);
+            currentY += 15;
+            doc.setFont(undefined, 'normal');
+            doc.text(`Total Mano de Obra: $${costoTotalManoObra.toFixed(2)}`, 40, currentY);
+            currentY += 25;
+            
+            
+            // --- MATERIALES UTILIZADOS ---
+            doc.setFont(undefined, 'bold');
+            doc.text("Materiales Utilizados:", 40, currentY);
+            currentY += 10;
+            
+            let costoTotalMateriales = 0;
+            const bodyMateriales = [];
+            if (orden.materiales_asignados && orden.materiales_asignados.length > 0) {
+                orden.materiales_asignados.forEach(mat => {
+                    costoTotalMateriales += mat.costo_total;
+                    bodyMateriales.push([
+                        mat.nombre_material,
+                        mat.cantidad_usada.toString(),
+                        `$${mat.costo_total.toFixed(2)}`
+                    ]);
+                });
+            }
+            
+            doc.autoTable({
+                head: [['Material', 'Cantidad', 'Costo']],
+                body: bodyMateriales.length > 0 ? bodyMateriales : [['No hay materiales asignados', '', '$0.00']],
+                startY: currentY,
+                theme: 'grid',
+                headStyles: { fillColor: [45, 45, 45] },
+                margin: { left: 40, right: 40 }
+            });
+            
+            currentY = doc.lastAutoTable.finalY + 20;
+            
+            // --- RESUMEN FINANCIERO ---
+            const subtotalGeneral = costoTotalMateriales + costoTotalManoObra;
+            const margenPorcentaje = orden.margen_ganancia || 20;
+            const margenMonto = subtotalGeneral * (margenPorcentaje / 100);
+            const totalFinal = subtotalGeneral + margenMonto;
+            
+            doc.autoTable({
+                body: [
+                    [{ content: 'Subtotal Materiales:', styles: { halign: 'right', fontStyle: 'bold' }}, { content: `$${costoTotalMateriales.toFixed(2)}`, styles: { halign: 'right' }}],
+                    [{ content: 'Costo Mano de Obra:', styles: { halign: 'right', fontStyle: 'bold' }}, { content: `$${costoTotalManoObra.toFixed(2)}`, styles: { halign: 'right' }}],
+                    [{ content: 'Subtotal:', styles: { halign: 'right', fontStyle: 'bold' }}, { content: `$${subtotalGeneral.toFixed(2)}`, styles: { halign: 'right', fontStyle: 'bold' }}],
+                    [{ content: `Margen de Ganancia (${margenPorcentaje}%):`, styles: { halign: 'right', fontStyle: 'bold' }}, { content: `$${margenMonto.toFixed(2)}`, styles: { halign: 'right' }}],
+                    [{ content: 'TOTAL A PAGAR:', styles: { halign: 'right', fontStyle: 'bold', fontSize: 14, fillColor: [45, 45, 45], textColor: [255, 255, 255] }}, { content: `$${totalFinal.toFixed(2)}`, styles: { halign: 'right', fontStyle: 'bold', fontSize: 14, fillColor: [45, 45, 45], textColor: [255, 255, 255] }}]
+                ],
+                startY: currentY,
+                theme: 'plain',
+                columnStyles: {
+                    0: { cellWidth: pageWidth - 240 },
+                    1: { cellWidth: 160 }
+                },
+                margin: { left: 40, right: 40 }
+            });
+            
+            // --- PIE DE PÁGINA ---
+            currentY = pageHeight - 60;
+            doc.setFontSize(8);
+            doc.setTextColor(100);
+            doc.text("Este comprobante es un documento informativo sin validez fiscal.", pageWidth / 2, currentY, { align: 'center' });
+            currentY += 12;
+            doc.setTextColor(200, 0, 0);
+            doc.setFont(undefined, 'bold');
+            doc.text("DOCUMENTO SIN VALOR TRIBUTARIO", pageWidth / 2, currentY, { align: 'center' });
+            
+            // Guardar PDF
+            doc.save(`comprobante_${comprobante.id_comprobante}_orden_${orden.id_orden}.pdf`);
+        };
+    }
 });
 </script>
 

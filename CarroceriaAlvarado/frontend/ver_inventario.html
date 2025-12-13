@@ -43,6 +43,7 @@
                 <ul class="collapse show list-unstyled" id="inventarioSubmenu">
                     <li class="active"><a href="ver_inventario.html">Ver Inventario</a></li>
                     <li><a href="anadir_material.html">Añadir Material</a></li>
+                    <li><a href="gestion_categorias.html">Gestión de Categorías</a></li>
                     <li><a href="entradas_salidas_inventario.html">Entradas/Salidas</a></li>
                 </ul>
             </li>
@@ -144,7 +145,7 @@
                                     <th>Unidad</th>
                                     <th>Ubicación</th>
                                     <th>Nº Factura</th>
-                                    <th>Precio Unitario</th>
+                                    <th>Precio de Venta</th>
                                     <th>Proveedor</th>
                                     <th>Última Actualización</th>
                                     <th>Acciones</th>
@@ -417,7 +418,7 @@ function mostrarMateriales(materiales) {
                 <td>${unidadAbreviatura}</td>
                 <td>${ubicacion}</td>
                 <td>${numeroFactura}</td>
-                <td>${(material.precio_compra || material.precio_unitario) !== undefined ? '$' + parseFloat(material.precio_compra || material.precio_unitario).toFixed(2) : 'N/A'}</td>
+                <td>${material.precio_venta !== undefined ? '$' + parseFloat(material.precio_venta).toFixed(2) : 'N/A'}</td>
                 <td>${proveedorNombre}</td>
                 <td>${fechaFormateada}</td>
                 <td class="text-center table-actions">
