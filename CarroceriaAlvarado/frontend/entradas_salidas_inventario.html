@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <title>Entradas y Salidas de Inventario - Carrocería Alvarado</title>
+    <title>Entradas y Salidas de Inventario - Carrocerias Alvarado</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" type="text/css" href="vendor/bootstrap/css/bootstrap.min.css">
@@ -17,7 +17,7 @@
 <div class="admin-wrapper">
    <nav id="sidebar">
         <div class="sidebar-header">
-            <h3>Carrocería Alvarado</h3>
+            <h3>Carrocerías Alvarado</h3>
         </div>
         <ul class="list-unstyled components">
             <p class="ms-3">Administración</p>
@@ -137,7 +137,7 @@
 <script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
 
 <script>
-// Función para poblar los combobox de materiales
+// Funci�n para poblar los combobox de materiales
 function cargarNombresDeMaterialesEnCombobox() {
     console.log("cargarNombresDeMaterialesEnCombobox() - Iniciando carga de nombres de materiales...");
     const token = localStorage.getItem('token');
@@ -152,12 +152,12 @@ function cargarNombresDeMaterialesEnCombobox() {
         console.error("cargarNombresDeMaterialesEnCombobox() - No hay token.");
         $selectEntrada.html('<option value="">Error de autenticación</option>');
         $selectSalida.html('<option value="">Error de autenticación</option>');
-        // La protección de página general ya debería haber redirigido
+        // La protecci�n de p�gina general ya deber�a haber redirigido
         return;
     }
 
     $.ajax({
-        url: 'http://127.0.0.1:5000/materiales', // Endpoint GET para listar todos los materiales
+        url: 'https://553682876eea.ngrok-free.app/materiales', // Endpoint GET para listar todos los materiales
         method: 'GET',
         headers: {
             'Authorization': 'Bearer ' + token
@@ -170,7 +170,7 @@ function cargarNombresDeMaterialesEnCombobox() {
             if (materiales && Array.isArray(materiales) && materiales.length > 0) {
                 materiales.forEach(function(material) {
                     if (material.nombre) { // Asegurarse que el material tiene un nombre
-                        // Usamos el nombre del material como el valor y como el texto de la opción,
+                        // Usamos el nombre del material como el valor y como el texto de la opci�n,
                         // ya que el backend ahora espera nombre_material.
                         const optionHtml = `<option value="${material.nombre}">${material.nombre} (Stock: ${material.cantidad !== undefined ? material.cantidad : 'N/A'})</option>`;
                         $selectEntrada.append(optionHtml);
@@ -189,7 +189,7 @@ function cargarNombresDeMaterialesEnCombobox() {
             console.error("cargarNombresDeMaterialesEnCombobox() - Error al cargar materiales. Status:", xhr.status, "Response:", xhr.responseText);
             $selectEntrada.empty().append('<option value="">Error al cargar materiales</option>');
             $selectSalida.empty().append('<option value="">Error al cargar materiales</option>');
-            // El manejo de error 401/403 general de la página ya debería actuar
+            // El manejo de error 401/403 general de la p�gina ya deber�a actuar
         }
     });
 }
@@ -224,10 +224,10 @@ $(document).ready(function () {
         window.location.href = 'index.html';
     });
 
-    // LLAMAR A LA FUNCIÓN PARA CARGAR MATERIALES EN LOS COMBOBOX
+    // LLAMAR A LA FUNCI�N PARA CARGAR MATERIALES EN LOS COMBOBOX
     cargarNombresDeMaterialesEnCombobox();
 
-    // --- Función para cargar Unidades de Medida ---
+    // --- Funci�n para cargar Unidades de Medida ---
     function cargarUnidadesDeMedida() {
         console.log("cargarUnidadesDeMedida() - Iniciando carga de unidades...");
         const token = localStorage.getItem('token');
@@ -246,7 +246,7 @@ $(document).ready(function () {
         }
 
         $.ajax({
-            url: 'http://127.0.0.1:5000/unidades',
+            url: 'https://553682876eea.ngrok-free.app/unidades',
             method: 'GET',
             headers: {
                 'Authorization': 'Bearer ' + token
@@ -280,10 +280,10 @@ $(document).ready(function () {
         });
     }
 
-    // LLAMAR A LA FUNCIÓN PARA CARGAR UNIDADES DE MEDIDA
+    // LLAMAR A LA FUNCI�N PARA CARGAR UNIDADES DE MEDIDA
     cargarUnidadesDeMedida();
 
-    // --- Lógica para Formulario de Entrada de Inventario ---
+    // --- L�gica para Formulario de Entrada de Inventario ---
     $('#formEntradaInventario').on('submit', function(event) {
         event.preventDefault();
         const mensajeDiv = $('#mensajeEntrada');
@@ -328,10 +328,10 @@ $(document).ready(function () {
         console.log("Enviando datos de entrada:", dataEntrada);
 
         $.ajax({
-            url: 'http://127.0.0.1:5000/inventory/entry',
+            url: 'https://553682876eea.ngrok-free.app/inventory/entry',
             method: 'POST',
             headers: {
-                'Authorization': 'Bearer ' + token, // 'token' ya está definido en el scope de $(document).ready
+                'Authorization': 'Bearer ' + token, // 'token' ya est� definido en el scope de $(document).ready
                 'Content-Type': 'application/json'
             },
             data: JSON.stringify(dataEntrada),
@@ -348,7 +348,7 @@ $(document).ready(function () {
         });
     });
 
-    // --- Lógica para Formulario de Salida de Inventario ---
+    // --- L�gica para Formulario de Salida de Inventario ---
     $('#formSalidaInventario').on('submit', function(event) {
         event.preventDefault();
         const mensajeDiv = $('#mensajeSalida');
@@ -378,10 +378,10 @@ $(document).ready(function () {
         console.log("Enviando datos de salida:", dataSalida);
 
         $.ajax({
-            url: 'http://127.0.0.1:5000/inventory/exit',
+            url: 'https://553682876eea.ngrok-free.app/inventory/exit',
             method: 'POST',
             headers: {
-                'Authorization': 'Bearer ' + token, // 'token' ya está definido en el scope de $(document).ready
+                'Authorization': 'Bearer ' + token, // 'token' ya est� definido en el scope de $(document).ready
                 'Content-Type': 'application/json'
             },
             data: JSON.stringify(dataSalida),

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <title>Ver Inventario - Carrocería Alvarado</title>
+    <title>Ver Inventario - Carrocerías Alvarado</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" type="text/css" href="vendor/bootstrap/css/bootstrap.min.css">
@@ -19,7 +19,7 @@
 <div class="admin-wrapper">
     <nav id="sidebar">
         <div class="sidebar-header">
-            <h3>Carrocería Alvarado</h3>
+            <h3>Carrocerías Alvarado</h3>
         </div>
         <ul class="list-unstyled components">
             <p class="ms-3">Administración</p>
@@ -144,7 +144,7 @@
                                     <th>Stock Actual (Cantidad)</th>
                                     <th>Unidad</th>
                                     <th>Ubicación</th>
-                                    <th>Nº Factura</th>
+                                    <th>N° Factura</th>
                                     <th>Precio de Venta</th>
                                     <th>Proveedor</th>
                                     <th>Última Actualización</th>
@@ -168,7 +168,7 @@
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <p>¿Está seguro de que desea eliminar el material: <strong id="materialNameToDelete"></strong>?</p>
+                <p>Estás seguro de que desea eliminar el material: <strong id="materialNameToDelete"></strong>?</p>
                 <p class="text-danger">Esta acción no se puede deshacer. Asegúrese de que el stock sea cero y no haya dependencias activas.</p>
             </div>
             <div class="modal-footer">
@@ -180,7 +180,7 @@
 </div>
 
 
-<!-- Modal de Edición de Material -->
+<!-- Modal de Edición de Material -->   
 <div class="modal fade" id="editMaterialModal" tabindex="-1" aria-labelledby="editMaterialModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -196,7 +196,7 @@
                         <input type="text" class="form-control" id="editMaterialNombre" required>
                     </div>
                     
-                    <!-- Categoría y Código -->
+                    <!-- Categoría y Codigo -->
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="editMaterialCategoria" class="form-label">Categoría <span class="text-danger">*</span></label>
@@ -230,7 +230,7 @@
                             <input type="text" class="form-control" id="editMaterialUbicacion" placeholder="Ej: Bodega A, Estante 3">
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label for="editMaterialNumeroFactura" class="form-label">Nº Factura</label>
+                            <label for="editMaterialNumeroFactura" class="form-label">N° Factura</label>
                             <input type="text" class="form-control" id="editMaterialNumeroFactura" placeholder="Ej: FAC-001234">
                         </div>
                     </div>
@@ -289,14 +289,14 @@
 
 let umbralGlobalStockBajo = null;
 let todosLosMateriales = []; // Array global con todos los materiales cargados
-let materialesFiltrados = []; // Array con materiales después de aplicar filtros
+let materialesFiltrados = []; // Array con materiales despu�s de aplicar filtros
 
 function loadMateriales(umbralStockBajo) {
     console.log("loadMateriales() - Iniciando carga de materiales. Umbral de stock bajo:", umbralStockBajo);
     const token = localStorage.getItem('token');
-    const materialesTableBody = $('#materialesTableBody'); // Asegúrate que este ID exista en tu HTML
+    const materialesTableBody = $('#materialesTableBody'); // Aseg�rate que este ID exista en tu HTML
 
-    materialesTableBody.empty().append('<tr><td colspan="12" class="text-center">Cargando materiales...</td></tr>'); // Ajusta colspan según tus columnas
+    materialesTableBody.empty().append('<tr><td colspan="12" class="text-center">Cargando materiales...</td></tr>'); // Ajusta colspan seg�n tus columnas
 
     if (!token) { 
         console.error("loadMateriales() - No hay token. No se puede llamar a la API. Redirigiendo a login.");
@@ -307,7 +307,7 @@ function loadMateriales(umbralStockBajo) {
     console.log("loadMateriales() - Token que se usará para la API:", token);
 
     $.ajax({ 
-        url: 'http://127.0.0.1:5000/materiales',  // Endpoint para obtener materiales
+        url: 'https://553682876eea.ngrok-free.app/materiales',  // Endpoint para obtener materiales
         method: 'GET',
         headers: { 
             'Authorization': 'Bearer ' + token  
@@ -327,7 +327,7 @@ function loadMateriales(umbralStockBajo) {
             todosLosMateriales = materiales;
             materialesFiltrados = materiales;
             
-            // Poblar los filtros con valores únicos
+            // Poblar los filtros con valores �nicos
             poblarFiltros(materiales);
             
             // Mostrar todos los materiales inicialmente
@@ -523,7 +523,7 @@ function aplicarFiltros() {
     $('#resultCount').text(filtered.length);
 }
 
-// Calcular precio de venta en modal de edición
+// Calcular precio de venta en modal de edici�n
 function calcularPrecioVentaEdicion() {
     const precioCompra = parseFloat($('#editMaterialPrecioCompra').val()) || 0;
     const porcentaje = parseInt($('#editMaterialPorcentajeGanancia').val()) || 0;
@@ -543,7 +543,7 @@ $(document).ready(function () {
         $('#sidebar').toggleClass('active');
     });
 
-    // Verificación de token y rol al cargar la página
+    // Verificaci�n de token y rol al cargar la p�gina
     const token = localStorage.getItem('token');
     const userRol = localStorage.getItem('userRol');
     const loggedInUsername = localStorage.getItem('loggedInUsername');
@@ -552,7 +552,7 @@ $(document).ready(function () {
     console.log("ver_inventario.html $(document).ready - Rol:", userRol);
     console.log("ver_inventario.html $(document).ready - Username:", loggedInUsername);
 
-    // Definir roles que pueden acceder a esta página
+    // Definir roles que pueden acceder a esta p�gina
     const rolesPermitidos = ['Administrador', 'Supervisor', 'Encargado de Inventario']; 
 
     if (!token || !userRol || !rolesPermitidos.includes(userRol)) {
@@ -561,7 +561,7 @@ $(document).ready(function () {
         return; 
     }
     
-    // Si el usuario está autorizado, actualizar el saludo con el nombre de usuario
+    // Si el usuario est� autorizado, actualizar el saludo con el nombre de usuario
     if (loggedInUsername && loggedInUsername !== "undefined" && loggedInUsername.trim() !== "") {
         if ($('#currentUserName').length) { 
             $('#currentUserName').text(loggedInUsername);
@@ -572,8 +572,8 @@ $(document).ready(function () {
         console.log("ver_inventario.html - loggedInUsername no encontrado/inválido en localStorage.");
     }
 
-    // Manejador del botón de Logout
-    // Asegúrate que el botón de logout en esta página tenga id="logoutButton"
+    // Manejador del bot�n de Logout
+    // Aseg�rate que el bot�n de logout en esta p�gina tenga id="logoutButton"
     $('#logoutButton').on('click', function(e) { 
         e.preventDefault();
         console.log("ver_inventario.html - Cerrando sesión...");
@@ -583,14 +583,14 @@ $(document).ready(function () {
         window.location.href = 'index.html';
     });
 
-    // Eventos para recalcular precio de venta en modal de edición
+    // Eventos para recalcular precio de venta en modal de edici�n
     $(document).on('input change', '#editMaterialPrecioCompra, #editMaterialPorcentajeGanancia', calcularPrecioVentaEdicion);
 
-    // Cargar proveedores en el select del modal de edición
+    // Cargar proveedores en el select del modal de edici�n
     function cargarProveedoresEnModal() {
         const $selectProveedor = $('#editMaterialProveedor');
         $.ajax({
-            url: 'http://127.0.0.1:5000/proveedores',
+            url: 'https://553682876eea.ngrok-free.app/proveedores',
             method: 'GET',
             headers: { 'Authorization': 'Bearer ' + token },
             success: function(proveedores) {
@@ -609,11 +609,11 @@ $(document).ready(function () {
     
     cargarProveedoresEnModal(); // Cargar al iniciar
     
-    // Cargar categorías en el select del modal de edición
+    // Cargar categor�as en el select del modal de edici�n
     function cargarCategoriasEnModal() {
         const $selectCategoria = $('#editMaterialCategoria');
         $.ajax({
-            url: 'http://127.0.0.1:5000/categorias-materiales',
+            url: 'https://553682876eea.ngrok-free.app/categorias-materiales',
             method: 'GET',
             headers: { 'Authorization': 'Bearer ' + token },
             success: function(categorias) {
@@ -683,7 +683,7 @@ $(document).ready(function () {
 
         // Obtener datos del material
         $.ajax({
-            url: `http://127.0.0.1:5000/materiales/${materialId}`,
+            url: `https://553682876eea.ngrok-free.app/materiales/${materialId}`,
             method: 'GET',
             headers: { 'Authorization': 'Bearer ' + token },
             success: function(material) {
@@ -715,7 +715,7 @@ $(document).ready(function () {
                 // Calcular precio de venta
                 calcularPrecioVentaEdicion();
                 
-                // Limpiar mensaje anterior (éxito o error)
+                // Limpiar mensaje anterior (exito o error)
                 $('#mensajeEditarMaterial').text('').removeClass('alert alert-success alert-danger');
                 
                 // Mostrar modal
@@ -773,7 +773,7 @@ $(document).ready(function () {
         setButtonLoading('#btnGuardarEdicion', 'Guardando...');
 
         $.ajax({
-            url: `http://127.0.0.1:5000/materiales/${materialId}`,
+            url: `https://553682876eea.ngrok-free.app/materiales/${materialId}`,
             method: 'PUT',
             headers: {
                 'Authorization': 'Bearer ' + token,
@@ -813,9 +813,9 @@ $(document).ready(function () {
     // --- Obtener Configuraciones y Luego Cargar Materiales ---
     console.log("ver_inventario.html - Obteniendo configuraciones del sistema...");
     $.ajax({
-        url: 'http://127.0.0.1:5000/configuraciones', // Endpoint GET para obtener configuraciones
+        url: 'https://553682876eea.ngrok-free.app/configuraciones', // Endpoint GET para obtener configuraciones
         method: 'GET',
-        headers: { 'Authorization': 'Bearer ' + token }, // Reutilizar el token ya validado para esta página
+        headers: { 'Authorization': 'Bearer ' + token }, // Reutilizar el token ya validado para esta p�gina
         success: function(config) {
             console.log("ver_inventario.html - Configuraciones recibidas:", config);
             if (config && typeof config.global_low_stock_threshold === 'number') {
@@ -838,7 +838,7 @@ $(document).ready(function () {
     // --- Manejadores de Eventos para Eliminar Material ---
     var materialIdParaEliminar = null; // Variable para guardar el ID del material a eliminar
 
-    // Cuando se hace clic en un botón "Eliminar Material" de la tabla
+    // Cuando se hace clic en un bot�n "Eliminar Material" de la tabla
     $(document).on('click', '.btn-eliminar-material', function() {
         materialIdParaEliminar = $(this).data('id'); 
         const materialNombre = $(this).data('nombre');
@@ -886,7 +886,7 @@ $(document).ready(function () {
         console.log("Confirmada eliminación para material ID:", materialIdParaEliminar);
 
         $.ajax({
-            url: `http://127.0.0.1:5000/materiales/${materialIdParaEliminar}`, 
+            url: `https://553682876eea.ngrok-free.app/materiales/${materialIdParaEliminar}`, 
             method: 'DELETE',
             headers: {
                 'Authorization': 'Bearer ' + currentToken

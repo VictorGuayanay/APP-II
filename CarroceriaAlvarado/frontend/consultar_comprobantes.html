@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Consultar Comprobantes - Carrocería Alvarado</title>
+    <title>Consultar Comprobantes - Carrocerías Alvarado</title>
     <link rel="stylesheet" type="text/css" href="vendor/bootstrap/css/bootstrap.min.css">
     <link rel="stylesheet" type="text/css" href="fonts/font-awesome-4.7.0/css/font-awesome.min.css">
     <link rel="stylesheet" type="text/css" href="css/main.css">
@@ -12,7 +12,7 @@
 
 <div class="admin-wrapper">
     <nav id="sidebar">
-        <div class="sidebar-header"><h3>Carrocería Alvarado</h3></div>
+        <div class="sidebar-header"><h3>Carrocerías Alvarado</h3></div>
         <ul class="list-unstyled components">
             <p class="ms-3">Administración</p>
             <li>
@@ -118,7 +118,7 @@
 
 <script>
 $(document).ready(function() {
-    // Lógica estándar
+    // Lógica estandar
     $('#sidebarCollapse').on('click', function() { $('#sidebar').toggleClass('active'); });
     const token = localStorage.getItem('token');
     if (!token) { window.location.href = 'index.html'; return; }
@@ -148,7 +148,7 @@ $(document).ready(function() {
         }
 
         mensajeDiv.text('Buscando comprobantes...').addClass('alert alert-info');
-        const urlConsulta = `http://127.0.0.1:5000/comprobantes-pago?fecha_desde=${fechaDesde}&fecha_hasta=${fechaHasta}`;
+        const urlConsulta = `https://553682876eea.ngrok-free.app/comprobantes-pago?fecha_desde=${fechaDesde}&fecha_hasta=${fechaHasta}`;
 
         $.ajax({
             url: urlConsulta,
@@ -196,20 +196,20 @@ $(document).ready(function() {
         });
     });
 
-    // Lógica para Imprimir PDF
+    // L�gica para Imprimir PDF
     $('#imprimirPdfButton').on('click', function() {
         console.log("Generando PDF con encabezado y logo...");
         
         // 1. Crear el objeto de imagen y definir su ruta
-        //    Asegúrate de que la ruta 'images/logo_empresa.png' sea correcta y que la imagen exista.
+        //    Aseg�rate de que la ruta 'images/logo_empresa.png' sea correcta y que la imagen exista.
         var logo = new Image();
-        logo.src = 'images/logo.jpg'; // ¡IMPORTANTE: Reemplaza con la ruta real de tu logo!
+        logo.src = 'images/logo.jpg'; // �IMPORTANTE: Reemplaza con la ruta real de tu logo!
 
-        // 2. Toda la lógica de creación del PDF debe ir dentro del 'onload' de la imagen
-        //    para asegurar que el logo se haya cargado antes de intentar añadirlo.
+        // 2. Toda la l�gica de creaci�n del PDF debe ir dentro del 'onload' de la imagen
+        //    para asegurar que el logo se haya cargado antes de intentar a�adirlo.
         logo.onload = function() {
             const { jsPDF } = window.jspdf;
-            // Crear un nuevo documento PDF en orientación horizontal ('l' para landscape)
+            // Crear un nuevo documento PDF en orientaci�n horizontal ('l' para landscape)
             const doc = new jsPDF({
                 orientation: 'landscape',
                 unit: 'pt',
@@ -217,14 +217,14 @@ $(document).ready(function() {
             });
 
             // --- INICIO DEL ENCABEZADO ---
-            // 3. Añadir el logo al PDF
-            // Parámetros: (imagen, formato, x, y, ancho, alto)
-            doc.addImage(this, 'JPG', 60, 15, 60, 60); // Ajusta estas coordenadas y tamaño según tu logo
+            // 3. A�adir el logo al PDF
+            // Par�metros: (imagen, formato, x, y, ancho, alto)
+            doc.addImage(this, 'JPG', 60, 15, 60, 60); // Ajusta estas coordenadas y tama�o seg�n tu logo
 
-            // 4. Añadir texto del encabezado
+            // 4. A�adir texto del encabezado
             doc.setFontSize(18);
             doc.setTextColor(40);
-            doc.text("Carrocería Alvarado", 150, 35); // Alineado a la derecha del logo
+            doc.text("Carrocerías Alvarado", 150, 35); // Alineado a la derecha del logo
             
             doc.setFontSize(10);
             doc.text("Dirección: Av. Monseñor Leonidas Proaño (a pocos metros de la linea ferrea), Riobamba, Ecuador", 150, 50);
@@ -232,14 +232,14 @@ $(document).ready(function() {
             
             // --- FIN DEL ENCABEZADO ---
 
-            // 5. Añadir título del reporte
+            // 5. A�adir t�tulo del reporte
 
             const fechaDesde = $('#fechaDesde').val();
             const fechaHasta = $('#fechaHasta').val();
             const titulo = `Reporte de Comprobantes de Pago (${fechaDesde} a ${fechaHasta})`;
 
             doc.setFontSize(14);
-            doc.text(titulo, 40, 100); // Posición debajo del encabezado
+            doc.text(titulo, 40, 100); // Posici�n debajo del encabezado
 
             doc.autoTable({
                 html: '#comprobantesTable',
@@ -249,7 +249,7 @@ $(document).ready(function() {
                     fillColor: [45, 45, 45] // Color de cabecera (oscuro)
                 },
                 didDrawPage: function (data) {
-                    // Pie de página con número (opcional, se dibujará en cada página)
+                    // Pie de p�gina con n�mero (opcional, se dibujar� en cada p�gina)
                     const pageCount = doc.internal.getNumberOfPages();
                     doc.setFontSize(8);
                     doc.text('Página ' + doc.internal.pages.length, data.settings.margin.left, doc.internal.pageSize.height - 10);
@@ -260,7 +260,7 @@ $(document).ready(function() {
         };
     });
     
-    // Función para imprimir comprobante individual
+    // Funci�n para imprimir comprobante individual
     $(document).on('click', '.btn-imprimir-comprobante', function() {
         const $row = $(this).closest('tr');
         const idComprobante = $(this).data('id-comprobante');
@@ -281,7 +281,7 @@ $(document).ready(function() {
         
         // Cargar datos de la orden
         $.ajax({
-            url: `http://127.0.0.1:5000/ordenes-trabajo/${idOrden}`,
+            url: `https://553682876eea.ngrok-free.app/ordenes-trabajo/${idOrden}`,
             method: 'GET',
             headers: { 'Authorization': 'Bearer ' + token },
             success: function(orden) {
@@ -294,7 +294,7 @@ $(document).ready(function() {
         });
     });
     
-    // Función para generar PDF del comprobante
+    // Funci�n para generar PDF del comprobante
     function generarPDFComprobante(orden, comprobante) {
         var logo = new Image();
         logo.src = 'images/logo.jpg';
@@ -315,14 +315,14 @@ $(document).ready(function() {
             
             doc.setFontSize(18);
             doc.setTextColor(40);
-            doc.text("Carrocería Alvarado", 120, 35);
+            doc.text("Carrocerías Alvarado", 120, 35);
             
             doc.setFontSize(9);
             doc.text("Dirección: Av. Monseñor Leonidas Proaño", 120, 50);
             doc.text("(a pocos metros de la línea férrea), Riobamba, Ecuador", 120, 62);
             doc.text("Teléfono: 099 991 1866 | Email: carroceriasalvarado@hotmail.com", 120, 74);
             
-            // --- TÍTULO DEL COMPROBANTE ---
+            // --- T�TULO DEL COMPROBANTE ---
             let currentY = 100;
             doc.setFontSize(16);
             doc.setFont(undefined, 'bold');
@@ -335,7 +335,7 @@ $(document).ready(function() {
             doc.text("DOCUMENTO SIN VALOR TRIBUTARIO", pageWidth / 2, currentY, { align: 'center' });
             doc.setTextColor(40);
             
-            // --- INFORMACIÓN DEL COMPROBANTE ---
+            // --- INFORMACI�N DEL COMPROBANTE ---
             currentY += 25;
             doc.setFontSize(11);
             doc.setFont(undefined, 'bold');
@@ -354,7 +354,7 @@ $(document).ready(function() {
             currentY += 15;
             const fechaInicio = orden.fecha_inicio ? new Date(orden.fecha_inicio).toLocaleDateString('es-EC') : '-';
             const fechaFin = orden.fecha_fin ? new Date(orden.fecha_fin).toLocaleDateString('es-EC') : '-';
-            doc.text(`Período de Trabajo: ${fechaInicio} a ${fechaFin}`, 40, currentY);
+            doc.text(`Periodo de Trabajo: ${fechaInicio} a ${fechaFin}`, 40, currentY);
             
             // --- DESCRIPCIÓN DEL TRABAJO ---
             currentY += 25;
@@ -448,7 +448,7 @@ $(document).ready(function() {
                 margin: { left: 40, right: 40 }
             });
             
-            // --- PIE DE PÁGINA ---
+            // --- PIE DE P�GINA ---
             currentY = pageHeight - 60;
             doc.setFontSize(8);
             doc.setTextColor(100);

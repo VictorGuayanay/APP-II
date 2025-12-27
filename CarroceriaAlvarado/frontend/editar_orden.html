@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <title>Editar Orden de Trabajo - Carrocería Alvarado</title>
+    <title>Editar Orden de Trabajo - Carrocerías Alvarado</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" type="text/css" href="vendor/bootstrap/css/bootstrap.min.css">
@@ -15,7 +15,7 @@
     <!-- Sidebar -->
     <nav id="sidebar">
         <div class="sidebar-header">
-            <h3>Carrocería Alvarado</h3>
+            <h3>Carrocerías Alvarado</h3>
         </div>
         <ul class="list-unstyled components">
             <p class="ms-3">Administración</p>
@@ -49,8 +49,8 @@
             <li><a href="ingresar_cliente.html"><i class="fa fa-user-plus"></i> Ingreso Clientes</a></li>
             <li><a href="ingresar_proveedor.html"><i class="fa fa-truck"></i> Ingreso Proveedores</a></li>
             <li><a href="ver_proveedores.html"><i class="fa fa-list"></i> Ver Proveedores</a></li>
-            <li><a href="orden_trabajo.html"><i class="fa fa-briefcase"></i> Órdenes de Trabajo</a></li>
-            <li class="active"><a href="listar_ordenes_trabajo.html"><i class="fa fa-briefcase"></i> Listar Órdenes de Trabajo</a></li>
+            <li><a href="orden_trabajo.html"><i class="fa fa-briefcase"></i> Ordenes de Trabajo</a></li>
+            <li class="active"><a href="listar_ordenes_trabajo.html"><i class="fa fa-briefcase"></i> Listar Ordenes de Trabajo</a></li>
             <li><a href="consultar_comprobantes.html"><i class="fa fa-money"></i> Comprobante</a></li>
             <li><a href="reportes.html"><i class="fa fa-bar-chart"></i> Reportes</a></li>
             <li><a href="#" data-bs-toggle="modal" data-bs-target="#settingsModal" ><i class="fa fa-cog"></i> Configuración</a></li>
@@ -85,8 +85,8 @@
                 </div>
                 <div class="card-body">
                     <form id="formEditarOrden">
-                        <!-- Datos Básicos -->
-                        <div class="row">
+                        <!-- Datos B�sicos -->
+                        <div class="row">   
                             <div class="col-md-6 mb-3">
                                 <label for="selectCliente" class="form-label">Cliente <span class="text-danger">*</span></label>
                                 <select class="form-select" id="selectCliente" required>
@@ -211,7 +211,7 @@
     </div>
 </div>
 
-<!-- Modal de Configuración -->
+<!-- Modal de Configuraci�n -->
 <div id="settingsModalPlaceholder"></div>
 
 <!-- Scripts -->
@@ -221,7 +221,7 @@
 
 <script>
 $(document).ready(function() {
-    // Lógica estándar
+    // L�gica est�ndar
     $('#sidebarCollapse').on('click', function() { $('#sidebar').toggleClass('active'); });
     const token = localStorage.getItem('token');
     if (!token) { window.location.href = 'index.html'; return; }
@@ -229,7 +229,7 @@ $(document).ready(function() {
     if (loggedInUsername) { $('#currentUserName').text(loggedInUsername); }
     $('#logoutButton').on('click', function(e) { e.preventDefault(); localStorage.clear(); window.location.href = 'index.html'; });
 
-    // Cargar modal de configuración
+    // Cargar modal de configuraci�n
     $('#settingsModalPlaceholder').load('settings_modal.html');
 
     // Obtener ID de orden de la URL
@@ -252,7 +252,7 @@ $(document).ready(function() {
     // Cargar clientes
     function cargarClientes() {
         $.ajax({
-            url: 'http://127.0.0.1:5000/clientes',
+            url: 'https://553682876eea.ngrok-free.app/clientes',
             method: 'GET',
             headers: { 'Authorization': 'Bearer ' + token },
             success: function(clientes) {
@@ -275,7 +275,7 @@ $(document).ready(function() {
     // Cargar todos los empleados del sistema
     function cargarTodosLosEmpleados() {
         $.ajax({
-            url: 'http://127.0.0.1:5000/empleados',
+            url: 'https://553682876eea.ngrok-free.app/empleados',
             method: 'GET',
             headers: { 'Authorization': 'Bearer ' + token },
             success: function(empleados) {
@@ -287,7 +287,7 @@ $(document).ready(function() {
         });
     }
     
-    // Mostrar empleados asignados con botón Cambiar
+    // Mostrar empleados asignados con bot�n Cambiar
     function mostrarEmpleadosAsignados() {
         const $container = $('#empleadosAsignadosContainer');
         $container.empty();
@@ -314,14 +314,14 @@ $(document).ready(function() {
             $container.append(empleadoCard);
         });
         
-        // Botón para agregar más empleados
+        // Bot�n para agregar m�s empleados
         $container.append('<button type="button" class="btn btn-sm btn-primary mt-2" id="btnAgregarMasEmpleados"><i class="fa fa-plus"></i> Agregar Otro Empleado</button>');
     }
     
-    // Obtener empleados disponibles (excluyendo los que están en otras órdenes activas)
+    // Obtener empleados disponibles (excluyendo los que est�n en otras �rdenes activas)
     function obtenerEmpleadosDisponibles(callback) {
         $.ajax({
-            url: 'http://127.0.0.1:5000/empleados/disponibles',
+            url: 'https://553682876eea.ngrok-free.app/empleados/disponibles',
             method: 'GET',
             headers: { 'Authorization': 'Bearer ' + token },
             success: function(empleados) {
@@ -338,7 +338,7 @@ $(document).ready(function() {
     // Mostrar modal para seleccionar empleado
     function mostrarModalSeleccionEmpleado(indexACambiar) {
         obtenerEmpleadosDisponibles(function(empleadosDisponibles) {
-            // Filtrar empleados que ya están asignados a esta orden
+            // Filtrar empleados que ya est�n asignados a esta orden
             const idsAsignados = empleadosAsignados.map(e => e.id_empleado);
             const disponibles = empleadosDisponibles.filter(e => !idsAsignados.includes(e.id_empleado));
             
@@ -432,7 +432,7 @@ $(document).ready(function() {
     function cargarProveedores() {
         const $selectProveedor = $('#selectProveedor');
         $.ajax({
-            url: 'http://127.0.0.1:5000/proveedores',
+            url: 'https://553682876eea.ngrok-free.app/proveedores',
             method: 'GET',
             headers: { 'Authorization': 'Bearer ' + token },
             success: function(proveedores) {
@@ -462,7 +462,7 @@ $(document).ready(function() {
         }
         
         $.ajax({
-            url: `http://127.0.0.1:5000/proveedores/${idProveedor}/materiales`,
+            url: `https://553682876eea.ngrok-free.app/proveedores/${idProveedor}/materiales`,
             method: 'GET',
             headers: { 'Authorization': 'Bearer ' + token },
             success: function(materiales) {
@@ -606,7 +606,7 @@ $(document).ready(function() {
             total_orden: subtotalMateriales * (1 + (parseInt($('#margenGanancia').val()) || 20) / 100)
         };
         
-        // Validación
+        // Validaci�n
         if (ordenData.fecha_fin && ordenData.fecha_fin < ordenData.fecha_inicio) {
             mensajeDiv.html('<div class="alert alert-danger">La fecha de fin no puede ser anterior a la fecha de inicio</div>');
             return;
@@ -615,7 +615,7 @@ $(document).ready(function() {
         console.log('Enviando datos:', ordenData);
         
         $.ajax({
-            url: `http://127.0.0.1:5000/ordenes-trabajo/${idOrden}`,
+            url: `https://553682876eea.ngrok-free.app/ordenes-trabajo/${idOrden}`,
             method: 'PUT',
             headers: {
                 'Authorization': 'Bearer ' + token,
@@ -626,7 +626,7 @@ $(document).ready(function() {
                 console.log('Respuesta:', response);
                 mensajeDiv.html('<div class="alert alert-success"><i class="fa fa-check"></i> ' + response.message + '</div>');
                 
-                // Redirigir después de 2 segundos
+                // Redirigir despu�s de 2 segundos
                 setTimeout(function() {
                     window.location.href = `detalle_orden.html?id=${idOrden}`;
                 }, 2000);
@@ -639,7 +639,7 @@ $(document).ready(function() {
         });
     });
     
-    // Botón ver detalle
+    // Bot�n ver detalle
     $('#btnVerDetalle').on('click', function() {
         window.location.href = `detalle_orden.html?id=${idOrden}`;
     });
@@ -649,9 +649,9 @@ $(document).ready(function() {
     cargarTodosLosEmpleados();
     cargarProveedores();
     
-    // Cargar datos de la orden (esto llamará a mostrarEmpleadosAsignados internamente)
+    // Cargar datos de la orden (esto llamar� a mostrarEmpleadosAsignados internamente)
     $.ajax({
-        url: `http://127.0.0.1:5000/ordenes-trabajo/${idOrden}`,
+        url: `https://553682876eea.ngrok-free.app/ordenes-trabajo/${idOrden}`,
         method: 'GET',
         headers: { 'Authorization': 'Bearer ' + token },
         success: function(orden) {
@@ -675,7 +675,7 @@ $(document).ready(function() {
                 });
                 mostrarEmpleadosAsignados();
             } else {
-                mostrarEmpleadosAsignados(); // Mostrar botón "Agregar Empleado"
+                mostrarEmpleadosAsignados(); // Mostrar bot�n "Agregar Empleado"
             }
             
             // Cargar materiales asignados

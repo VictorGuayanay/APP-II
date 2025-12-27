@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <title>Crear Orden de Trabajo - Carrocería Alvarado</title>
+    <title>Crear Orden de Trabajo - Carrocerías Alvarado</title>
     <meta charset="UTF-8">
     <link rel="stylesheet" type="text/css" href="vendor/bootstrap/css/bootstrap.min.css">
     <link rel="stylesheet" type="text/css" href="fonts/font-awesome-4.7.0/css/font-awesome.min.css">
@@ -13,7 +13,7 @@
 <div class="admin-wrapper">
     <nav id="sidebar">
         <div class="sidebar-header">
-            <h3>Carrocería Alvarado</h3>
+            <h3>Carrocerías Alvarado</h3>
         </div>
         <ul class="list-unstyled components">
             <p class="ms-3">Administración</p>
@@ -227,7 +227,7 @@ function cargarSelectCliente() {
 
     // Cargar Clientes
     $.ajax({
-        url: 'http://127.0.0.1:5000/clientes',
+        url: 'https://553682876eea.ngrok-free.app/clientes',
         method: 'GET',
         headers: { 'Authorization': 'Bearer ' + token },
         success: function(clientes) {
@@ -256,7 +256,7 @@ function cargarEmpleadosParaAsignacionManual() {
     if (!token) { return; }
 
     $.ajax({
-        url: 'http://127.0.0.1:5000/empleados', // Reutilizamos el endpoint que lista empleados
+        url: 'https://553682876eea.ngrok-free.app/empleados', // Reutilizamos el endpoint que lista empleados
         method: 'GET',
         headers: { 'Authorization': 'Bearer ' + token },
         success: function(empleados) {
@@ -286,7 +286,7 @@ function cargarEmpleadosParaAsignacionManual() {
 
 
 $(document).ready(function() {
-    // Lógica estándar
+    // Lógica estandar
     $('#sidebarCollapse').on('click', function() { $('#sidebar').toggleClass('active'); });
     const token = localStorage.getItem('token');
     if (!token) { window.location.href = 'index.html'; return; }
@@ -301,7 +301,7 @@ $(document).ready(function() {
     function cargarProveedores() {
         const $selectProveedor = $('#selectProveedor');
         $.ajax({
-            url: 'http://127.0.0.1:5000/proveedores',
+            url: 'https://553682876eea.ngrok-free.app/proveedores',
             method: 'GET',
             headers: { 'Authorization': 'Bearer ' + token },
             success: function(proveedores) {
@@ -331,7 +331,7 @@ $(document).ready(function() {
         if (proveedorId) {
             // Cargar materiales del proveedor seleccionado
             $.ajax({
-                url: `http://127.0.0.1:5000/proveedores/${proveedorId}/materiales`,
+                url: `https://553682876eea.ngrok-free.app/proveedores/${proveedorId}/materiales`,
                 method: 'GET',
                 headers: { 'Authorization': 'Bearer ' + token },
                 success: function(materiales) {
@@ -534,7 +534,7 @@ $(document).ready(function() {
         console.log("Enviando datos de nueva orden de trabajo:", ordenData);
 
         $.ajax({
-            url: 'http://127.0.0.1:5000/ordenes-trabajo',
+            url: 'https://553682876eea.ngrok-free.app/ordenes-trabajo',
             method: 'POST',
             headers: {
                 'Authorization': 'Bearer ' + token,

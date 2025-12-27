@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <title>Ver Proveedores - Carrocería Alvarado</title>
+    <title>Ver Proveedores - Carrocerías Alvarado</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" type="text/css" href="vendor/bootstrap/css/bootstrap.min.css">
@@ -13,7 +13,7 @@
 <div class="admin-wrapper">
     <nav id="sidebar">
         <div class="sidebar-header">
-            <h3>Carrocería Alvarado</h3>
+            <h3>Carrocerías Alvarado</h3>
         </div>
         <ul class="list-unstyled components">
             <p class="ms-3">Administración</p>
@@ -45,8 +45,8 @@
             <li><a href="ingresar_cliente.html"><i class="fa fa-user-plus"></i> Ingreso Clientes</a></li>
             <li><a href="ingresar_proveedor.html"><i class="fa fa-truck"></i> Ingreso Proveedores</a></li>
             <li class="active"><a href="ver_proveedores.html"><i class="fa fa-list"></i> Ver Proveedores</a></li>
-            <li><a href="orden_trabajo.html"><i class="fa fa-briefcase"></i> Órdenes de Trabajo</a></li>
-            <li><a href="listar_ordenes_trabajo.html"><i class="fa fa-briefcase"></i> Listar Órdenes de Trabajo</a></li>
+            <li><a href="orden_trabajo.html"><i class="fa fa-briefcase"></i> Ordenes de Trabajo</a></li>
+            <li><a href="listar_ordenes_trabajo.html"><i class="fa fa-briefcase"></i> Listar Ordenes de Trabajo</a></li>
             <li><a href="consultar_comprobantes.html"><i class="fa fa-bar-chart"></i> Comprobante</a></li>
             <li><a href="reportes.html"><i class="fa fa-bar-chart"></i> Reportes</a></li>
             <li><a href="#" data-bs-toggle="modal" data-bs-target="#settingsModal" ><i class="fa fa-cog"></i> Configuración</a></li>
@@ -194,7 +194,7 @@ function loadProveedores() {
     }
 
     $.ajax({ 
-        url: 'http://127.0.0.1:5000/proveedores',
+        url: 'https://553682876eea.ngrok-free.app/proveedores',
         method: 'GET',
         headers: { 
             'Authorization': 'Bearer ' + token  
@@ -283,7 +283,7 @@ $(document).ready(function () {
         console.log("Editando proveedor ID:", proveedorIdParaEditar);
 
         $.ajax({
-            url: `http://127.0.0.1:5000/proveedores/${proveedorIdParaEditar}`,
+            url: `https://553682876eea.ngrok-free.app/proveedores/${proveedorIdParaEditar}`,
             method: 'GET',
             headers: { 'Authorization': 'Bearer ' + token },
             success: function(proveedor) {
@@ -320,7 +320,7 @@ $(document).ready(function () {
         };
 
         $.ajax({
-            url: `http://127.0.0.1:5000/proveedores/${proveedorId}`,
+            url: `https://553682876eea.ngrok-free.app/proveedores/${proveedorId}`,
             method: 'PUT',
             headers: {
                 'Authorization': 'Bearer ' + token,
@@ -361,7 +361,7 @@ $(document).ready(function () {
         }
 
         $.ajax({
-            url: `http://127.0.0.1:5000/proveedores/${proveedorIdParaEliminar}`,
+            url: `https://553682876eea.ngrok-free.app/proveedores/${proveedorIdParaEliminar}`,
             method: 'DELETE',
             headers: {
                 'Authorization': 'Bearer ' + token

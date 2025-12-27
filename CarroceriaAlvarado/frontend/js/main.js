@@ -1,11 +1,11 @@
-$(document).ready(function() {
+$(document).ready(function () {
     // Manejo del formulario de login
-    $('#loginForm').on('submit', function(event) {
+    $('#loginForm').on('submit', function (event) {
         event.preventDefault();
 
         const username = $('#username').val().trim();
         const password = $('#password').val().trim();
-        const messageDiv = $('#message'); 
+        const messageDiv = $('#message');
 
         messageDiv.text('').removeClass('error success'); // Limpiar mensajes anteriores
 
@@ -18,22 +18,22 @@ $(document).ready(function() {
         }
 
         $.ajax({
-            url: 'http://127.0.0.1:5000/login', // API Flask en puerto 5000
+            url: 'https://553682876eea.ngrok-free.app/login', // API Flask via ngrok
             method: 'POST',
             contentType: 'application/json',
             data: JSON.stringify({ username, password }),
-            success: function(response) {
+            success: function (response) {
                 console.log('Respuesta exitosa del login:', response);
-                
+
                 // Asegurarse que la respuesta contiene token, rol Y username
-                if (response.token && response.rol && response.username) { 
+                if (response.token && response.rol && response.username) {
                     localStorage.setItem('token', response.token);
                     localStorage.setItem('userRol', response.rol);
                     localStorage.setItem('loggedInUsername', response.username); // Guardar username
 
                     messageDiv.text('Login exitoso. Redirigiendo...').removeClass('error').addClass('success');
 
-                    if (response.rol === 'Administrador') { 
+                    if (response.rol === 'Administrador') {
                         window.location.href = 'admin.html';
                     } else {
                         window.location.href = 'users.html';
@@ -43,7 +43,7 @@ $(document).ready(function() {
                     messageDiv.text('Error inesperado al procesar el login. Intente de nuevo.').removeClass('success').addClass('error');
                 }
             },
-            error: function(xhr, status, errorThrown) {
+            error: function (xhr, status, errorThrown) {
                 console.log('Error en login AJAX detectado:');
                 console.log('xhr:', xhr);
                 console.log('status:', status);
@@ -63,7 +63,7 @@ $(document).ready(function() {
                         console.log("No se pudo parsear xhr.responseText como JSON o no contiene 'error':", xhr.responseText);
                     }
                 }
-                
+
                 messageDiv.text(errorMsg).removeClass('success').addClass('error');
                 console.log('Mensaje de error a mostrar:', errorMsg);
             }
@@ -71,7 +71,7 @@ $(document).ready(function() {
     });
 
     // Manejo del formulario de reset password
-    $('#resetPassForm').on('submit', function(event) {
+    $('#resetPassForm').on('submit', function (event) {
         event.preventDefault();
 
         const email = $('#email').val().trim();
@@ -87,18 +87,18 @@ $(document).ready(function() {
         }
 
         $.ajax({
-            url: 'http://127.0.0.1:5000/reset_password',
+            url: 'https://553682876eea.ngrok-free.app/reset_password',
             method: 'POST',
             contentType: 'application/json',
             data: JSON.stringify({ email }),
-            success: function(response) {
+            success: function (response) {
                 console.log('Respuesta exitosa de reset_password:', response);
                 messageDiv.text(response.message || 'Instrucciones enviadas a su correo electrónico. Serás redirigido en 3 segundos...').removeClass('error').addClass('success');
-                setTimeout(function() {
+                setTimeout(function () {
                     window.location.href = 'index.html';
                 }, 3000);
             },
-            error: function(xhr, status, errorThrown) { 
+            error: function (xhr, status, errorThrown) {
                 console.log('Error en reset_password:', xhr, status, errorThrown);
                 const errorMsg = xhr.responseJSON?.error || 'Error al procesar la solicitud de restablecimiento.';
                 messageDiv.text(errorMsg).removeClass('success').addClass('error');
@@ -107,12 +107,12 @@ $(document).ready(function() {
     });
 
     // Manejo del formulario de nueva contraseña
-    $('#newPassForm').on('submit', function(event) {
+    $('#newPassForm').on('submit', function (event) {
         event.preventDefault();
 
-        const password = $('#password').val().trim(); 
-        const confirmPassword = $('#confirm_password').val().trim(); 
-        const messageDiv = $('#message'); 
+        const password = $('#password').val().trim();
+        const confirmPassword = $('#confirm_password').val().trim();
+        const messageDiv = $('#message');
 
         messageDiv.text('').removeClass('error success');
         console.log('Datos (sin contraseña) enviados para new password.');
@@ -139,30 +139,30 @@ $(document).ready(function() {
         }
 
         $.ajax({
-            url: 'http://127.0.0.1:5000/new_password', 
+            url: 'https://553682876eea.ngrok-free.app/new_password',
             method: 'POST',
             contentType: 'application/json',
             data: JSON.stringify({ token, password }),
-            success: function(response) {
+            success: function (response) {
                 console.log('Respuesta exitosa de new_password:', response);
                 messageDiv.text(response.message || 'Contraseña actualizada exitosamente. Serás redirigido en 3 segundos...').removeClass('error').addClass('success');
-                setTimeout(function() {
+                setTimeout(function () {
                     window.location.href = 'index.html';
                 }, 3000);
             },
-            error: function(xhr, status, errorThrown) { 
+            error: function (xhr, status, errorThrown) {
                 console.log('Error en new_password. Status:', status, 'Error:', errorThrown);
-                console.log('xhr.responseText para new_password:', xhr.responseText); 
+                console.log('xhr.responseText para new_password:', xhr.responseText);
                 const errorMsg = xhr.responseJSON?.error || 'Error al actualizar la contraseña.';
                 messageDiv.text(errorMsg).removeClass('success').addClass('error');
             }
         });
     });
 
-    if ($('#password').length > 0) { 
-        $('#password').on('input', function() {
-            const passwordVal = $(this).val(); 
-            const strengthIndicator = $('#strengthIndicator'); 
+    if ($('#password').length > 0) {
+        $('#password').on('input', function () {
+            const passwordVal = $(this).val();
+            const strengthIndicator = $('#strengthIndicator');
             if (strengthIndicator.length > 0) {
                 let strengthText = 'Baja';
                 let strengthClass = 'low';
@@ -180,10 +180,10 @@ $(document).ready(function() {
         });
     }
 
-    if ($('#confirm_password').length > 0 && $('#password').length > 0) { 
-        $('#confirm_password').on('input', function() {
-            const mainPassword = $('#password').val(); 
-            const confirmPasswordVal = $(this).val(); 
+    if ($('#confirm_password').length > 0 && $('#password').length > 0) {
+        $('#confirm_password').on('input', function () {
+            const mainPassword = $('#password').val();
+            const confirmPasswordVal = $(this).val();
             const confirmInput = $(this);
 
             if (mainPassword === confirmPasswordVal && confirmPasswordVal !== '') {
@@ -193,35 +193,35 @@ $(document).ready(function() {
             }
         });
     }
-    
+
     function cargarNotificaciones() {
         console.log("cargarNotificaciones() - Iniciando carga de notificaciones...");
         const token = localStorage.getItem('token');
-        const $notificationCount = $('#notificationCount'); 
-        const $notificationList = $('#notificationList');   
+        const $notificationCount = $('#notificationCount');
+        const $notificationList = $('#notificationList');
 
-      
+
         if (!token) {
             console.error("cargarNotificaciones() - No hay token. No se puede llamar a la API.");
             return;
         }
 
         $.ajax({
-            url: 'http://127.0.0.1:5000/notificaciones',
+            url: 'https://553682876eea.ngrok-free.app/notificaciones',
             method: 'GET',
             headers: {
                 'Authorization': 'Bearer ' + token
             },
-            success: function(notificaciones) {
+            success: function (notificaciones) {
                 console.log("cargarNotificaciones() - Notificaciones recibidas:", notificaciones);
-                $notificationList.empty(); 
+                $notificationList.empty();
 
                 if (notificaciones && Array.isArray(notificaciones) && notificaciones.length > 0) {
                     // Hay notificaciones, actualizar contador y mostrarlo
                     $notificationCount.text(notificaciones.length).show();
 
                     // Poblar la lista desplegable
-                    notificaciones.forEach(function(notif) {
+                    notificaciones.forEach(function (notif) {
                         let iconClass = 'fa-info-circle'; // Icono por defecto
                         if (notif.tipo === 'stock_bajo') {
                             iconClass = 'fa-warning text-warning'; // Icono de advertencia para stock bajo
@@ -246,7 +246,7 @@ $(document).ready(function() {
                     $notificationList.append('<li><span class="dropdown-item-text">No hay notificaciones nuevas.</span></li>');
                 }
             },
-            error: function(xhr, status, error) {
+            error: function (xhr, status, error) {
                 console.error("cargarNotificaciones() - Error al cargar notificaciones. Status:", xhr.status, "Response:", xhr.responseText);
                 $notificationCount.hide();
                 $notificationList.empty().append('<li><span class="dropdown-item-text text-danger">Error al cargar notificaciones.</span></li>');
@@ -263,23 +263,23 @@ $(document).ready(function() {
         if (!token) return;
 
         $.ajax({
-            url: `http://127.0.0.1:5000/ordenes-trabajo/${idOrden}/recursos-estimados`,
+            url: `https://553682876eea.ngrok-free.app/ordenes-trabajo/${idOrden}/recursos-estimados`,
             method: 'GET',
             headers: { 'Authorization': 'Bearer ' + token },
-            success: function(response) {
+            success: function (response) {
                 $('#recursosEstimados').removeClass('hidden');
                 $('#personalEstimado').text(response.personal_estimado);
                 $('#horasEstimadas').text(response.horas_estimadas);
                 $('#descOrden').text(response.descripcion);
             },
-            error: function(xhr, status, error) {
+            error: function (xhr, status, error) {
                 console.error('Error al cargar recursos estimados:', error);
             }
         });
     }
 
     // Llamada después de crear una orden
-    $('#ordenForm').on('submit', function(event) {
+    $('#ordenForm').on('submit', function (event) {
         event.preventDefault();
 
         const id_empleado = $('#empleado').val();
@@ -300,20 +300,20 @@ $(document).ready(function() {
         }
 
         $.ajax({
-            url: 'http://127.0.0.1:5000/ordenes-trabajo',
+            url: 'https://553682876eea.ngrok-free.app/ordenes-trabajo',
             method: 'POST',
             contentType: 'application/json',
             headers: { 'Authorization': 'Bearer ' + token },
             data: JSON.stringify({
                 id_empleado, id_cliente, fecha_inicio, fecha_fin, descripcion
             }),
-            success: function(response) {
+            success: function (response) {
                 alert('Orden creada exitosamente.');
                 if (response.id_orden_creada) {
                     cargarRecursosEstimados(response.id_orden_creada);
                 }
             },
-            error: function(xhr, status, error) {
+            error: function (xhr, status, error) {
                 alert('Error al crear la orden: ' + (xhr.responseJSON?.error || error));
             }
         });

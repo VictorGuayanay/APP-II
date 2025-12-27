@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Detalle de Orden de Trabajo - Carrocería Alvarado</title>
+    <title>Detalle de Orden de Trabajo - Carrocerías Alvarado</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" type="text/css" href="vendor/bootstrap/css/bootstrap.min.css">
     <link rel="stylesheet" type="text/css" href="fonts/font-awesome-4.7.0/css/font-awesome.min.css">
@@ -13,7 +13,7 @@
 <div class="admin-wrapper">
     <nav id="sidebar">
         <div class="sidebar-header">
-            <h3>Carrocería Alvarado</h3>
+            <h3>Carrocerías Alvarado</h3>
         </div>
         <ul class="list-unstyled components">
             <p class="ms-3">Administración</p>
@@ -151,7 +151,22 @@
                         </div>
                     </div>
                     
-                    <div class="row mt-3">
+                    <!-- Alerta para �rdenes finalizadas -->
+                    <div id="ordenFinalizadaAlert" class="alert alert-success mt-3" style="display: none;">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <h5 class="alert-heading"><i class="fa fa-check-circle"></i> Orden Finalizada</h5>
+                                <p class="mb-0">Esta orden de trabajo ya ha sido finalizada. No se pueden realizar más modificaciones.</p>
+                            </div>
+                            <div>
+                                <a href="listar_ordenes_trabajo.html" class="btn btn-success">
+                                    <i class="fa fa-arrow-left"></i> Volver a Lista
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mt-3" id="accionesOrdenContainer">
                         <!-- Finalizar Orden -->
                         <div class="col-md-6 mb-3">
                             <div class="card border-danger h-100">
@@ -236,7 +251,7 @@
                     <button type="button" class="btn btn-success" id="confirmGeneratePaymentButton">Confirmar y Generar</button>
                 </div>
             </div>
-        </div>
+        </div>  
     </div>
 
     <!-- Modal para Confirmar Finalización de Orden -->
@@ -386,7 +401,7 @@
     let costoTotalActualDeLaOrden = 0;
 
     // Definiciones necesarias
-    const API_BASE_URL = 'http://127.0.0.1:5000';
+    const API_BASE_URL = 'https://553682876eea.ngrok-free.app';
     
     function getAuthHeaders() {
         const token = localStorage.getItem('token');
@@ -406,7 +421,7 @@
         $selectNuevoEmpleado.html('<option value="">Cargando empleados...</option>').prop('disabled', true);
 
         $.ajax({
-            url: 'http://127.0.0.1:5000/empleados',
+            url: 'https://553682876eea.ngrok-free.app/empleados',
             method: 'GET',
             headers: { 'Authorization': 'Bearer ' + token },
             success: function(empleados) {
@@ -433,7 +448,7 @@
         $selectMaterial.html('<option value="">Cargando...</option>').prop('disabled', true);
 
         $.ajax({
-            url: 'http://127.0.0.1:5000/materiales',
+            url: 'https://553682876eea.ngrok-free.app/materiales',
             method: 'GET',
             headers: { 'Authorization': 'Bearer ' + token },
             success: function(materiales) {
@@ -454,7 +469,7 @@
         });
     }
 
-    // Función para calcular días laborales entre dos fechas
+    // Funci�n para calcular d�as laborales entre dos fechas
     function calcularDiasLaborales(fechaInicio, fechaFin) {
         const inicio = new Date(fechaInicio);
         const fin = fechaFin ? new Date(fechaFin) : new Date();
@@ -463,7 +478,7 @@
         return diffDays;
     }
 
-    // Función para calcular el costo de mano de obra
+    // Funci�n para calcular el costo de mano de obra
     function calcularManoDeObra(empleados, fechaInicio, fechaFin) {
         const diasLaborales = calcularDiasLaborales(fechaInicio, fechaFin);
         const horasPorDia = 8;
@@ -489,9 +504,9 @@
         return { detalles, costoTotalManoObra, diasLaborales, horasTotales };
     }
 
-    // Función para mostrar el resumen financiero
+    // Funci�n para mostrar el resumen financiero
     function mostrarResumenFinanciero(orden, costoManoObra) {
-        // Convertir a número y usar 0 si es null/undefined
+        // Convertir a n�mero y usar 0 si es null/undefined
         const subtotalMateriales = parseFloat(orden.subtotal_materiales) || 0;
         const margenPorcentaje = parseInt(orden.margen_ganancia) || 20;
         const costoManoObraNum = parseFloat(costoManoObra) || 0;
@@ -530,7 +545,7 @@
         $materialesTableBody.html('<tr><td colspan="5" class="text-center">Cargando...</td></tr>');
 
         $.ajax({
-            url: `http://127.0.0.1:5000/ordenes-trabajo/${idOrden}`,
+            url: `https://553682876eea.ngrok-free.app/ordenes-trabajo/${idOrden}`,
             method: 'GET',
             headers: { 'Authorization': 'Bearer ' + token },
             success: function(orden) {
@@ -596,6 +611,18 @@
                     fecha_inicio: orden.fecha_inicio,
                     fecha_fin: orden.fecha_fin
                 });
+                console.log("Estado de la orden:", orden.estado);
+                
+                // Verificar si la orden est� finalizada y mostrar/ocultar elementos
+                if (orden.estado === 'Finalizado') {
+                    console.log("Orden finalizada, ocultando botones de acción");
+                    $('#accionesOrdenContainer').hide();
+                    $('#ordenFinalizadaAlert').show();
+                } else {
+                    console.log("Orden no finalizada, mostrando botones de acción");
+                    $('#accionesOrdenContainer').show();
+                    $('#ordenFinalizadaAlert').hide();
+                }
 
                 // NUEVO: Calcular y mostrar mano de obra
                 if (orden.empleados_asignados && orden.empleados_asignados.length > 0) {
@@ -705,7 +732,7 @@
             mensajeDiv.text('Procesando...').removeClass('alert-danger alert-success').addClass('alert alert-info');
 
             $.ajax({
-                url: `http://127.0.0.1:5000/ordenes-trabajo/${idOrden}/modificar-asignacion`,
+                url: `https://553682876eea.ngrok-free.app/ordenes-trabajo/${idOrden}/modificar-asignacion`,
                 method: 'PUT',
                 headers: {
                     'Authorization': 'Bearer ' + token,
@@ -748,7 +775,7 @@
             console.log("Enviando material a la orden:", dataToSend);
 
             $.ajax({
-                url: `http://127.0.0.1:5000/ordenes-trabajo/${idOrden}/materiales`,
+                url: `https://553682876eea.ngrok-free.app/ordenes-trabajo/${idOrden}/materiales`,
                 method: 'POST',
                 headers: {
                     'Authorization': 'Bearer ' + token,
@@ -928,7 +955,7 @@
             }
         });
 
-        // Confirmar y finalizar orden (sin edición de cantidades)
+        // Confirmar y finalizar orden (sin edici�n de cantidades)
         $('#confirmFinalizeOrderButton').on('click', function() {
             console.log('Clic en Confirmar y Finalizar Orden');
             
@@ -937,11 +964,11 @@
                 url: `${API_BASE_URL}/ordenes-trabajo/${idOrden}/confirmar-uso-y-finalizar`,
                 method: 'PUT',
                 headers: getAuthHeaders(),
-                data: JSON.stringify([]), // Enviar array vacío ya que no hay cambios en cantidades
+                data: JSON.stringify([]), // Enviar array vac�o ya que no hay cambios en cantidades
                 success: function(response) {
                     console.log('Orden finalizada:', response);
                     $('#mensajeAnadirMaterial').text(response.message || "Orden finalizada con éxito.").removeClass('alert-info alert-danger').addClass('alert alert-success show');
-                    $('#finalizeOrderButton').prop('disabled', true); // Deshabilitar botón tras éxito
+                    $('#finalizeOrderButton').prop('disabled', true); // Deshabilitar bot�n tras �xito
                     bootstrap.Modal.getInstance(document.getElementById('confirmMaterialUsageModal')).hide();
                     cargarDetallesDeOrden(idOrden);
                 },

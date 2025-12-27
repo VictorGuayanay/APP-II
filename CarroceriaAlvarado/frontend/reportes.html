@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <title>Reportes - Carrocería Alvarado</title>
+    <title>Reportes - Carrocerias Alvarado</title>
     <meta charset="UTF-8">
     <link rel="stylesheet" type="text/css" href="vendor/bootstrap/css/bootstrap.min.css">
     <link rel="stylesheet" type="text/css" href="fonts/font-awesome-4.7.0/css/font-awesome.min.css">
@@ -11,7 +11,7 @@
 
 <div class="admin-wrapper">
     <nav id="sidebar">
-        <div class="sidebar-header"><h3>Carrocería Alvarado</h3></div>
+        <div class="sidebar-header"><h3>Carrocerias Alvarado</h3></div>
         <ul class="list-unstyled components">
             <p class="ms-3">Administración</p>
              <li>
@@ -42,8 +42,8 @@
             <li><a href="ingresar_cliente.html"><i class="fa fa-user-plus"></i> Ingreso Clientes</a></li>
             <li><a href="ingresar_proveedor.html"><i class="fa fa-truck"></i> Ingreso Proveedores</a></li>
             <li><a href="ver_proveedores.html"><i class="fa fa-list"></i> Ver Proveedores</a></li>
-            <li><a href="orden_trabajo.html"><i class="fa fa-briefcase"></i> Órdenes de Trabajo</a></li>
-            <li><a href="listar_ordenes_trabajo.html"><i class="fa fa-briefcase"></i> Listar Órdenes de Trabajo</a></li>
+            <li><a href="orden_trabajo.html"><i class="fa fa-briefcase"></i> Ordenes de Trabajo</a></li>
+            <li><a href="listar_ordenes_trabajo.html"><i class="fa fa-briefcase"></i> Listar Ordenes de Trabajo</a></li>
             <li><a href="consultar_comprobantes.html"><i class="fa fa-money"></i> Comprobante</a></li>
             <li class="active"><a href="reportes.html"><i class="fa fa-bar-chart"></i> Reportes</a></li>
             <li><a href="#" data-bs-toggle="modal" data-bs-target="#settingsModal" ><i class="fa fa-cog"></i> Configuración</a></li>
@@ -156,7 +156,7 @@ function cargarFiltros() {
 
     // Cargar Materiales
     $.ajax({
-        url: 'http://127.0.0.1:5000/materiales',
+        url: 'https://553682876eea.ngrok-free.app/materiales',
         method: 'GET',
         headers: { 'Authorization': 'Bearer ' + token },
         success: function(materiales) {
@@ -170,7 +170,7 @@ function cargarFiltros() {
 
     // Cargar Empleados
     $.ajax({
-        url: 'http://127.0.0.1:5000/empleados',
+        url: 'https://553682876eea.ngrok-free.app/empleados',
         method: 'GET',
         headers: { 'Authorization': 'Bearer ' + token },
         success: function(empleados) {
@@ -209,7 +209,7 @@ function renderizarGrafico(data) {
 
 
 $(document).ready(function() {
-    // Lógica estándar
+    // Lógica estandar
     $('#sidebarCollapse').on('click', function() { $('#sidebar').toggleClass('active'); });
     const token = localStorage.getItem('token');
     if (!token) { window.location.href = 'index.html'; return; }
@@ -253,7 +253,7 @@ $(document).ready(function() {
         mensajeDiv.text('Generando reporte...').addClass('alert alert-info');
 
         // Construcción dinámica de la URL con los filtros
-        let urlReporte = `http://127.0.0.1:5000/reportes/uso-materiales?fecha_desde=${fechaDesde}&fecha_hasta=${fechaHasta}`;
+        let urlReporte = `https://553682876eea.ngrok-free.app/reportes/uso-materiales?fecha_desde=${fechaDesde}&fecha_hasta=${fechaHasta}`;
         if (idMaterial) {
             urlReporte += `&id_material=${idMaterial}`;
         }
@@ -309,10 +309,10 @@ $(document).ready(function() {
         // 1. Crear el objeto de imagen y definir su ruta
         //    Asegúrate de que la ruta 'images/logo_empresa.png' sea correcta y que la imagen exista.
         var logo = new Image();
-        logo.src = 'images/logo.jpg'; // ¡IMPORTANTE: Reemplaza con la ruta real de tu logo!
+        logo.src = 'images/logo.jpg'; // IMPORTANTE: Reemplaza con la ruta real de tu logo!
 
         // 2. Toda la lógica de creación del PDF debe ir dentro del 'onload' de la imagen
-        //    para asegurar que el logo se haya cargado antes de intentar añadirlo.
+        //    para asegurar que el logo se haya cargado antes de intentar aadirlo.
         logo.onload = function() {
             const { jsPDF } = window.jspdf;
             // Crear un nuevo documento PDF en orientación horizontal ('l' para landscape)
@@ -330,7 +330,7 @@ $(document).ready(function() {
             // 4. Añadir texto del encabezado
             doc.setFontSize(18);
             doc.setTextColor(40);
-            doc.text("Carrocería Alvarado", 150, 35); // Alineado a la derecha del logo
+            doc.text("Carrocerías Alvarado", 150, 35); // Alineado a la derecha del logo
             
             doc.setFontSize(10);
             doc.text("Dirección: Av. Monseñor Leonidas Proaño (a pocos metros de la linea ferrea), Riobamba, Ecuador", 150, 50);
@@ -355,7 +355,7 @@ $(document).ready(function() {
                     fillColor: [45, 45, 45] // Color de cabecera (oscuro)
                 },
                 didDrawPage: function (data) {
-                    // Pie de página con número (opcional, se dibujará en cada página)
+                    // Pie de página con número (se dibujará en cada página)
                     const pageCount = doc.internal.getNumberOfPages();
                     doc.setFontSize(8);
                     doc.text('Página ' + doc.internal.pages.length, data.settings.margin.left, doc.internal.pageSize.height - 10);

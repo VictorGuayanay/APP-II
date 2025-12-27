@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <title>Ingresar Proveedor - Carrocería Alvarado</title>
+    <title>Ingresar Proveedor - Carrocerías Alvarado</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" type="text/css" href="vendor/bootstrap/css/bootstrap.min.css">
@@ -14,7 +14,7 @@
     <!-- Sidebar -->
    <nav id="sidebar">
         <div class="sidebar-header">
-            <h3>Carrocería Alvarado</h3>
+            <h3>Carrocerías Alvarado</h3>
         </div>
         <ul class="list-unstyled components">
             <p class="ms-3">Administración</p>
@@ -164,7 +164,7 @@ $(document).ready(function () {
         }
 
         $.ajax({
-            url: 'http://127.0.0.1:5000/proveedores',
+            url: 'https://553682876eea.ngrok-free.app/proveedores',
             method: 'POST',
             headers: {
                 'Authorization': 'Bearer ' + token,

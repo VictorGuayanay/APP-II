@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <title>Ingresar Empleado - Carrocería Alvarado</title>
+    <title>Ingresar Empleado - Carrocerías Alvarado</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" type="text/css" href="vendor/bootstrap/css/bootstrap.min.css">
@@ -15,10 +15,10 @@
     <!-- Sidebar -->
    <nav id="sidebar">
         <div class="sidebar-header">
-            <h3>Carrocería Alvarado</h3>
+            <h3>Carrocerías Alvarado</h3>
         </div>
         <ul class="list-unstyled components">
-            <p class="ms-3">Administración</p>
+            <p class="ms-3">Administracón</p>
             <li>
                 <a href="#dashboardSubmenu" data-bs-toggle="collapse" aria-expanded="false" class="dropdown-toggle">
                     <i class="fa fa-tachometer"></i> Dashboard
@@ -159,7 +159,7 @@ $(document).ready(function () {
         }
 
         $.ajax({
-            url: 'http://127.0.0.1:5000/empleados',
+            url: 'https://553682876eea.ngrok-free.app/empleados',
             method: 'POST',
             headers: {
                 'Authorization': 'Bearer ' + token,

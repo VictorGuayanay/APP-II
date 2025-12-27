@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <title>Ingresar Cliente - Carrocería Alvarado</title>
+    <title>Ingresar Cliente - Carrocerías Alvarado</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" type="text/css" href="vendor/bootstrap/css/bootstrap.min.css">
@@ -14,7 +14,7 @@
 <div class="admin-wrapper">
     <nav id="sidebar">
         <div class="sidebar-header">
-            <h3>Carrocería Alvarado</h3>
+            <h3>Carrocerías Alvarado</h3>
         </div>
         <ul class="list-unstyled components">
             <p class="ms-3">Administración</p>
@@ -59,11 +59,11 @@
             <div class="container-fluid">
                 <button type="button" id="sidebarCollapse" class="btn btn-info" style="background-color: #0073aa; border-color: #0073aa;">
                     <i class="fa fa-align-left"></i>
-                    <span>Menú</span>
+                    <span>MenÚ</span>
                 </button>
                 <div class="user-info">
                     <span>Hola, <strong id="currentUserName">Admin</strong>!</span>
-                    <a href="#" id="logoutButton" class="ms-3">Cerrar Sesión</a>
+                    <a href="#" id="logoutButton" class="ms-3">Cerrar SesiÓn</a>
                 </div>
             </div>
         </nav>
@@ -84,7 +84,7 @@
                         </div>
                         <div class="mb-3">
                             <label for="clienteTelefono" class="form-label">Teléfono <span class="text-danger">*</span></label>
-                            <input type="tel" class="form-control" id="clienteTelefono" maxlength="10" pattern="[0-9]{1,10}" title="Solo números, máximo 10 dígitos" required>
+                            <input type="tel" class="form-control" id="clienteTelefono" maxlength="10" pattern="[0-9]{1,10}" title="olo números, máximo 10 dígitos" required>
                         </div>
 
                         <div class="mb-3">
@@ -104,7 +104,7 @@
 <script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
 <script>
 $(document).ready(function () {
-    // Lógica estándar
+    // Lógica estandar
     $('#sidebarCollapse').on('click', function () { $('#sidebar').toggleClass('active'); });
     const token = localStorage.getItem('token');
     if (!token) { window.location.href = 'index.html'; return; }
@@ -131,7 +131,7 @@ $(document).ready(function () {
         }
 
         $.ajax({
-            url: 'http://127.0.0.1:5000/clientes',
+            url: 'https://553682876eea.ngrok-free.app/clientes',
             method: 'POST',
             headers: {
                 'Authorization': 'Bearer ' + token,

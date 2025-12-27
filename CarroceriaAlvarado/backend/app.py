@@ -23,7 +23,15 @@ APP_CONFIG = {
 }
 
 
-CORS(app) 
+CORS(app, resources={
+    r"/*": {
+        "origins": "*",
+        "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        "allow_headers": "*",
+        "expose_headers": "*",
+        "supports_credentials": False
+    }
+}) 
 
 conn_str = (
     "DRIVER={ODBC Driver 17 for SQL Server};"
@@ -46,6 +54,23 @@ def get_db_connection():
     except Exception as e:
         print(f"!!!!!!!! ERROR CRÍTICO AL CONECTAR A LA BASE DE DATOS: {str(e)} !!!!!!!!")
         raise Exception(f"Error al conectar a la base de datos: {str(e)}")
+
+
+# Manejador global para peticiones OPTIONS (CORS preflight)
+@app.route('/', defaults={'path': ''}, methods=['OPTIONS'])
+@app.route('/<path:path>', methods=['OPTIONS'])
+def handle_options(path):
+    response = app.make_default_options_response()
+    return response
+
+# Hook para agregar headers CORS a todas las respuestas
+@app.after_request
+def after_request(response):
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    response.headers.add('Access-Control-Allow-Headers', '*')
+    response.headers.add('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
+    return response
+
 
 
 def send_reset_email(email, user_id):
@@ -148,8 +173,12 @@ def registrar_usuario():
         return jsonify({'error': f'Error interno del servidor en registro: {str(e)}'}), 500
 
 
-@app.route('/login', methods=['POST'])
+@app.route('/login', methods=['POST', 'OPTIONS'])
 def login():
+    # Handle OPTIONS preflight request
+    if request.method == 'OPTIONS':
+        return '', 200
+    
     try:
         data = request.get_json()
         if not data: return jsonify({'error': 'No se recibieron datos JSON'}), 400
@@ -1061,7 +1090,7 @@ def get_todos_los_materiales(decoded_user_rol, decoded_user_id): # Argumentos de
             FROM Materiales m
             LEFT JOIN Proveedores p ON m.id_proveedor = p.id_proveedor
             LEFT JOIN Unidades_de_Medida u ON m.id_unidad = u.id_unidad
-            LEFT JOIN CategoriaMateriales c ON m.id_categoria = c.id_categoria
+            LEFT JOIN Categorias_Materiales c ON m.id_categoria = c.id_categoria
             ORDER BY m.nombre ASC 
         """
         cursor.execute(sql_query)
@@ -1178,7 +1207,7 @@ def crear_nuevo_material(decoded_user_rol, decoded_user_id): # El argumento depe
         cursor = conn.cursor()
 
         # Validar que la categoría existe
-        cursor.execute("SELECT codigo_prefijo FROM CategoriaMateriales WHERE id_categoria = ?", (id_categoria,))
+        cursor.execute("SELECT codigo_prefijo FROM Categorias_Materiales WHERE id_categoria = ?", (id_categoria,))
         row = cursor.fetchone()
         if not row:
             conn.close()
@@ -1622,7 +1651,7 @@ def actualizar_material(decoded_user_rol, decoded_user_id, id_material):
             return jsonify({'error': 'Material no encontrado'}), 404
         
         # Validar que la categoría existe
-        cursor.execute("SELECT codigo_prefijo FROM CategoriaMateriales WHERE id_categoria = ?", (id_categoria,))
+        cursor.execute("SELECT codigo_prefijo FROM Categorias_Materiales WHERE id_categoria = ?", (id_categoria,))
         row = cursor.fetchone()
         if not row:
             return jsonify({'error': f'La categoría con ID {id_categoria} no existe'}), 404
@@ -2462,7 +2491,7 @@ def get_categorias_materiales(decoded_user_rol, decoded_user_id):
         cursor.execute("""
             SELECT id_categoria, codigo_prefijo, nombre_categoria, 
                    descripcion, estado, fecha_creacion
-            FROM CategoriaMateriales
+            FROM Categorias_Materiales
             ORDER BY codigo_prefijo
         """)
         
@@ -2523,13 +2552,13 @@ def crear_categoria_material(decoded_user_rol, decoded_user_id):
         cursor = conn.cursor()
         
         # Verificar que el código no exista
-        cursor.execute("SELECT id_categoria FROM CategoriaMateriales WHERE codigo_prefijo = ?", (codigo_prefijo,))
+        cursor.execute("SELECT id_categoria FROM Categorias_Materiales WHERE codigo_prefijo = ?", (codigo_prefijo,))
         if cursor.fetchone():
             return jsonify({'error': f'El código prefijo "{codigo_prefijo}" ya existe'}), 409
         
         # Insertar categoría
         cursor.execute("""
-            INSERT INTO CategoriaMateriales (codigo_prefijo, nombre_categoria, descripcion, estado)
+            INSERT INTO Categorias_Materiales (codigo_prefijo, nombre_categoria, descripcion, estado)
             VALUES (?, ?, ?, 1)
         """, (codigo_prefijo, nombre_categoria, descripcion))
         
@@ -2576,7 +2605,7 @@ def actualizar_categoria_material(decoded_user_rol, decoded_user_id, id_categori
         cursor = conn.cursor()
         
         # Verificar que la categoría existe
-        cursor.execute("SELECT codigo_prefijo FROM CategoriaMateriales WHERE id_categoria = ?", (id_categoria,))
+        cursor.execute("SELECT codigo_prefijo FROM Categorias_Materiales WHERE id_categoria = ?", (id_categoria,))
         row = cursor.fetchone()
         if not row:
             return jsonify({'error': f'Categoría con ID {id_categoria} no encontrada'}), 404
@@ -2585,7 +2614,7 @@ def actualizar_categoria_material(decoded_user_rol, decoded_user_id, id_categori
         
         # Actualizar categoría (NO se puede cambiar codigo_prefijo)
         cursor.execute("""
-            UPDATE CategoriaMateriales
+            UPDATE Categorias_Materiales
             SET nombre_categoria = ?, descripcion = ?, estado = ?
             WHERE id_categoria = ?
         """, (nombre_categoria, descripcion, estado, id_categoria))
@@ -2621,7 +2650,7 @@ def eliminar_categoria_material(decoded_user_rol, decoded_user_id, id_categoria)
         cursor = conn.cursor()
         
         # Verificar que la categoría existe
-        cursor.execute("SELECT codigo_prefijo, nombre_categoria FROM CategoriaMateriales WHERE id_categoria = ?", (id_categoria,))
+        cursor.execute("SELECT codigo_prefijo, nombre_categoria FROM Categorias_Materiales WHERE id_categoria = ?", (id_categoria,))
         row = cursor.fetchone()
         if not row:
             return jsonify({'error': f'Categoría con ID {id_categoria} no encontrada'}), 404
@@ -2638,7 +2667,7 @@ def eliminar_categoria_material(decoded_user_rol, decoded_user_id, id_categoria)
             }), 409
         
         # Eliminar categoría
-        cursor.execute("DELETE FROM CategoriaMateriales WHERE id_categoria = ?", (id_categoria,))
+        cursor.execute("DELETE FROM Categorias_Materiales WHERE id_categoria = ?", (id_categoria,))
         conn.commit()
         
         print(f"API DELETE /categorias-materiales/{id_categoria}: Categoría '{nombre_categoria}' eliminada")

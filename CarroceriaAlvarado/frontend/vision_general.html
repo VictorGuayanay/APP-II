@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <title>Visi√≥n General - Carrocer√≠a Alvarado</title>
+    <title>VisiÛn General - CarrocerÌa Alvarado</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" type="text/css" href="vendor/bootstrap/css/bootstrap.min.css">
@@ -14,16 +14,16 @@
 <div class="admin-wrapper">
     <nav id="sidebar">
         <div class="sidebar-header">
-            <h3>Carrocer√≠a Alvarado</h3>
+            <h3>CarrocerÌa Alvarado</h3>
         </div>
         <ul class="list-unstyled components">
-            <p class="ms-3">Administraci√≥n</p>
+            <p class="ms-3">AdministraciÛn</p>
             <li>
                 <a href="#dashboardSubmenu" data-bs-toggle="collapse" aria-expanded="true" class="dropdown-toggle">
                     <i class="fa fa-tachometer"></i> Dashboard
                 </a>
                 <ul class="collapse list-unstyled" id="dashboardSubmenu">
-                    <li class="active"><a href="vision_general.html">Visi√≥n General</a></li>
+                    <li class="active"><a href="vision_general.html">VisiÛn General</a></li>
                 </ul>
             </li>
             <li> 
@@ -37,7 +37,7 @@
                 </a>
                 <ul class="collapse list-unstyled" id="inventarioSubmenu">
                     <li><a href="ver_inventario.html">Ver Inventario</a></li>
-                    <li><a href="anadir_material.html">A√±adir Material</a></li>
+                    <li><a href="anadir_material.html">AÒadir Material</a></li>
                     <li><a href="entradas_salidas_inventario.html">Entradas/Salidas</a></li>
                 </ul>
             </li>
@@ -45,11 +45,11 @@
             <li><a href="ingresar_cliente.html"><i class="fa fa-user-plus"></i> Ingreso Clientes</a></li>
             <li><a href="ingresar_proveedor.html"><i class="fa fa-truck"></i> Ingreso Proveedores</a></li>
             <li><a href="ver_proveedores.html"><i class="fa fa-list"></i> Ver Proveedores</a></li>
-            <li><a href="orden_trabajo.html"><i class="fa fa-briefcase"></i> √ìrdenes de Trabajo</a></li>
-            <li><a href="listar_ordenes_trabajo.html"><i class="fa fa-briefcase"></i> Listar √ìrdenes de Trabajo</a></li>
+            <li><a href="orden_trabajo.html"><i class="fa fa-briefcase"></i> ”rdenes de Trabajo</a></li>
+            <li><a href="listar_ordenes_trabajo.html"><i class="fa fa-briefcase"></i> Listar ”rdenes de Trabajo</a></li>
             <li><a href="consultar_comprobantes.html"><i class="fa fa-money"></i> Comprobante</a></li>
             <li><a href="reportes.html"><i class="fa fa-bar-chart"></i> Reportes</a></li>
-            <li><a href="#" data-bs-toggle="modal" data-bs-target="#settingsModal" ><i class="fa fa-cog"></i> Configuraci√≥n</a></li>
+            <li><a href="#" data-bs-toggle="modal" data-bs-target="#settingsModal" ><i class="fa fa-cog"></i> ConfiguraciÛn</a></li>
         </ul>
     </nav>
 
@@ -58,7 +58,7 @@
             <div class="container-fluid">
                 <button type="button" id="sidebarCollapse" class="btn btn-info" style="background-color: #0073aa; border-color: #0073aa;">
                     <i class="fa fa-align-left"></i>
-                    <span>Men√∫</span>
+                    <span>Men˙</span>
                 </button>
                 <div class="user-info">
                     <div class="dropdown me-3">
@@ -71,13 +71,13 @@
                         </ul>
                     </div>
                     <span>Hola, <strong id="currentUserName">Usuario</strong>!</span>
-                    <a href="#" id="logoutButton" class="ms-3">Cerrar Sesi√≥n</a>
+                    <a href="#" id="logoutButton" class="ms-3">Cerrar SesiÛn</a>
                 </div>
             </div>
         </nav>
 
         <div class="content-area container-fluid pt-4">
-            <h2 class="card-header-title">Visi√≥n General</h2>
+            <h2 class="card-header-title">VisiÛn General</h2>
             
             <div class="row">
                 <div class="col-md-6">
@@ -96,7 +96,7 @@
                 <div class="col-md-6">
                     <div class="card dashboard-card">
                         <div class="card-header">
-                            <h5 class="card-title"><i class="fa fa-briefcase text-info"></i> √ìrdenes de Trabajo Recientes</h5>
+                            <h5 class="card-title"><i class="fa fa-briefcase text-info"></i> ”rdenes de Trabajo Recientes</h5>
                         </div>
                         <div class="card-body">
                             <div class="table-responsive">
@@ -105,7 +105,7 @@
                                         <tr>
                                             <th>ID</th>
                                             <th>Cliente</th>
-                                            <th>Descripci√≥n</th>
+                                            <th>DescripciÛn</th>
                                             <th>Estado</th>
                                         </tr>
                                     </thead>
@@ -121,17 +121,17 @@
         </div> </div> </div> <script src="vendor/jquery/jquery-3.2.1.min.js"></script>
 <script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
 <script>
-// Funci√≥n para cargar los datos del dashboard
+// FunciÛn para cargar los datos del dashboard
 function cargarVisionGeneral() {
-    console.log("Cargando datos para la Visi√≥n General...");
+    console.log("Cargando datos para la VisiÛn General...");
     const token = localStorage.getItem('token');
     const $stockAlertList = $('#stock-alert-list');
     const $workOrderTable = $('#work-order-table');
 
-    if (!token) { /* La protecci√≥n de p√°gina ya deber√≠a haber actuado */ return; }
+    if (!token) { /* La protecciÛn de p·gina ya deberÌa haber actuado */ return; }
 
     $.ajax({
-        url: 'http://127.0.0.1:5000/dashboard/overview',
+        url: 'https://553682876eea.ngrok-free.app/dashboard/overview',
         method: 'GET',
         headers: { 'Authorization': 'Bearer ' + token },
         success: function(data) {
@@ -152,7 +152,7 @@ function cargarVisionGeneral() {
                 $stockAlertList.append('<p class="text-muted">No hay alertas de stock bajo actualmente.</p>');
             }
 
-            // Poblar tabla de √≥rdenes de trabajo recientes
+            // Poblar tabla de Ûrdenes de trabajo recientes
             $workOrderTable.empty();
             if (data.ordenes_recientes && data.ordenes_recientes.length > 0) {
                 data.ordenes_recientes.forEach(function(orden) {
@@ -164,23 +164,23 @@ function cargarVisionGeneral() {
                                            </tr>`);
                 });
             } else {
-                $workOrderTable.append('<tr><td colspan="4" class="text-center text-muted">No hay √≥rdenes de trabajo activas o recientes.</td></tr>');
+                $workOrderTable.append('<tr><td colspan="4" class="text-center text-muted">No hay Ûrdenes de trabajo activas o recientes.</td></tr>');
             }
         },
         error: function(xhr) {
             console.error("Error al cargar datos del dashboard:", xhr.responseText);
             $stockAlertList.html('<p class="text-danger">Error al cargar datos de inventario.</p>');
-            $workOrderTable.html('<tr><td colspan="4" class="text-center text-danger">Error al cargar √≥rdenes de trabajo.</td></tr>');
+            $workOrderTable.html('<tr><td colspan="4" class="text-center text-danger">Error al cargar Ûrdenes de trabajo.</td></tr>');
             if (xhr.status === 401 || xhr.status === 403) {
-                 window.location.href = 'index.html'; // Redirigir si falla la autenticaci√≥n/autorizaci√≥n
+                 window.location.href = 'index.html'; // Redirigir si falla la autenticaciÛn/autorizaciÛn
             }
         }
     });
 }
 
-// Script principal de la p√°gina
+// Script principal de la p·gina
 $(document).ready(function () {
-    // L√≥gica est√°ndar: sidebar, protecci√≥n, nombre de usuario, logout
+    // LÛgica est·ndar: sidebar, protecciÛn, nombre de usuario, logout
     $('#sidebarCollapse').on('click', function () {
         $('#sidebar').toggleClass('active');
     });
@@ -200,13 +200,13 @@ $(document).ready(function () {
 
     $('#logoutButton').on('click', function(e) {
         e.preventDefault();
-        localStorage.clear(); // Limpiar todo el localStorage al cerrar sesi√≥n
+        localStorage.clear(); // Limpiar todo el localStorage al cerrar sesiÛn
         window.location.href = 'index.html';
     });
 
     // Cargar los datos del dashboard y las notificaciones
     cargarVisionGeneral();
-    // Si tu l√≥gica de notificaciones est√° en otro archivo, aseg√∫rate de llamarla tambi√©n
+    // Si tu lÛgica de notificaciones est· en otro archivo, aseg˙rate de llamarla tambiÈn
     // cargarNotificaciones(); 
 });
 </script>

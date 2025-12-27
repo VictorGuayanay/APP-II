@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <title>Registro - CarrocerÃ­a Alvarado</title>
+    <title>Registro - Carrocería Alvarado</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!--===============================================================================================-->	
@@ -43,32 +43,32 @@
 
                     <div class="wrap-input100 validate-input" data-validate="Ingrese el usuario">
                         <input class="input100" type="text" id="username" name="username" placeholder="Usuario">
-                        <span class="focus-input100" data-placeholder="ïˆ‡"></span>
+                        <span class="focus-input100" data-placeholder="?"></span>
                     </div>
 
                     <div class="wrap-input100 validate-input" data-validate="Ingrese el correo">
                         <input class="input100" type="email" id="email" name="email" placeholder="Correo">
-                        <span class="focus-input100" data-placeholder="ï‡º"></span>
+                        <span class="focus-input100" data-placeholder="?"></span>
                     </div>
 
-                    <div class="wrap-input100 validate-input" data-validate="Ingrese la contraseÃ±a">
-                        <input class="input100" type="password" id="password" name="password" placeholder="ContraseÃ±a" maxlength="15">
-                        <span class="focus-input100" data-placeholder="ï†‘"></span>
+                    <div class="wrap-input100 validate-input" data-validate="Ingrese la contraseña">
+                        <input class="input100" type="password" id="password" name="password" placeholder="Contraseña" maxlength="15">
+                        <span class="focus-input100" data-placeholder="?"></span>
                         <div class="strength-indicator" id="strengthIndicator"></div>
                     </div>
 
-                    <div class="wrap-input100 validate-input" data-validate="Confirme la contraseÃ±a">
-                        <input class="input100 confirm-password" type="password" id="confirm_password" name="confirm_password" placeholder="Confirmar ContraseÃ±a" maxlength="15">
-                        <span class="focus-input100" data-placeholder="ï†‘"></span>
+                    <div class="wrap-input100 validate-input" data-validate="Confirme la contraseña">
+                        <input class="input100 confirm-password" type="password" id="confirm_password" name="confirm_password" placeholder="Confirmar Contraseña" maxlength="15">
+                        <span class="focus-input100" data-placeholder="?"></span>
                     </div>
 
                     <div class="wrap-input100 validate-input" data-validate="Seleccione un rol">
                         <select class="input100" id="rol" name="rol">
-                            <option value="">Elija una opciÃ³n</option>
+                            <option value="">Elija una opción</option>
                             <option value="Supervisor">Administrador</option>
                             <option value="Administrador">Supervisor</option>
                         </select>
-                        <!--<span class="focus-input100" data-placeholder="ï„"></span>-->
+                        <!--<span class="focus-input100" data-placeholder="?"></span>-->
                     </div>
 
                     <div class="container-login100-form-btn">
@@ -78,7 +78,7 @@
                     <div id="message" class="message"></div>
 
                     <div class="text-center p-t-20">
-                        <a href="index.html" class="txt2">Â¿Ya tienes cuenta? Inicia SesiÃ³n</a>
+                        <a href="index.html" class="txt2">¿Ya tienes cuenta? Inicia Sesión</a>
                     </div>
                 </form>
             </div>
@@ -100,7 +100,7 @@
         $(document).ready(function() {
             $('#rol').select2({
                 minimumResultsForSearch: Infinity,
-                placeholder: "Elija una opciÃ³n",
+                placeholder: "Elija una opción",
                 allowClear: true
             });
 
@@ -143,7 +143,7 @@
                 const rol = $('#rol').val();
                 const messageDiv = $('#message');
 
-                console.log('Datos enviados:', { username, email, password, rol });  // DepuraciÃ³n
+                console.log('Datos enviados:', { username, email, password, rol });  // Depuración
 
                 if (!username || !email || !password || !confirmPassword) {
                     messageDiv.text('Por favor, completa todos los campos.').addClass('error');
@@ -151,17 +151,17 @@
                 }
 
                 if (password !== confirmPassword) {
-                    messageDiv.text('Las contraseÃ±as no coinciden.').addClass('error');
+                    messageDiv.text('Las contraseñas no coinciden.').addClass('error');
                     return;
                 }
 
                 if (password.length < 3) {
-                    messageDiv.text('La contraseÃ±a debe tener al menos 3 caracteres.').addClass('error');
+                    messageDiv.text('La contraseña debe tener al menos 3 caracteres.').addClass('error');
                     return;
                 }
 
                 if (!/@/.test(email) || !/\./.test(email)) {
-                    messageDiv.text('Correo electrÃ³nico invÃ¡lido.').addClass('error');
+                    messageDiv.text('Correo electrónico inválido.').addClass('error');
                     return;
                 }
 
@@ -171,19 +171,19 @@
                 }
 
                 $.ajax({
-                    url: 'http://127.0.0.1:5000/registro',
+                    url: 'https://553682876eea.ngrok-free.app/registro',
                     method: 'POST',
                     contentType: 'application/json',
                     data: JSON.stringify({ username, email, password, rol }),
                     success: function(response) {
-                        console.log('Registro exitoso:', response);  // DepuraciÃ³n
-                        messageDiv.text('Registro exitoso. SerÃ¡s redirigido al inicio en 2 segundos...').removeClass('error').addClass('success');
+                        console.log('Registro exitoso:', response);  // Depuración
+                        messageDiv.text('Registro exitoso. Serás redirigido al inicio en 2 segundos...').removeClass('error').addClass('success');
                         setTimeout(function() {
                             window.location.href = 'index.html';
                         }, 2000);
                     },
                     error: function(xhr, status, error) {
-                        console.log('Error en registro:', xhr, status, error);  // DepuraciÃ³n
+                        console.log('Error en registro:', xhr, status, error);  // Depuración
                         const errorMsg = xhr.responseJSON?.error || 'Error al registrar.';
                         messageDiv.text(errorMsg).addClass('error');
                     }
