@@ -194,10 +194,10 @@ function loadProveedores() {
     }
 
     $.ajax({ 
-        url: 'https://553682876eea.ngrok-free.app/proveedores',
+        url: 'http://127.0.0.1:5000/proveedores',
         method: 'GET',
         headers: { 
-            'Authorization': 'Bearer ' + token  
+            'Authorization': 'Bearer ' + token
         },
         success: function(proveedores) {
             console.log("loadProveedores() - Proveedores recibidos:", proveedores);
@@ -283,9 +283,11 @@ $(document).ready(function () {
         console.log("Editando proveedor ID:", proveedorIdParaEditar);
 
         $.ajax({
-            url: `https://553682876eea.ngrok-free.app/proveedores/${proveedorIdParaEditar}`,
+            url: `http://127.0.0.1:5000/proveedores/${proveedorIdParaEditar}`,
             method: 'GET',
-            headers: { 'Authorization': 'Bearer ' + token },
+            headers: { 
+                'Authorization': 'Bearer ' + token
+            },
             success: function(proveedor) {
                 $('#editProveedorId').val(proveedor.id_proveedor);
                 $('#editProveedorRuc').val(proveedor.ruc);
@@ -320,7 +322,7 @@ $(document).ready(function () {
         };
 
         $.ajax({
-            url: `https://553682876eea.ngrok-free.app/proveedores/${proveedorId}`,
+            url: `http://127.0.0.1:5000/proveedores/${proveedorId}`,
             method: 'PUT',
             headers: {
                 'Authorization': 'Bearer ' + token,
@@ -361,7 +363,7 @@ $(document).ready(function () {
         }
 
         $.ajax({
-            url: `https://553682876eea.ngrok-free.app/proveedores/${proveedorIdParaEliminar}`,
+            url: `http://127.0.0.1:5000/proveedores/${proveedorIdParaEliminar}`,
             method: 'DELETE',
             headers: {
                 'Authorization': 'Bearer ' + token

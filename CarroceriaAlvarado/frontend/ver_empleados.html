@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
     <title>Gesti�n de Empleados - Carrocer�a Alvarado</title>
@@ -179,7 +179,7 @@ function cargarEmpleados() {
     const tbody = $('#empleadosTableBody');
     
     $.ajax({
-        url: 'https://553682876eea.ngrok-free.app/empleados',
+        url: 'http://127.0.0.1:5000/empleados',
         method: 'GET',
         headers: {'Authorization': 'Bearer ' + token},
         success: function(empleados) {
@@ -230,7 +230,7 @@ function abrirModalEditar(idEmpleado) {
     
     // Obtener datos del empleado
     $.ajax({
-        url: 'https://553682876eea.ngrok-free.app/empleados',
+        url: 'http://127.0.0.1:5000/empleados',
         method: 'GET',
         headers: {'Authorization': 'Bearer ' + token},
         success: function(empleados) {
@@ -278,7 +278,7 @@ function guardarCambiosEmpleado() {
     mensajeDiv.html('<div class="alert alert-info">Guardando cambios...</div>');
     
     $.ajax({
-        url: `https://553682876eea.ngrok-free.app/empleados/${idEmpleado}`,
+        url: `http://127.0.0.1:5000/empleados/${idEmpleado}`,
         method: 'PUT',
         headers: {
             'Authorization': 'Bearer ' + token,
@@ -307,7 +307,7 @@ function eliminarEmpleado(idEmpleado, nombreEmpleado) {
     const token = localStorage.getItem('token');
     
     $.ajax({
-        url: `https://553682876eea.ngrok-free.app/empleados/${idEmpleado}`,
+        url: `http://127.0.0.1:5000/empleados/${idEmpleado}`,
         method: 'DELETE',
         headers: {'Authorization': 'Bearer ' + token},
         success: function(response) {

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
     <title>Editar Orden de Trabajo - Carrocerías Alvarado</title>
@@ -252,7 +252,7 @@ $(document).ready(function() {
     // Cargar clientes
     function cargarClientes() {
         $.ajax({
-            url: 'https://553682876eea.ngrok-free.app/clientes',
+            url: 'http://127.0.0.1:5000/clientes',
             method: 'GET',
             headers: { 'Authorization': 'Bearer ' + token },
             success: function(clientes) {
@@ -275,7 +275,7 @@ $(document).ready(function() {
     // Cargar todos los empleados del sistema
     function cargarTodosLosEmpleados() {
         $.ajax({
-            url: 'https://553682876eea.ngrok-free.app/empleados',
+            url: 'http://127.0.0.1:5000/empleados',
             method: 'GET',
             headers: { 'Authorization': 'Bearer ' + token },
             success: function(empleados) {
@@ -321,7 +321,7 @@ $(document).ready(function() {
     // Obtener empleados disponibles (excluyendo los que est�n en otras �rdenes activas)
     function obtenerEmpleadosDisponibles(callback) {
         $.ajax({
-            url: 'https://553682876eea.ngrok-free.app/empleados/disponibles',
+            url: 'http://127.0.0.1:5000/empleados/disponibles',
             method: 'GET',
             headers: { 'Authorization': 'Bearer ' + token },
             success: function(empleados) {
@@ -432,7 +432,7 @@ $(document).ready(function() {
     function cargarProveedores() {
         const $selectProveedor = $('#selectProveedor');
         $.ajax({
-            url: 'https://553682876eea.ngrok-free.app/proveedores',
+            url: 'http://127.0.0.1:5000/proveedores',
             method: 'GET',
             headers: { 'Authorization': 'Bearer ' + token },
             success: function(proveedores) {
@@ -462,7 +462,7 @@ $(document).ready(function() {
         }
         
         $.ajax({
-            url: `https://553682876eea.ngrok-free.app/proveedores/${idProveedor}/materiales`,
+            url: `http://127.0.0.1:5000/proveedores/${idProveedor}/materiales`,
             method: 'GET',
             headers: { 'Authorization': 'Bearer ' + token },
             success: function(materiales) {
@@ -615,7 +615,7 @@ $(document).ready(function() {
         console.log('Enviando datos:', ordenData);
         
         $.ajax({
-            url: `https://553682876eea.ngrok-free.app/ordenes-trabajo/${idOrden}`,
+            url: `http://127.0.0.1:5000/ordenes-trabajo/${idOrden}`,
             method: 'PUT',
             headers: {
                 'Authorization': 'Bearer ' + token,
@@ -651,7 +651,7 @@ $(document).ready(function() {
     
     // Cargar datos de la orden (esto llamar� a mostrarEmpleadosAsignados internamente)
     $.ajax({
-        url: `https://553682876eea.ngrok-free.app/ordenes-trabajo/${idOrden}`,
+        url: `http://127.0.0.1:5000/ordenes-trabajo/${idOrden}`,
         method: 'GET',
         headers: { 'Authorization': 'Bearer ' + token },
         success: function(orden) {

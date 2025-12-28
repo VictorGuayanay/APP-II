@@ -1,7 +1,7 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
-    <title>Entradas y Salidas de Inventario - Carrocerias Alvarado</title>
+    <title>Venta Directa de Materiales - Carrocerías Alvarado</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" type="text/css" href="vendor/bootstrap/css/bootstrap.min.css">
@@ -11,6 +11,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
     <link rel="stylesheet" href="css/animations.css">
     <link rel="stylesheet" href="css/fixed-layout.css">
+    <!-- jsPDF para generar PDFs -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
 
@@ -41,7 +43,8 @@
                 <ul class="collapse show list-unstyled" id="inventarioSubmenu">
                     <li><a href="ver_inventario.html">Ver Inventario</a></li>
                     <li><a href="anadir_material.html">Añadir Material</a></li>
-                    <li class="active"><a href="entradas_salidas_inventario.html">Entradas/Salidas</a></li>
+                    <li><a href="entradas_salidas_inventario.html">Venta Directa</a></li>
+                    <li><a href="registro_ventas.html">Registro de Ventas</a></li>
                 </ul>
             </li>
             <li><a href="ingresar_empleado.html"><i class="fa fa-address-card"></i> Ingreso Empleados</a></li>
@@ -68,132 +71,699 @@
         </nav>
 
         <div class="content-area container-fluid pt-4">
-            <h2 class="card-header-title">Registrar Movimientos de Inventario</h2>
+            <h2 class="card-header-title">Venta Directa de Materiales a Cliente Final</h2>
 
+            <!-- Sección de Cliente -->
             <div class="card form-section">
-                <div class="card-header">
-                    Registrar Entrada de Material
+                <div class="card-header bg-primary text-white">
+                    <i class="fa fa-user"></i> Información del Cliente
                 </div>
                 <div class="card-body">
-                    <form id="formEntradaInventario">
+                    <div class="row">
+                        <div class="col-md-8 mb-3">
+                            <label for="ventaCliente" class="form-label">Cliente <span class="text-danger">*</span></label>
+                            <select class="form-select" id="ventaCliente" required>
+                                <option value="">Cargando clientes...</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3 d-flex align-items-end">
+                            <button type="button" class="btn btn-success me-2" id="btnConsumidorFinal">
+                                <i class="fa fa-user"></i> Consumidor Final
+                            </button>
+                            <button type="button" class="btn btn-info" id="btnAbrirModalCliente">
+                                <i class="fa fa-plus"></i> Nuevo Cliente
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Información del cliente seleccionado -->
+                    <div id="infoCliente" class="alert alert-info" style="display: none;">
+                        <strong><i class="fa fa-info-circle"></i> Datos del Cliente:</strong>
+                        <div id="datosCliente"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Formulario de Productos -->
+            <div class="card form-section">
+                <div class="card-header bg-success text-white">
+                    <i class="fa fa-shopping-cart"></i> Agregar Producto al Carrito
+                </div>
+                <div class="card-body">
+                    <form id="formAgregarProducto">
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <label for="entradaNombreMaterial" class="form-label">Nombre del Material <span class="text-danger">*</span></label>
-                                <select class="form-select" id="entradaNombreMaterial" required>
-                                    <option value="">Cargando materiales...</option>
+                                <label for="ventaProveedor" class="form-label">Proveedor <span class="text-danger">*</span></label>
+                                <select class="form-select" id="ventaProveedor" required>
+                                    <option value="">Cargando proveedores...</option>
                                 </select>
+                                <small class="form-text text-muted">Seleccione primero el proveedor</small>
                             </div>
-                            <div class="col-md-3 mb-3">
-                                <label for="entradaCantidad" class="form-label">Cantidad de Entrada <span class="text-danger">*</span></label>
-                                <input type="number" class="form-control" id="entradaCantidad" placeholder="Ej: 100" min="1" required>
-                            </div>
-                            <div class="col-md-3 mb-3">
-                                <label for="entradaUnidad" class="form-label">Unidad de Medida <span class="text-danger">*</span></label>
-                                <select class="form-select" id="entradaUnidad" required>
-                                    <option value="">Cargando unidades...</option>
+                            <div class="col-md-6 mb-3">
+                                <label for="ventaNombreMaterial" class="form-label">Material <span class="text-danger">*</span></label>
+                                <select class="form-select" id="ventaNombreMaterial" required disabled>
+                                    <option value="">Seleccione un proveedor primero...</option>
                                 </select>
-                            </div>
-                            <div class="col-md-3 mb-3">
-                                <label for="entradaPrecioUnitario" class="form-label">Precio Unitario (Opcional)</label>
-                                <input type="number" step="0.01" min="0" class="form-control" id="entradaPrecioUnitario" placeholder="Ej: 0.15">
                             </div>
                         </div>
-                        <button type="submit" class="btn btn-primary">Registrar Entrada</button>
-                        <div id="mensajeEntrada" class="mt-3"></div>
+                        
+                        <div class="row">
+                            <div class="col-md-3 mb-3">
+                                <label for="ventaCantidad" class="form-label">Cantidad <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control" id="ventaCantidad" placeholder="Ej: 5" min="1" required>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label for="ventaUnidad" class="form-label">Unidad</label>
+                                <input type="text" class="form-control" id="ventaUnidad" readonly style="background-color: #e9ecef;">
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label for="ventaStockDisponible" class="form-label">Stock Disponible</label>
+                                <input type="text" class="form-control" id="ventaStockDisponible" readonly style="background-color: #e9ecef;">
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label for="ventaPrecioUnitario" class="form-label">Precio Unitario</label>
+                                <input type="text" class="form-control" id="ventaPrecioUnitario" readonly style="background-color: #e9ecef;">
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-3 mb-3">
+                                <label for="ventaPorcentajeGanancia" class="form-label">% Ganancia <span class="text-danger">*</span></label>
+                                <select class="form-select" id="ventaPorcentajeGanancia" required>
+                                    <option value="">Seleccione...</option>
+                                    <option value="5">5%</option>
+                                    <option value="10">10%</option>
+                                    <option value="15">15%</option>
+                                    <option value="20" selected>20%</option>
+                                    <option value="25">25%</option>
+                                    <option value="30">30%</option>
+                                    <option value="35">35%</option>
+                                    <option value="40">40%</option>
+                                    <option value="45">45%</option>
+                                    <option value="50">50%</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label for="ventaPorcentajeIVA" class="form-label">% IVA <span class="text-danger">*</span></label>
+                                <select class="form-select" id="ventaPorcentajeIVA" required>
+                                    <option value="">Seleccione...</option>
+                                    <option value="5">5%</option>
+                                    <option value="8">8%</option>
+                                    <option value="10">10%</option>
+                                    <option value="12" selected>12%</option>
+                                    <option value="15">15%</option>
+                                    <option value="20">20%</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <hr class="my-4">
+                        <!-- Resumen de Venta -->
+                        <h6 class="mt-3 mb-2">Resumen de Venta</h6>
+                        
+                        <div class="row">
+                            <div class="col-md-3 mb-3">
+                                <label for="ventaSubtotal" class="form-label">Subtotal</label>
+                                <input type="text" class="form-control" id="ventaSubtotal" readonly style="background-color: #e9ecef;">
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label for="ventaGanancia" class="form-label">Ganancia</label>
+                                <input type="text" class="form-control" id="ventaGanancia" readonly style="background-color: #e9ecef;">
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label for="ventaIVA" class="form-label">IVA</label>
+                                <input type="text" class="form-control" id="ventaIVA" readonly style="background-color: #e9ecef;">
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label for="ventaTotal" class="form-label">TOTAL</label>
+                                <input type="text" class="form-control" id="ventaTotal" readonly style="background-color: #d4edda; font-weight: bold; font-size: 1.3em; text-align: right; color: #155724;">
+                            </div>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary"><i class="fa fa-plus-circle"></i> Agregar al Carrito</button>
+                        <button type="button" class="btn btn-secondary" id="btnLimpiarFormulario"><i class="fa fa-eraser"></i> Limpiar</button>
+                        <div id="mensajeProducto" class="mt-3"></div>
                     </form>
                 </div>
             </div>
 
+            <!-- Carrito de Compra -->
             <div class="card form-section">
-                <div class="card-header">
-                    Registrar Salida de Material
+                <div class="card-header bg-warning">
+                    <i class="fa fa-shopping-cart"></i> Carrito de Compra
                 </div>
                 <div class="card-body">
-                    <form id="formSalidaInventario">
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="salidaNombreMaterial" class="form-label">Nombre del Material <span class="text-danger">*</span></label>
-                                <select class="form-select" id="salidaNombreMaterial" required>
-                                    <option value="">Cargando materiales...</option>
-                                </select>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="salidaCantidad" class="form-label">Cantidad de Salida <span class="text-danger">*</span></label>
-                                <input type="number" class="form-control" id="salidaCantidad" placeholder="Ej: 10" min="1" required>
-                            </div>
-                            <div class="col-md-3 mb-3">
-                                <label for="salidaUnidad" class="form-label">Unidad de Medida <span class="text-danger">*</span></label>
-                                <select class="form-select" id="salidaUnidad" required>
-                                    <option value="">Cargando unidades...</option>
-                                </select>
-                            </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="tablaCarrito">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Material</th>
+                                    <th>Cantidad</th>
+                                    <th>Precio Unit.</th>
+                                    <th>Subtotal</th>
+                                    <th>% Gan.</th>
+                                    <th>Ganancia</th>
+                                    <th>% IVA</th>
+                                    <th>IVA</th>
+                                    <th>Total</th>
+                                    <th>Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody id="carritoBody">
+                                <tr id="carritoVacio">
+                                    <td colspan="10" class="text-center text-muted">
+                                        <i class="fa fa-shopping-cart"></i> El carrito está vacío
+                                    </td>
+                                </tr>
+                            </tbody>
+                            <tfoot id="carritoTotales" style="display: none;">
+                                <tr class="table-secondary">
+                                    <th colspan="3">TOTALES</th>
+                                    <th id="totalSubtotal">$0.00</th>
+                                    <th></th>
+                                    <th id="totalGanancia">$0.00</th>
+                                    <th></th>
+                                    <th id="totalIVA">$0.00</th>
+                                    <th id="totalGeneral" class="text-success fw-bold">$0.00</th>
+                                    <th></th>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="ventaFormaPagoFinal" class="form-label">Forma de Pago <span class="text-danger">*</span></label>
+                            <select class="form-select" id="ventaFormaPagoFinal">
+                                <option value="">Seleccione...</option>
+                                <option value="Efectivo">Efectivo</option>
+                                <option value="Tarjeta">Tarjeta</option>
+                                <option value="Transferencia">Transferencia</option>
+                                <option value="Cheque">Cheque</option>
+                            </select>
                         </div>
-                        <button type="submit" class="btn btn-warning">Registrar Salida</button>
-                        <div id="mensajeSalida" class="mt-3"></div>
-                    </form>
+                        <div class="col-md-6 mb-3 d-flex align-items-end">
+                            <button type="button" class="btn btn-success btn-lg w-100" id="btnRegistrarVenta" disabled>
+                                <i class="fa fa-check-circle"></i> Registrar Venta Completa
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div id="mensajeVenta" class="mt-3"></div>
                 </div>
             </div>
-        </div> </div> </div> <script src="vendor/jquery/jquery-3.2.1.min.js"></script>
+        </div> </div> </div>
+        
+        <!-- Modal Nuevo Cliente (Custom - sin Bootstrap JS) -->
+        <div id="modalClienteTemporal" style="display: none; position: fixed; z-index: 9999; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5);">
+            <div style="position: relative; margin: 5% auto; width: 90%; max-width: 500px; background-color: white; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.3);">
+                <div style="background-color: #17a2b8; color: white; padding: 15px; border-radius: 8px 8px 0 0; display: flex; justify-content: space-between; align-items: center;">
+                    <h5 style="margin: 0;"><i class="fa fa-user-plus"></i> Registrar Nuevo Cliente</h5>
+                    <button type="button" class="btn-close-custom" onclick="cerrarModalCliente()" style="background: none; border: none; color: white; font-size: 24px; cursor: pointer; padding: 0; line-height: 1;">&times;</button>
+                </div>
+                <div style="padding: 20px;">
+                    <form id="formClienteTemporal">
+                        <div style="margin-bottom: 15px;">
+                            <label for="tempRucCi" style="display: block; margin-bottom: 5px; font-weight: 500;">Cédula / RUC <span style="color: red;">*</span></label>
+                            <input type="text" class="form-control" id="tempRucCi" required style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                        </div>
+                        <div style="margin-bottom: 15px;">
+                            <label for="tempNombre" style="display: block; margin-bottom: 5px; font-weight: 500;">Nombre / Razón Social <span style="color: red;">*</span></label>
+                            <input type="text" class="form-control" id="tempNombre" required style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                        </div>
+                        <div style="margin-bottom: 15px;">
+                            <label for="tempTelefono" style="display: block; margin-bottom: 5px; font-weight: 500;">Teléfono</label>
+                            <input type="text" class="form-control" id="tempTelefono" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                        </div>
+                        <div style="margin-bottom: 15px;">
+                            <label for="tempEmail" style="display: block; margin-bottom: 5px; font-weight: 500;">Correo</label>
+                            <input type="email" class="form-control" id="tempEmail" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                        </div>
+                    </form>
+                </div>
+                <div style="padding: 15px; border-top: 1px solid #ddd; text-align: right;">
+                    <button type="button" class="btn btn-secondary" onclick="cerrarModalCliente()" style="margin-right: 10px;">Cancelar</button>
+                    <button type="button" class="btn btn-info" id="btnGuardarClienteTemporal">
+                        <i class="fa fa-save"></i> Registrar Cliente
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <script src="vendor/jquery/jquery-3.2.1.min.js"></script>
 <script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
 
 <script>
-// Funci�n para poblar los combobox de materiales
-function cargarNombresDeMaterialesEnCombobox() {
-    console.log("cargarNombresDeMaterialesEnCombobox() - Iniciando carga de nombres de materiales...");
-    const token = localStorage.getItem('token');
-    const $selectEntrada = $('#entradaNombreMaterial');
-    const $selectSalida = $('#salidaNombreMaterial');
+// Variables globales
+let materialesDisponibles = [];
+let carritoProductos = [];
+let clienteSeleccionado = null;
+let ultimaVentaRegistrada = null; // Para guardar datos de la última venta
 
-    // Mensaje inicial mientras carga
-    $selectEntrada.html('<option value="">Cargando materiales...</option>').prop('disabled', true);
-    $selectSalida.html('<option value="">Cargando materiales...</option>').prop('disabled', true);
+// Función global para cerrar modal
+function cerrarModalCliente() {
+    document.getElementById('modalClienteTemporal').style.display = 'none';
+    $('#formClienteTemporal')[0].reset();
+}
+
+// Función para generar PDF del comprobante
+function generarComprobantePDF(datosVenta) {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    
+    // Configuración
+    const margen = 20;
+    let y = 20;
+    
+    // Encabezado - DOCUMENTO SIN VALOR TRIBUTARIO
+    doc.setFontSize(10);
+    doc.setTextColor(255, 0, 0);
+    doc.text('DOCUMENTO SIN VALOR TRIBUTARIO', 105, y, { align: 'center' });
+    y += 10;
+    
+    // Título
+    doc.setFontSize(16);
+    doc.setTextColor(0, 0, 0);
+    doc.text('COMPROBANTE DE VENTA', 105, y, { align: 'center' });
+    y += 5;
+    doc.setFontSize(14);
+    doc.text('Carrocerías Alvarado', 105, y, { align: 'center' });
+    y += 15;
+    
+    // Información de la venta
+    doc.setFontSize(10);
+    doc.text(`Venta #${datosVenta.id_venta}`, margen, y);
+    doc.text(`Fecha: ${new Date().toLocaleString('es-EC')}`, 150, y);
+    y += 7;
+    doc.text(`Usuario: ${datosVenta.usuario}`, margen, y);
+    y += 10;
+    
+    // Información del cliente
+    doc.setFontSize(11);
+    doc.setFont(undefined, 'bold');
+    doc.text('CLIENTE:', margen, y);
+    doc.setFont(undefined, 'normal');
+    y += 6;
+    doc.setFontSize(10);
+    doc.text(`Tipo: ${datosVenta.cliente.tipo}`, margen, y);
+    y += 5;
+    doc.text(`Nombre: ${datosVenta.cliente.nombre}`, margen, y);
+    y += 5;
+    doc.text(`RUC/CI: ${datosVenta.cliente.ruc_ci}`, margen, y);
+    if (datosVenta.cliente.telefono) {
+        y += 5;
+        doc.text(`Teléfono: ${datosVenta.cliente.telefono}`, margen, y);
+    }
+    y += 10;
+    
+    // Tabla de productos
+    doc.setFont(undefined, 'bold');
+    doc.text('DETALLE DE PRODUCTOS:', margen, y);
+    y += 7;
+    
+    // Encabezados de tabla
+    doc.setFontSize(9);
+    doc.text('Material', margen, y);
+    doc.text('Cant.', 90, y);
+    doc.text('P.Unit', 115, y);
+    doc.text('Subtotal', 145, y);
+    doc.text('IVA', 170, y);
+    doc.text('Total', 185, y);
+    y += 5;
+    
+    // Línea separadora
+    doc.line(margen, y, 200, y);
+    y += 5;
+    
+    // Productos
+    doc.setFont(undefined, 'normal');
+    datosVenta.productos.forEach(producto => {
+        if (y > 270) { // Nueva página si es necesario
+            doc.addPage();
+            y = 20;
+        }
+        
+        doc.text(producto.nombre_material.substring(0, 30), margen, y);
+        doc.text(producto.cantidad.toString(), 90, y);
+        doc.text(`$${producto.precio_unitario.toFixed(2)}`, 115, y);
+        doc.text(`$${producto.subtotal.toFixed(2)}`, 145, y);
+        doc.text(`$${producto.iva.toFixed(2)}`, 170, y);
+        doc.text(`$${producto.total.toFixed(2)}`, 185, y);
+        y += 5;
+    });
+    
+    y += 5;
+    doc.line(margen, y, 200, y);
+    y += 7;
+    
+    // Totales
+    doc.setFont(undefined, 'bold');
+    doc.setFontSize(10);
+    doc.text('SUBTOTAL:', 125, y);
+    doc.text(`$${datosVenta.totales.subtotal.toFixed(2)}`, 185, y, { align: 'right' });
+    y += 6;
+    doc.text('IVA:', 125, y);
+    doc.text(`$${datosVenta.totales.iva.toFixed(2)}`, 185, y, { align: 'right' });
+    y += 6;
+    doc.setFontSize(12);
+    doc.text('TOTAL:', 125, y);
+    doc.text(`$${datosVenta.totales.total.toFixed(2)}`, 185, y, { align: 'right' });
+    y += 10;
+    
+    // Forma de pago
+    doc.setFontSize(10);
+    doc.setFont(undefined, 'normal');
+    doc.text(`Forma de Pago: ${datosVenta.forma_pago}`, margen, y);
+    
+    // Pie de página
+    y = 280;
+    doc.setFontSize(8);
+    doc.setTextColor(128, 128, 128);
+    doc.text('Gracias por su compra', 105, y, { align: 'center' });
+    
+    // Descargar PDF
+    doc.save(`Comprobante_Venta_${datosVenta.id_venta}.pdf`);
+}
+
+// Función para cargar clientes
+function cargarClientes() {
+    console.log("cargarClientes() - Iniciando carga...");
+    const token = localStorage.getItem('token');
+    const $select = $('#ventaCliente');
+
+    $select.html('<option value="">Cargando clientes...</option>').prop('disabled', true);
 
     if (!token) {
-        console.error("cargarNombresDeMaterialesEnCombobox() - No hay token.");
-        $selectEntrada.html('<option value="">Error de autenticación</option>');
-        $selectSalida.html('<option value="">Error de autenticación</option>');
-        // La protecci�n de p�gina general ya deber�a haber redirigido
+        console.error("cargarClientes() - No hay token.");
+        $select.html('<option value="">Error de autenticación</option>');
         return;
     }
 
     $.ajax({
-        url: 'https://553682876eea.ngrok-free.app/materiales', // Endpoint GET para listar todos los materiales
+        url: 'http://127.0.0.1:5000/clientes',
+        method: 'GET',
+        headers: {
+            'Authorization': 'Bearer ' + token
+        },
+        success: function(clientes) {
+            console.log("cargarClientes() - Clientes recibidos:", clientes);
+            
+            $select.empty().append('<option value="">Seleccione un cliente...</option>');
+
+            if (clientes && Array.isArray(clientes) && clientes.length > 0) {
+                clientes.forEach(function(cliente) {
+                    if (cliente.id_cliente && cliente.nombre) {
+                        const optionHtml = `<option value="${cliente.id_cliente}" 
+                            data-tipo="Registrado"
+                            data-ruc="${cliente.cedula || ''}"
+                            data-nombre="${cliente.nombre}"
+                            data-telefono="${cliente.telefono || ''}"
+                            data-email="${cliente.email || ''}">
+                            ${cliente.nombre} - ${cliente.cedula || 'S/N'}
+                        </option>`;
+                        $select.append(optionHtml);
+                    }
+                });
+                $select.prop('disabled', false);
+            } else {
+                $select.append('<option value="">No hay clientes disponibles</option>');
+            }
+        },
+        error: function(xhr) {
+            console.error("cargarClientes() - Error:", xhr.status, xhr.responseText);
+            $select.empty().append('<option value="">Error al cargar clientes</option>');
+        }
+    });
+}
+
+// Función para mostrar información del cliente
+function mostrarInfoCliente() {
+    const $select = $('#ventaCliente');
+    const $option = $select.find('option:selected');
+    
+    if ($option.val() && clienteSeleccionado) {
+        let html = `
+            <strong>Tipo:</strong> ${clienteSeleccionado.tipo}<br>
+            <strong>RUC/CI:</strong> ${clienteSeleccionado.ruc_ci || 'N/A'}<br>
+            <strong>Nombre:</strong> ${clienteSeleccionado.nombre}<br>
+            <strong>Teléfono:</strong> ${clienteSeleccionado.telefono || 'N/A'}<br>
+            <strong>Email:</strong> ${clienteSeleccionado.email || 'N/A'}
+        `;
+        $('#datosCliente').html(html);
+        $('#infoCliente').show();
+    } else {
+        $('#infoCliente').hide();
+    }
+}
+
+// Función para agregar producto al carrito
+function agregarAlCarrito(producto) {
+    carritoProductos.push(producto);
+    actualizarTablaCarrito();
+    habilitarBotonVenta();
+}
+
+// Función para eliminar producto del carrito
+function eliminarDelCarrito(index) {
+    carritoProductos.splice(index, 1);
+    actualizarTablaCarrito();
+    habilitarBotonVenta();
+}
+
+// Función para actualizar tabla del carrito
+function actualizarTablaCarrito() {
+    const $tbody = $('#carritoBody');
+    const $totales = $('#carritoTotales');
+    
+    if (carritoProductos.length === 0) {
+        $tbody.html(`
+            <tr id="carritoVacio">
+                <td colspan="10" class="text-center text-muted">
+                    <i class="fa fa-shopping-cart"></i> El carrito está vacío
+                </td>
+            </tr>
+        `);
+        $totales.hide();
+        return;
+    }
+    
+    let html = '';
+    let totalSubtotal = 0;
+    let totalGanancia = 0;
+    let totalIVA = 0;
+    let totalGeneral = 0;
+    
+    carritoProductos.forEach((producto, index) => {
+        totalSubtotal += producto.subtotal;
+        totalGanancia += producto.ganancia;
+        totalIVA += producto.iva;
+        totalGeneral += producto.total;
+        
+        html += `
+            <tr>
+                <td>${producto.nombre_material}</td>
+                <td>${producto.cantidad}</td>
+                <td>$${producto.precio_unitario.toFixed(2)}</td>
+                <td>$${producto.subtotal.toFixed(2)}</td>
+                <td>${producto.porcentaje_ganancia}%</td>
+                <td>$${producto.ganancia.toFixed(2)}</td>
+                <td>${producto.porcentaje_iva}%</td>
+                <td>$${producto.iva.toFixed(2)}</td>
+                <td class="fw-bold">$${producto.total.toFixed(2)}</td>
+                <td>
+                    <button class="btn btn-sm btn-danger" onclick="eliminarDelCarrito(${index})">
+                        <i class="fa fa-trash"></i>
+                    </button>
+                </td>
+            </tr>
+        `;
+    });
+    
+    $tbody.html(html);
+    
+    // Actualizar totales
+    $('#totalSubtotal').text('$' + totalSubtotal.toFixed(2));
+    $('#totalGanancia').text('$' + totalGanancia.toFixed(2));
+    $('#totalIVA').text('$' + totalIVA.toFixed(2));
+    $('#totalGeneral').text('$' + totalGeneral.toFixed(2));
+    $totales.show();
+}
+
+// Función para habilitar/deshabilitar botón de venta
+function habilitarBotonVenta() {
+    const tieneProductos = carritoProductos.length > 0;
+    const tieneCliente = clienteSeleccionado !== null;
+    $('#btnRegistrarVenta').prop('disabled', !(tieneProductos && tieneCliente));
+}
+
+// Función para cargar proveedores
+function cargarProveedores() {
+    console.log("cargarProveedores() - Iniciando carga...");
+    const token = localStorage.getItem('token');
+    const $select = $('#ventaProveedor');
+
+    $select.html('<option value="">Cargando proveedores...</option>').prop('disabled', true);
+
+    if (!token) {
+        console.error("cargarProveedores() - No hay token.");
+        $select.html('<option value="">Error de autenticación</option>');
+        return;
+    }
+
+    $.ajax({
+        url: 'http://127.0.0.1:5000/proveedores',
+        method: 'GET',
+        headers: {
+            'Authorization': 'Bearer ' + token
+        },
+        success: function(proveedores) {
+            console.log("cargarProveedores() - Proveedores recibidos:", proveedores);
+            
+            $select.empty().append('<option value="">Seleccione un proveedor...</option>');
+
+            if (proveedores && Array.isArray(proveedores) && proveedores.length > 0) {
+                proveedores.forEach(function(proveedor) {
+                    if (proveedor.id_proveedor && proveedor.nombre_proveedor) {
+                        const optionHtml = `<option value="${proveedor.id_proveedor}">${proveedor.nombre_proveedor}</option>`;
+                        $select.append(optionHtml);
+                    }
+                });
+                $select.prop('disabled', false);
+            } else {
+                $select.append('<option value="">No hay proveedores disponibles</option>');
+            }
+        },
+        error: function(xhr) {
+            console.error("cargarProveedores() - Error:", xhr.status, xhr.responseText);
+            $select.empty().append('<option value="">Error al cargar proveedores</option>');
+        }
+    });
+}
+
+// Función para cargar materiales filtrados por proveedor
+function cargarMaterialesPorProveedor(idProveedor) {
+    console.log("cargarMaterialesPorProveedor() - ID Proveedor:", idProveedor);
+    const token = localStorage.getItem('token');
+    const $select = $('#ventaNombreMaterial');
+
+    if (!idProveedor) {
+        $select.html('<option value="">Seleccione un proveedor primero...</option>').prop('disabled', true);
+        limpiarCampos();
+        return;
+    }
+
+    $select.html('<option value="">Cargando materiales...</option>').prop('disabled', true);
+
+    $.ajax({
+        url: 'http://127.0.0.1:5000/materiales',
         method: 'GET',
         headers: {
             'Authorization': 'Bearer ' + token
         },
         success: function(materiales) {
-            console.log("cargarNombresDeMaterialesEnCombobox() - Materiales recibidos:", materiales);
-            $selectEntrada.empty().append('<option value="">Seleccione un material...</option>');
-            $selectSalida.empty().append('<option value="">Seleccione un material...</option>');
+            console.log("cargarMaterialesPorProveedor() - Materiales recibidos:", materiales);
+            
+            // Filtrar materiales por proveedor y con stock
+            const materialesFiltrados = materiales.filter(function(material) {
+                return material.id_proveedor == idProveedor && material.cantidad > 0;
+            });
+            
+            materialesDisponibles = materialesFiltrados;
+            
+            $select.empty().append('<option value="">Seleccione un material...</option>');
 
-            if (materiales && Array.isArray(materiales) && materiales.length > 0) {
-                materiales.forEach(function(material) {
-                    if (material.nombre) { // Asegurarse que el material tiene un nombre
-                        // Usamos el nombre del material como el valor y como el texto de la opci�n,
-                        // ya que el backend ahora espera nombre_material.
-                        const optionHtml = `<option value="${material.nombre}">${material.nombre} (Stock: ${material.cantidad !== undefined ? material.cantidad : 'N/A'})</option>`;
-                        $selectEntrada.append(optionHtml);
-                        $selectSalida.append(optionHtml);
-                    }
+            if (materialesFiltrados.length > 0) {
+                materialesFiltrados.forEach(function(material) {
+                    const optionHtml = `<option value="${material.id_material}" 
+                        data-nombre="${material.nombre}"
+                        data-stock="${material.cantidad}"
+                        data-precio="${material.precio_venta || 0}"
+                        data-unidad="${material.abreviatura_unidad || material.nombre_unidad || 'N/A'}">
+                        ${material.nombre} (Stock: ${material.cantidad} ${material.abreviatura_unidad || ''})
+                    </option>`;
+                    $select.append(optionHtml);
                 });
-                $selectEntrada.prop('disabled', false);
-                $selectSalida.prop('disabled', false);
+                $select.prop('disabled', false);
             } else {
-                console.log("cargarNombresDeMaterialesEnCombobox() - No hay materiales para mostrar o formato incorrecto.");
-                $selectEntrada.append('<option value="">No hay materiales disponibles</option>');
-                $selectSalida.append('<option value="">No hay materiales disponibles</option>');
+                $select.append('<option value="">No hay materiales disponibles de este proveedor</option>');
+                $select.prop('disabled', true);
             }
         },
         error: function(xhr) {
-            console.error("cargarNombresDeMaterialesEnCombobox() - Error al cargar materiales. Status:", xhr.status, "Response:", xhr.responseText);
-            $selectEntrada.empty().append('<option value="">Error al cargar materiales</option>');
-            $selectSalida.empty().append('<option value="">Error al cargar materiales</option>');
-            // El manejo de error 401/403 general de la p�gina ya deber�a actuar
+            console.error("cargarMaterialesPorProveedor() - Error:", xhr.status, xhr.responseText);
+            $select.empty().append('<option value="">Error al cargar materiales</option>');
         }
     });
 }
 
+// Función para actualizar información del material seleccionado
+function actualizarInfoMaterial() {
+    const $select = $('#ventaNombreMaterial');
+    const $option = $select.find('option:selected');
+    
+    if ($option.val()) {
+        const stock = $option.data('stock') || 0;
+        const precio = parseFloat($option.data('precio')) || 0;
+        const unidad = $option.data('unidad') || 'N/A';
+        
+        $('#ventaStockDisponible').val(stock + ' ' + unidad);
+        $('#ventaPrecioUnitario').val('$' + precio.toFixed(2));
+        $('#ventaUnidad').val(unidad);
+        
+        calcularTotal();
+    } else {
+        limpiarCampos();
+    }
+}
+
+// Función para calcular el total de venta con ganancia e IVA
+function calcularTotal() {
+    const $select = $('#ventaNombreMaterial');
+    const $option = $select.find('option:selected');
+    const cantidad = parseInt($('#ventaCantidad').val()) || 0;
+    const porcentajeGanancia = parseInt($('#ventaPorcentajeGanancia').val()) || 0;
+    const porcentajeIVA = parseInt($('#ventaPorcentajeIVA').val()) || 0;
+    
+    if ($option.val() && cantidad > 0) {
+        const precioUnitario = parseFloat($option.data('precio')) || 0;
+        
+        // Calcular subtotal (precio × cantidad)
+        const subtotal = precioUnitario * cantidad;
+        
+        // Calcular ganancia
+        const ganancia = subtotal * (porcentajeGanancia / 100);
+        
+        // Calcular IVA sobre el subtotal
+        const iva = subtotal * (porcentajeIVA / 100);
+        
+        // Calcular total
+        const total = subtotal + ganancia + iva;
+        
+        // Mostrar valores
+        $('#ventaSubtotal').val('$' + subtotal.toFixed(2));
+        $('#ventaGanancia').val('$' + ganancia.toFixed(2));
+        $('#ventaIVA').val('$' + iva.toFixed(2));
+        $('#ventaTotal').val('$' + total.toFixed(2));
+    } else {
+        $('#ventaSubtotal').val('');
+        $('#ventaGanancia').val('');
+        $('#ventaIVA').val('');
+        $('#ventaTotal').val('');
+    }
+}
+
+// Función para limpiar campos
+function limpiarCampos() {
+    $('#ventaStockDisponible').val('');
+    $('#ventaPrecioUnitario').val('');
+    $('#ventaUnidad').val('');
+    $('#ventaSubtotal').val('');
+    $('#ventaGanancia').val('');
+    $('#ventaIVA').val('');
+    $('#ventaTotal').val('');
+}
 
 $(document).ready(function () {
     $('#sidebarCollapse').on('click', function () {
@@ -207,7 +777,7 @@ $(document).ready(function () {
     const rolesPermitidos = ['Administrador', 'Supervisor', 'Encargado de Inventario']; 
 
     if (!token || !userRol || !rolesPermitidos.includes(userRol)) {
-        console.log("entradas_salidas_inventario.html - Acceso denegado o no autenticado. Redirigiendo a login.");
+        console.log("entradas_salidas_inventario.html - Acceso denegado.");
         window.location.href = 'index.html';
         return; 
     }
@@ -218,189 +788,309 @@ $(document).ready(function () {
 
     $('#logoutButton').on('click', function(e) {
         e.preventDefault();
-        localStorage.removeItem('token');
-        localStorage.removeItem('userRol');
-        localStorage.removeItem('loggedInUsername');
+        localStorage.clear();
         window.location.href = 'index.html';
     });
 
-    // LLAMAR A LA FUNCI�N PARA CARGAR MATERIALES EN LOS COMBOBOX
-    cargarNombresDeMaterialesEnCombobox();
+    // Cargar datos iniciales
+    cargarClientes();
+    cargarProveedores();
 
-    // --- Funci�n para cargar Unidades de Medida ---
-    function cargarUnidadesDeMedida() {
-        console.log("cargarUnidadesDeMedida() - Iniciando carga de unidades...");
+    // Event listeners - Cliente
+    $('#ventaCliente').on('change', function() {
+        const $option = $(this).find('option:selected');
+        if ($option.val()) {
+            clienteSeleccionado = {
+                tipo: $option.data('tipo'),
+                id_cliente: $option.val(),
+                ruc_ci: $option.data('ruc'),
+                nombre: $option.data('nombre'),
+                telefono: $option.data('telefono'),
+                email: $option.data('email')
+            };
+            mostrarInfoCliente();
+            habilitarBotonVenta();
+        } else {
+            clienteSeleccionado = null;
+            $('#infoCliente').hide();
+            habilitarBotonVenta();
+        }
+    });
+
+    // Botón Consumidor Final
+    $('#btnConsumidorFinal').on('click', function() {
+        clienteSeleccionado = {
+            tipo: 'Consumidor Final',
+            id_cliente: null,
+            ruc_ci: '9999999999999',
+            nombre: 'CONSUMIDOR FINAL',
+            telefono: '',
+            email: ''
+        };
+        $('#ventaCliente').val('');
+        mostrarInfoCliente();
+        habilitarBotonVenta();
+    });
+
+    // Botón para abrir modal de nuevo cliente
+    $('#btnAbrirModalCliente').on('click', function() {
+        document.getElementById('modalClienteTemporal').style.display = 'block';
+    });
+
+    // Modal Cliente Temporal - Ahora guarda en BD
+    $('#btnGuardarClienteTemporal').on('click', function() {
+        const cedula = $('#tempRucCi').val().trim();
+        const nombre = $('#tempNombre').val().trim();
+        const telefono = $('#tempTelefono').val().trim();
+        const email = $('#tempEmail').val().trim();
+
+        if (!cedula || !nombre) {
+            alert('Cédula/RUC y Nombre son requeridos');
+            return;
+        }
+
+        // Guardar cliente en la base de datos
         const token = localStorage.getItem('token');
-        const $selectEntradaUnidad = $('#entradaUnidad');
-        const $selectSalidaUnidad = $('#salidaUnidad');
-
-        // Mensaje inicial mientras carga
-        $selectEntradaUnidad.html('<option value="">Cargando unidades...</option>').prop('disabled', true);
-        $selectSalidaUnidad.html('<option value="">Cargando unidades...</option>').prop('disabled', true);
-
-        if (!token) {
-            console.error("cargarUnidadesDeMedida() - No hay token.");
-            $selectEntradaUnidad.html('<option value="">Error de autenticación</option>');
-            $selectSalidaUnidad.html('<option value="">Error de autenticación</option>');
-            return;
-        }
-
-        $.ajax({
-            url: 'https://553682876eea.ngrok-free.app/unidades',
-            method: 'GET',
-            headers: {
-                'Authorization': 'Bearer ' + token
-            },
-            success: function(unidades) {
-                console.log("cargarUnidadesDeMedida() - Unidades recibidas:", unidades);
-                $selectEntradaUnidad.empty().append('<option value="">Seleccione una unidad...</option>');
-                $selectSalidaUnidad.empty().append('<option value="">Seleccione una unidad...</option>');
-
-                if (unidades && Array.isArray(unidades) && unidades.length > 0) {
-                    unidades.forEach(function(unidad) {
-                        if (unidad.id_unidad && unidad.nombre_unidad) {
-                            const optionHtml = `<option value="${unidad.id_unidad}">${unidad.nombre_unidad} (${unidad.abreviatura})</option>`;
-                            $selectEntradaUnidad.append(optionHtml);
-                            $selectSalidaUnidad.append(optionHtml);
-                        }
-                    });
-                    $selectEntradaUnidad.prop('disabled', false);
-                    $selectSalidaUnidad.prop('disabled', false);
-                } else {
-                    console.log("cargarUnidadesDeMedida() - No hay unidades para mostrar.");
-                    $selectEntradaUnidad.append('<option value="">No hay unidades disponibles</option>');
-                    $selectSalidaUnidad.append('<option value="">No hay unidades disponibles</option>');
-                }
-            },
-            error: function(xhr) {
-                console.error("cargarUnidadesDeMedida() - Error al cargar unidades. Status:", xhr.status, "Response:", xhr.responseText);
-                $selectEntradaUnidad.empty().append('<option value="">Error al cargar unidades</option>');
-                $selectSalidaUnidad.empty().append('<option value="">Error al cargar unidades</option>');
-            }
-        });
-    }
-
-    // LLAMAR A LA FUNCI�N PARA CARGAR UNIDADES DE MEDIDA
-    cargarUnidadesDeMedida();
-
-    // --- L�gica para Formulario de Entrada de Inventario ---
-    $('#formEntradaInventario').on('submit', function(event) {
-        event.preventDefault();
-        const mensajeDiv = $('#mensajeEntrada');
-        mensajeDiv.text('Procesando...').removeClass('alert-success alert-danger alert-info').addClass('alert alert-info show');
-
-        const nombreMaterialSeleccionado = $('#entradaNombreMaterial').val(); // Obtener del select
-        const cantidadStr = $('#entradaCantidad').val();
-        const precioUnitarioStr = $('#entradaPrecioUnitario').val();
-        const idUnidad = $('#entradaUnidad').val();
-
-        if (!nombreMaterialSeleccionado || !cantidadStr || !idUnidad) {
-            mensajeDiv.text('Nombre del material, cantidad de entrada y unidad de medida son requeridos.').removeClass('alert-info').addClass('alert alert-danger');
-            return;
-        }
-        
-        const cantidad = parseInt(cantidadStr);
-        if (isNaN(cantidad) || cantidad <= 0) {
-            mensajeDiv.text('La cantidad de entrada debe ser un número positivo.').removeClass('alert-info').addClass('alert alert-danger');
-            return;
-        }
-
-        const dataEntrada = {
-            nombre_material: nombreMaterialSeleccionado,
-            cantidad_entrada: cantidad,
-            id_unidad: parseInt(idUnidad)
+        const nuevoCliente = {
+            cedula: cedula,
+            nombre: nombre,
+            telefono: telefono,
+            email: email,
+            estado: 1
         };
 
-        if (precioUnitarioStr) {
-            try {
-                const precioFloat = parseFloat(precioUnitarioStr);
-                 if (isNaN(precioFloat) || precioFloat < 0) {
-                    mensajeDiv.text('El precio unitario debe ser un número válido y no negativo.').removeClass('alert-info').addClass('alert alert-danger');
-                    return;
-                }
-                dataEntrada.precio_unitario_entrada = precioFloat;
-            } catch(e){
-                mensajeDiv.text('El precio unitario ingresado no es un número válido.').removeClass('alert-info').addClass('alert alert-danger');
-                return;
-            }
-        }
-
-        console.log("Enviando datos de entrada:", dataEntrada);
-
         $.ajax({
-            url: 'https://553682876eea.ngrok-free.app/inventory/entry',
+            url: 'http://127.0.0.1:5000/clientes',
             method: 'POST',
             headers: {
-                'Authorization': 'Bearer ' + token, // 'token' ya est� definido en el scope de $(document).ready
+                'Authorization': 'Bearer ' + token,
                 'Content-Type': 'application/json'
             },
-            data: JSON.stringify(dataEntrada),
+            data: JSON.stringify(nuevoCliente),
             success: function(response) {
-                console.log("Respuesta de entrada:", response);
-                mensajeDiv.text(response.message || "Entrada registrada con éxito.").removeClass('alert-info alert-danger').addClass('alert alert-success');
-                $('#formEntradaInventario')[0].reset(); 
-                cargarNombresDeMaterialesEnCombobox(); // Recargar combobox para reflejar nuevo stock
+                console.log("Cliente creado:", response);
+                
+                // Cerrar modal
+                document.getElementById('modalClienteTemporal').style.display = 'none';
+                $('#formClienteTemporal')[0].reset();
+                
+                // Recargar lista de clientes
+                cargarClientes();
+                
+                // Esperar un momento y seleccionar el nuevo cliente
+                setTimeout(function() {
+                    if (response.id_cliente) {
+                        $('#ventaCliente').val(response.id_cliente).trigger('change');
+                    }
+                }, 500);
+                
+                alert('Cliente registrado exitosamente');
             },
             error: function(xhr) {
-                console.error("Error en entrada:", xhr.responseText);
-                mensajeDiv.text(xhr.responseJSON?.error || "Error al registrar la entrada.").removeClass('alert-info alert-success').addClass('alert alert-danger');
+                console.error("Error al crear cliente:", xhr.responseText);
+                let errorMsg = "Error al registrar el cliente.";
+                if (xhr.responseJSON && xhr.responseJSON.error) {
+                    errorMsg = xhr.responseJSON.error;
+                }
+                alert(errorMsg);
             }
         });
     });
 
-    // --- L�gica para Formulario de Salida de Inventario ---
-    $('#formSalidaInventario').on('submit', function(event) {
-        event.preventDefault();
-        const mensajeDiv = $('#mensajeSalida');
-        mensajeDiv.text('Procesando...').removeClass('alert-success alert-danger alert-info').addClass('alert alert-info show');
-        
-        const nombreMaterialSeleccionado = $('#salidaNombreMaterial').val(); // Obtener del select
-        const cantidadStr = $('#salidaCantidad').val();
-        const idUnidad = $('#salidaUnidad').val();
+    // Event listeners - Productos
+    $('#ventaProveedor').on('change', function() {
+        const idProveedor = $(this).val();
+        cargarMaterialesPorProveedor(idProveedor);
+    });
+    
+    $('#ventaNombreMaterial').on('change', actualizarInfoMaterial);
+    $('#ventaCantidad').on('input', calcularTotal);
+    $('#ventaPorcentajeGanancia').on('change', calcularTotal);
+    $('#ventaPorcentajeIVA').on('change', calcularTotal);
 
-        if (!nombreMaterialSeleccionado || !cantidadStr || !idUnidad) {
-            mensajeDiv.text('Nombre del material, cantidad de salida y unidad de medida son requeridos.').removeClass('alert-info').addClass('alert alert-danger');
+    // Botón Limpiar Formulario
+    $('#btnLimpiarFormulario').on('click', function() {
+        $('#formAgregarProducto')[0].reset();
+        $('#ventaNombreMaterial').prop('disabled', true).html('<option value="">Seleccione un proveedor primero...</option>');
+        limpiarCampos();
+    });
+
+    // Formulario Agregar al Carrito
+    $('#formAgregarProducto').on('submit', function(event) {
+        event.preventDefault();
+        const mensajeDiv = $('#mensajeProducto');
+        
+        if (!clienteSeleccionado) {
+            mensajeDiv.html('<div class="alert alert-warning">Primero seleccione un cliente</div>');
             return;
         }
 
+        const $select = $('#ventaNombreMaterial');
+        const $option = $select.find('option:selected');
+        const nombreMaterial = $option.data('nombre');
+        const cantidadStr = $('#ventaCantidad').val();
+        const stock = $option.data('stock') || 0;
+        const porcentajeGanancia = parseInt($('#ventaPorcentajeGanancia').val());
+        const porcentajeIVA = parseInt($('#ventaPorcentajeIVA').val());
+
+        if (!$select.val() || !cantidadStr || !porcentajeGanancia || !porcentajeIVA) {
+            mensajeDiv.html('<div class="alert alert-warning">Complete todos los campos requeridos</div>');
+            return;
+        }
+        
         const cantidad = parseInt(cantidadStr);
         if (isNaN(cantidad) || cantidad <= 0) {
-            mensajeDiv.text('La cantidad de salida debe ser un número positivo.').removeClass('alert-info').addClass('alert alert-danger');
+            mensajeDiv.html('<div class="alert alert-danger">La cantidad debe ser un número positivo</div>');
             return;
         }
 
-        const dataSalida = {
-            nombre_material: nombreMaterialSeleccionado,
-            cantidad_salida: cantidad,
-            id_unidad: parseInt(idUnidad)
+        if (cantidad > stock) {
+            mensajeDiv.html(`<div class="alert alert-danger">Stock insuficiente. Disponible: ${stock}</div>`);
+            return;
+        }
+
+        const precioUnitario = parseFloat($option.data('precio')) || 0;
+        const subtotal = precioUnitario * cantidad;
+        const ganancia = subtotal * (porcentajeGanancia / 100);
+        const iva = subtotal * (porcentajeIVA / 100);
+        const total = subtotal + ganancia + iva;
+
+        const producto = {
+            id_material: $select.val(),
+            nombre_material: nombreMaterial,
+            cantidad: cantidad,
+            precio_unitario: precioUnitario,
+            subtotal: subtotal,
+            porcentaje_ganancia: porcentajeGanancia,
+            ganancia: ganancia,
+            porcentaje_iva: porcentajeIVA,
+            iva: iva,
+            total: total
         };
 
-        console.log("Enviando datos de salida:", dataSalida);
+        agregarAlCarrito(producto);
+        mensajeDiv.html('<div class="alert alert-success">✅ Producto agregado al carrito</div>');
+        setTimeout(() => mensajeDiv.html(''), 3000);
+        
+        // Limpiar formulario pero mantener proveedor
+        const proveedorActual = $('#ventaProveedor').val();
+        $('#formAgregarProducto')[0].reset();
+        $('#ventaProveedor').val(proveedorActual);
+        cargarMaterialesPorProveedor(proveedorActual);
+        limpiarCampos();
+    });
+
+    // Botón Registrar Venta Completa
+    $('#btnRegistrarVenta').on('click', function() {
+        const mensajeDiv = $('#mensajeVenta');
+        const formaPago = $('#ventaFormaPagoFinal').val();
+
+        if (!formaPago) {
+            mensajeDiv.html('<div class="alert alert-warning">Seleccione una forma de pago</div>');
+            return;
+        }
+
+        if (carritoProductos.length === 0) {
+            mensajeDiv.html('<div class="alert alert-warning">El carrito está vacío</div>');
+            return;
+        }
+
+        if (!clienteSeleccionado) {
+            mensajeDiv.html('<div class="alert alert-warning">Seleccione un cliente</div>');
+            return;
+        }
+
+        mensajeDiv.html('<div class="alert alert-info">Procesando venta...</div>');
+        $('#btnRegistrarVenta').prop('disabled', true);
+
+        // Calcular totales
+        let subtotalGeneral = 0;
+        let gananciaGeneral = 0;
+        let ivaGeneral = 0;
+        let totalGeneral = 0;
+
+        carritoProductos.forEach(producto => {
+            subtotalGeneral += producto.subtotal;
+            gananciaGeneral += producto.ganancia;
+            ivaGeneral += producto.iva;
+            totalGeneral += producto.total;
+        });
+
+        const dataVenta = {
+            cliente: clienteSeleccionado,
+            productos: carritoProductos,
+            totales: {
+                subtotal: subtotalGeneral,
+                ganancia: gananciaGeneral,
+                iva: ivaGeneral,
+                total: totalGeneral
+            },
+            forma_pago: formaPago
+        };
+
+        const token = localStorage.getItem('token');
 
         $.ajax({
-            url: 'https://553682876eea.ngrok-free.app/inventory/exit',
+            url: 'http://127.0.0.1:5000/ventas-directas',
             method: 'POST',
             headers: {
-                'Authorization': 'Bearer ' + token, // 'token' ya est� definido en el scope de $(document).ready
+                'Authorization': 'Bearer ' + token,
                 'Content-Type': 'application/json'
             },
-            data: JSON.stringify(dataSalida),
+            data: JSON.stringify(dataVenta),
             success: function(response) {
-                console.log("Respuesta de salida:", response);
-                mensajeDiv.text(response.message || "Salida registrada con éxito.").removeClass('alert-info alert-danger').addClass('alert alert-success');
-                $('#formSalidaInventario')[0].reset(); 
-                cargarNombresDeMaterialesEnCombobox(); // Recargar combobox para reflejar nuevo stock
+                console.log("Venta registrada:", response);
+                
+                // Guardar datos de la venta para el PDF
+                ultimaVentaRegistrada = {
+                    id_venta: response.id_venta,
+                    cliente: clienteSeleccionado,
+                    productos: [...carritoProductos],
+                    totales: {
+                        subtotal: subtotalGeneral,
+                        ganancia: gananciaGeneral,
+                        iva: ivaGeneral,
+                        total: totalGeneral
+                    },
+                    forma_pago: formaPago,
+                    usuario: localStorage.getItem('username') || 'Usuario'
+                };
+                
+                mensajeDiv.html(`<div class="alert alert-success">
+                    ✅ <strong>Venta registrada exitosamente</strong><br>
+                    <strong>ID Venta:</strong> ${response.id_venta}<br>
+                    <strong>Total:</strong> $${totalGeneral.toFixed(2)}<br><br>
+                    <button class="btn btn-primary" onclick="generarComprobantePDF(ultimaVentaRegistrada)">
+                        <i class="fa fa-print"></i> Imprimir Comprobante
+                    </button>
+                </div>`);
+                
+                // Limpiar todo
+                carritoProductos = [];
+                clienteSeleccionado = null;
+                actualizarTablaCarrito();
+                $('#ventaCliente').val('');
+                $('#ventaFormaPagoFinal').val('');
+                $('#infoCliente').hide();
+                $('#formAgregarProducto')[0].reset();
+                $('#ventaNombreMaterial').prop('disabled', true).html('<option value="">Seleccione un proveedor primero...</option>');
+                limpiarCampos();
+                habilitarBotonVenta();
+                
+                // Recargar materiales para actualizar stock
+                const proveedorActual = $('#ventaProveedor').val();
+                if (proveedorActual) {
+                    cargarMaterialesPorProveedor(proveedorActual);
+                }
             },
             error: function(xhr) {
-                console.error("Error en salida:", xhr.responseText);
-                let errorMsg = "Error al registrar la salida, Stock insuficiente.";
-                if (xhr.responseJSON) {
+                console.error("Error en venta:", xhr.responseText);
+                let errorMsg = "Error al registrar la venta.";
+                if (xhr.responseJSON && xhr.responseJSON.error) {
                     errorMsg = xhr.responseJSON.error;
-                    if (xhr.responseJSON.stock_actual !== undefined) { 
-                        errorMsg += ` (Material: ${xhr.responseJSON.nombre_material || nombreMaterialSeleccionado}, Stock: ${xhr.responseJSON.stock_actual}, Solicitado: ${xhr.responseJSON.cantidad_solicitada || cantidad})`;
-                    }
                 }
-                mensajeDiv.text(errorMsg).removeClass('alert-info alert-success').addClass('alert alert-danger');
+                mensajeDiv.html(`<div class="alert alert-danger">${errorMsg}</div>`);
+                $('#btnRegistrarVenta').prop('disabled', false);
             }
         });
     });

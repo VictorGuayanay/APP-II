@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
     <title>Lista de Ordenes de Trabajo - Carrocerías Alvarado</title>
@@ -143,7 +143,7 @@ function loadOrdenesDeTrabajo() {
     $tableBody.html('<tr><td colspan="7" class="text-center">Cargando...</td></tr>');
 
     $.ajax({
-        url: 'https://553682876eea.ngrok-free.app/ordenes-trabajo',
+        url: 'http://127.0.0.1:5000/ordenes-trabajo',
         method: 'GET',
         headers: { 'Authorization': 'Bearer ' + token },
         success: function(ordenes) {
@@ -168,7 +168,14 @@ function loadOrdenesDeTrabajo() {
                     const botonImprimir = `<button class="btn btn-danger btn-sm btn-imprimir-orden" data-id="${orden.id_orden}" title="Imprimir PDF"><i class="fa fa-print"></i></button>`;
 
                     // Determinar el color del badge según el estado
-                    const badgeColor = orden.estado === 'Finalizado' ? 'bg-success' : 'bg-primary';
+                    let badgeColor;
+                    if (orden.estado === 'Finalizado') {
+                        badgeColor = 'bg-success'; // Verde para finalizadas
+                    } else if (orden.estado === 'Asignado') {
+                        badgeColor = 'bg-primary'; // Azul para asignadas
+                    } else {
+                        badgeColor = 'bg-secondary'; // Gris para otros estados
+                    }
                     
                     const fila = `
                         <tr>
@@ -321,7 +328,7 @@ $(document).ready(function() {
         recursosModal.show();
 
         $.ajax({
-            url: `https://553682876eea.ngrok-free.app/ordenes-trabajo/${ordenId}/calcular-recursos`,
+            url: `http://127.0.0.1:5000/ordenes-trabajo/${ordenId}/calcular-recursos`,
             method: 'GET',
             headers: { 'Authorization': 'Bearer ' + token },
             success: function(response) {
@@ -353,7 +360,7 @@ $(document).ready(function() {
 
         // 1. Obtener todos los detalles de la orden específica
         $.ajax({
-            url: `https://553682876eea.ngrok-free.app/ordenes-trabajo/${ordenId}`,
+            url: `http://127.0.0.1:5000/ordenes-trabajo/${ordenId}`,
             method: 'GET',
             headers: { 'Authorization': 'Bearer ' + token },
             success: function(orden) {

@@ -1,7 +1,7 @@
-<!DOCTYPE html>
+ï»¿<!DOCTYPE html>
 <html lang="es">
 <head>
-    <title>Registro - Carrocería Alvarado</title>
+    <title>Registro - Carrocerï¿½a Alvarado</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!--===============================================================================================-->	
@@ -51,20 +51,20 @@
                         <span class="focus-input100" data-placeholder="?"></span>
                     </div>
 
-                    <div class="wrap-input100 validate-input" data-validate="Ingrese la contraseña">
-                        <input class="input100" type="password" id="password" name="password" placeholder="Contraseña" maxlength="15">
+                    <div class="wrap-input100 validate-input" data-validate="Ingrese la contraseï¿½a">
+                        <input class="input100" type="password" id="password" name="password" placeholder="Contraseï¿½a" maxlength="15">
                         <span class="focus-input100" data-placeholder="?"></span>
                         <div class="strength-indicator" id="strengthIndicator"></div>
                     </div>
 
-                    <div class="wrap-input100 validate-input" data-validate="Confirme la contraseña">
-                        <input class="input100 confirm-password" type="password" id="confirm_password" name="confirm_password" placeholder="Confirmar Contraseña" maxlength="15">
+                    <div class="wrap-input100 validate-input" data-validate="Confirme la contraseï¿½a">
+                        <input class="input100 confirm-password" type="password" id="confirm_password" name="confirm_password" placeholder="Confirmar Contraseï¿½a" maxlength="15">
                         <span class="focus-input100" data-placeholder="?"></span>
                     </div>
 
                     <div class="wrap-input100 validate-input" data-validate="Seleccione un rol">
                         <select class="input100" id="rol" name="rol">
-                            <option value="">Elija una opción</option>
+                            <option value="">Elija una opciï¿½n</option>
                             <option value="Supervisor">Administrador</option>
                             <option value="Administrador">Supervisor</option>
                         </select>
@@ -78,7 +78,7 @@
                     <div id="message" class="message"></div>
 
                     <div class="text-center p-t-20">
-                        <a href="index.html" class="txt2">¿Ya tienes cuenta? Inicia Sesión</a>
+                        <a href="index.html" class="txt2">ï¿½Ya tienes cuenta? Inicia Sesiï¿½n</a>
                     </div>
                 </form>
             </div>
@@ -100,7 +100,7 @@
         $(document).ready(function() {
             $('#rol').select2({
                 minimumResultsForSearch: Infinity,
-                placeholder: "Elija una opción",
+                placeholder: "Elija una opciï¿½n",
                 allowClear: true
             });
 
@@ -143,7 +143,7 @@
                 const rol = $('#rol').val();
                 const messageDiv = $('#message');
 
-                console.log('Datos enviados:', { username, email, password, rol });  // Depuración
+                console.log('Datos enviados:', { username, email, password, rol });  // Depuraciï¿½n
 
                 if (!username || !email || !password || !confirmPassword) {
                     messageDiv.text('Por favor, completa todos los campos.').addClass('error');
@@ -151,17 +151,17 @@
                 }
 
                 if (password !== confirmPassword) {
-                    messageDiv.text('Las contraseñas no coinciden.').addClass('error');
+                    messageDiv.text('Las contraseï¿½as no coinciden.').addClass('error');
                     return;
                 }
 
                 if (password.length < 3) {
-                    messageDiv.text('La contraseña debe tener al menos 3 caracteres.').addClass('error');
+                    messageDiv.text('La contraseï¿½a debe tener al menos 3 caracteres.').addClass('error');
                     return;
                 }
 
                 if (!/@/.test(email) || !/\./.test(email)) {
-                    messageDiv.text('Correo electrónico inválido.').addClass('error');
+                    messageDiv.text('Correo electrï¿½nico invï¿½lido.').addClass('error');
                     return;
                 }
 
@@ -171,19 +171,19 @@
                 }
 
                 $.ajax({
-                    url: 'https://553682876eea.ngrok-free.app/registro',
+                    url: 'http://127.0.0.1:5000/registro',
                     method: 'POST',
                     contentType: 'application/json',
                     data: JSON.stringify({ username, email, password, rol }),
                     success: function(response) {
-                        console.log('Registro exitoso:', response);  // Depuración
-                        messageDiv.text('Registro exitoso. Serás redirigido al inicio en 2 segundos...').removeClass('error').addClass('success');
+                        console.log('Registro exitoso:', response);  // Depuraciï¿½n
+                        messageDiv.text('Registro exitoso. Serï¿½s redirigido al inicio en 2 segundos...').removeClass('error').addClass('success');
                         setTimeout(function() {
                             window.location.href = 'index.html';
                         }, 2000);
                     },
                     error: function(xhr, status, error) {
-                        console.log('Error en registro:', xhr, status, error);  // Depuración
+                        console.log('Error en registro:', xhr, status, error);  // Depuraciï¿½n
                         const errorMsg = xhr.responseJSON?.error || 'Error al registrar.';
                         messageDiv.text(errorMsg).addClass('error');
                     }

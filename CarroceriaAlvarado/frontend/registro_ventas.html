@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <title>Registro de Ventas - Carrocerías Alvarado</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" type="text/css" href="vendor/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="fonts/font-awesome-4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" type="text/css" href="css/main.css">
+    <link rel="stylesheet" href="css/fixed-layout.css">
+    <!-- jsPDF para generar PDFs -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+
+<div class="admin-wrapper">
+    <!-- Sidebar -->
+    <nav id="sidebar">
+        <div class="sidebar-header">
+            <h3>Carrocerías Alvarado</h3>
+        </div>
+        <ul class="list-unstyled components">
+            <p class="ms-3">Administración</p>
+            <li>
+                <a href="#dashboardSubmenu" data-bs-toggle="collapse" aria-expanded="false" class="dropdown-toggle">
+                    <i class="fa fa-tachometer"></i> Dashboard
+                </a>
+                <ul class="collapse list-unstyled" id="dashboardSubmenu">
+                    <li><a href="vision_general.html">Visión General</a></li>
+                </ul>
+            </li>
+            <li> 
+                <a href="admin.html">
+                    <i class="fa fa-users"></i> Panel Principal
+                </a>
+            </li>
+            <li>
+                <a href="#inventarioSubmenu" data-bs-toggle="collapse" aria-expanded="false" class="dropdown-toggle">
+                    <i class="fa fa-archive"></i> Inventario
+                </a>
+                <ul class="collapse list-unstyled" id="inventarioSubmenu">
+                    <li><a href="ver_inventario.html">Ver Inventario</a></li>
+                    <li><a href="anadir_material.html">Añadir Material</a></li>
+                    <li><a href="entradas_salidas_inventario.html">Venta Directa</a></li>
+                </ul>
+            </li>
+            
+            <li><a href="ingresar_empleado.html"><i class="fa fa-address-card"></i> Ingreso Empleados</a></li>
+            <li><a href="ver_empleados.html"><i class="fa fa-users"></i> Ver Empleados</a></li>
+            <li><a href="ingresar_cliente.html"><i class="fa fa-user-plus"></i> Ingreso Clientes</a></li>
+            <li><a href="ingresar_proveedor.html"><i class="fa fa-truck"></i> Ingreso Proveedores</a></li>
+            <li><a href="ver_proveedores.html"><i class="fa fa-list"></i> Ver Proveedores</a></li>
+            <li><a href="orden_trabajo.html"><i class="fa fa-briefcase"></i> Órdenes de Trabajo</a></li>
+            <li><a href="listar_ordenes_trabajo.html"><i class="fa fa-briefcase"></i> Listar Órdenes de Trabajo</a></li>
+            <li class="active"><a href="registro_ventas.html"><i class="fa fa-shopping-cart"></i> Registro de Ventas</a></li>
+            <li><a href="consultar_comprobantes.html"><i class="fa fa-money"></i> Comprobante</a></li>
+            <li><a href="reportes.html"><i class="fa fa-bar-chart"></i> Reportes</a></li>
+            <li><a href="#" data-bs-toggle="modal" data-bs-target="#settingsModal" ><i class="fa fa-cog"></i> Configuración</a></li>
+        </ul>
+    </nav>
+
+    <!-- Page Content -->
+    <div id="content">
+        <!-- Barra de Navegación Superior -->
+        <nav class="navbar navbar-expand-lg navbar-light top-navbar">
+            <div class="container-fluid">
+                <button type="button" id="sidebarCollapse" class="btn btn-info">
+                    <i class="fa fa-align-left"></i> <span>Menú</span>
+                </button>
+                <div class="user-info">
+                    <span>Hola, <strong id="currentUserName">Usuario</strong>!</span>
+                    <a href="#" id="logoutButton" class="ms-3">Cerrar Sesión</a>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Contenido Principal -->
+        <div class="content-area container-fluid pt-4">
+            <h2 class="mb-4"><i class="fa fa-shopping-cart"></i> Registro de Ventas Directas</h2>
+
+            <!-- Filtros -->
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <i class="fa fa-filter"></i> Filtros de Búsqueda
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <label for="filtroFechaDesde" class="form-label">Desde:</label>
+                            <input type="date" class="form-control" id="filtroFechaDesde">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="filtroFechaHasta" class="form-label">Hasta:</label>
+                            <input type="date" class="form-control" id="filtroFechaHasta">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="filtroCliente" class="form-label">Cliente:</label>
+                            <select class="form-select" id="filtroCliente">
+                                <option value="">Todos los clientes</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
+                            <button class="btn btn-primary w-100" onclick="aplicarFiltros()">
+                                <i class="fa fa-search"></i> Buscar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Estadísticas -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card text-white bg-info">
+                        <div class="card-body">
+                            <h6>Total Ventas</h6>
+                            <h3 id="totalVentas">0</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-white bg-success">
+                        <div class="card-body">
+                            <h6>Total Recaudado</h6>
+                            <h3 id="totalRecaudado">$0.00</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabla de Ventas -->
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <i class="fa fa-list"></i> Listado de Ventas
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Fecha</th>
+                                    <th>Cliente</th>
+                                    <th>Total</th>
+                                    <th>Forma de Pago</th>
+                                    <th>Usuario</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tablaVentas">
+                                <tr>
+                                    <td colspan="7" class="text-center">Cargando ventas...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Detalle de Venta -->
+<div id="modalDetalleVenta" style="display: none; position: fixed; z-index: 9999; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); overflow-y: auto;">
+    <div style="position: relative; margin: 3% auto; width: 90%; max-width: 900px; background-color: white; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.3);">
+        <div style="background-color: #28a745; color: white; padding: 15px; border-radius: 8px 8px 0 0; display: flex; justify-content: space-between; align-items: center;">
+            <h5 style="margin: 0;"><i class="fa fa-info-circle"></i> Detalle de Venta #<span id="detalleVentaId"></span></h5>
+            <button type="button" onclick="cerrarModalDetalle()" style="background: none; border: none; color: white; font-size: 24px; cursor: pointer; padding: 0; line-height: 1;">&times;</button>
+        </div>
+        <div style="padding: 20px;">
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <strong>Fecha:</strong> <span id="detalleFecha"></span>
+                </div>
+                <div class="col-md-6">
+                    <strong>Usuario:</strong> <span id="detalleUsuario"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-md-12">
+                    <strong>Cliente:</strong> <span id="detalleCliente"></span>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <strong>Forma de Pago:</strong> <span id="detalleFormaPago"></span>
+                </div>
+            </div>
+            
+            <h6 class="mt-4 mb-3"><strong>Productos:</strong></h6>
+            <div class="table-responsive">
+                <table class="table table-sm table-bordered">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Material</th>
+                            <th>Cantidad</th>
+                            <th>P. Unit.</th>
+                            <th>Subtotal</th>
+                            <th>IVA</th>
+                            <th>Total</th>
+                        </tr>
+                    </thead>
+                    <tbody id="detalleProductos">
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="row mt-3">
+                <div class="col-md-8"></div>
+                <div class="col-md-4">
+                    <table class="table table-sm">
+                        <tr>
+                            <td><strong>Subtotal:</strong></td>
+                            <td class="text-end" id="detalleSubtotal">$0.00</td>
+                        </tr>
+                        <tr>
+                            <td><strong>IVA:</strong></td>
+                            <td class="text-end" id="detalleIVA">$0.00</td>
+                        </tr>
+                        <tr class="table-success">
+                            <td><strong>TOTAL:</strong></td>
+                            <td class="text-end"><strong id="detalleTotal">$0.00</strong></td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div style="padding: 15px; border-top: 1px solid #ddd; text-align: right;">
+            <button type="button" class="btn btn-primary" onclick="reimprimirComprobante()">
+                <i class="fa fa-print"></i> Reimprimir Comprobante
+            </button>
+            <button type="button" class="btn btn-secondary" onclick="cerrarModalDetalle()">Cerrar</button>
+        </div>
+    </div>
+</div>
+
+<script src="vendor/jquery/jquery-3.2.1.min.js"></script>
+<script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+
+<script>
+let todasLasVentas = [];
+let ventaActual = null;
+
+// Función para cerrar modal
+function cerrarModalDetalle() {
+    document.getElementById('modalDetalleVenta').style.display = 'none';
+}
+
+// Función para generar PDF del comprobante (reutilizada)
+function generarComprobantePDF(datosVenta, isReprint = false) {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    
+    const margen = 20;
+    let y = 20;
+    
+    // Encabezado
+    doc.setFontSize(10);
+    doc.setTextColor(255, 0, 0);
+    doc.text('DOCUMENTO SIN VALOR TRIBUTARIO', 105, y, { align: 'center' });
+    y += 10;
+    
+    // RE-IMPRESIÓN si es reimpresión
+    if (isReprint) {
+        doc.setFontSize(12);
+        doc.setTextColor(255, 0, 0);
+        doc.setFont(undefined, 'bold');
+        doc.text('*** RE-IMPRESIÓN ***', 105, y, { align: 'center' });
+        y += 8;
+        doc.setFont(undefined, 'normal');
+    }
+    
+    doc.setFontSize(16);
+    doc.setTextColor(0, 0, 0);
+    doc.text('COMPROBANTE DE VENTA', 105, y, { align: 'center' });
+    y += 5;
+    doc.setFontSize(14);
+    doc.text('Carrocerías Alvarado', 105, y, { align: 'center' });
+    y += 15;
+    
+    doc.setFontSize(10);
+    doc.text(`Venta #${datosVenta.id_venta}`, margen, y);
+    
+    // Manejar fecha - puede venir como string o Date
+    const fecha = typeof datosVenta.fecha_venta === 'string' 
+        ? datosVenta.fecha_venta 
+        : new Date(datosVenta.fecha_venta).toLocaleString('es-EC');
+    doc.text(`Fecha: ${fecha}`, 150, y);
+    y += 7;
+    doc.text(`Usuario: ${datosVenta.nombre_usuario || datosVenta.usuario}`, margen, y);
+    y += 10;
+    
+    // Cliente
+    doc.setFontSize(11);
+    doc.setFont(undefined, 'bold');
+    doc.text('CLIENTE:', margen, y);
+    doc.setFont(undefined, 'normal');
+    y += 6;
+    doc.setFontSize(10);
+    doc.text(`Tipo: ${datosVenta.tipo_cliente}`, margen, y);
+    y += 5;
+    doc.text(`Nombre: ${datosVenta.cliente_nombre}`, margen, y);
+    y += 5;
+    doc.text(`RUC/CI: ${datosVenta.cliente_ruc_ci || 'N/A'}`, margen, y);
+    y += 10;
+    
+    // Productos
+    doc.setFont(undefined, 'bold');
+    doc.text('DETALLE DE PRODUCTOS:', margen, y);
+    y += 7;
+    
+    doc.setFontSize(9);
+    doc.text('Material', margen, y);
+    doc.text('Cant.', 90, y);
+    doc.text('P.Unit', 115, y);
+    doc.text('Subtotal', 145, y);
+    doc.text('IVA', 170, y);
+    doc.text('Total', 185, y);
+    y += 5;
+    
+    doc.line(margen, y, 200, y);
+    y += 5;
+    
+    doc.setFont(undefined, 'normal');
+    datosVenta.productos.forEach(producto => {
+        if (y > 270) {
+            doc.addPage();
+            y = 20;
+        }
+        
+        doc.text(producto.nombre_material.substring(0, 30), margen, y);
+        doc.text(producto.cantidad.toString(), 90, y);
+        doc.text(`$${Number(producto.precio_unitario || 0).toFixed(2)}`, 115, y);
+        doc.text(`$${Number(producto.subtotal || 0).toFixed(2)}`, 145, y);
+        doc.text(`$${Number(producto.valor_iva || producto.iva || 0).toFixed(2)}`, 170, y);
+        doc.text(`$${Number(producto.total || 0).toFixed(2)}`, 185, y);
+        y += 5;
+    });
+    
+    y += 5;
+    doc.line(margen, y, 200, y);
+    y += 7;
+    
+    // Totales
+    doc.setFont(undefined, 'bold');
+    doc.setFontSize(10);
+    doc.text('SUBTOTAL:', 125, y);
+    doc.text(`$${Number(datosVenta.subtotal_general || 0).toFixed(2)}`, 185, y, { align: 'right' });
+    y += 6;
+    doc.text('IVA:', 125, y);
+    doc.text(`$${Number(datosVenta.iva_general || 0).toFixed(2)}`, 185, y, { align: 'right' });
+    y += 6;
+    doc.setFontSize(12);
+    doc.text('TOTAL:', 125, y);
+    doc.text(`$${Number(datosVenta.total_general || 0).toFixed(2)}`, 185, y, { align: 'right' });
+    y += 10;
+    
+    doc.setFontSize(10);
+    doc.setFont(undefined, 'normal');
+    doc.text(`Forma de Pago: ${datosVenta.forma_pago}`, margen, y);
+    
+    y = 280;
+    doc.setFontSize(8);
+    doc.setTextColor(128, 128, 128);
+    doc.text('Gracias por su compra', 105, y, { align: 'center' });
+    
+    const filename = isReprint ? `Comprobante_Venta_${datosVenta.id_venta}_REIMPRESION.pdf` : `Comprobante_Venta_${datosVenta.id_venta}.pdf`;
+    doc.save(filename);
+}
+
+// Función para reimprimir comprobante
+function reimprimirComprobante() {
+    if (ventaActual) {
+        generarComprobantePDF(ventaActual, true); // true = es reimpresión
+    }
+}
+
+// Cargar ventas
+function cargarVentas() {
+    const token = localStorage.getItem('token');
+    
+    $.ajax({
+        url: 'http://127.0.0.1:5000/ventas-directas',
+        method: 'GET',
+        headers: {
+            'Authorization': 'Bearer ' + token
+        },
+        success: function(ventas) {
+            todasLasVentas = ventas;
+            mostrarVentas(ventas);
+            actualizarEstadisticas(ventas);
+            poblarFiltroClientes(ventas);
+        },
+        error: function(xhr) {
+            console.error("Error al cargar ventas:", xhr.responseText);
+            $('#tablaVentas').html('<tr><td colspan="7" class="text-center text-danger">Error al cargar ventas</td></tr>');
+        }
+    });
+}
+
+// Poblar dropdown de clientes
+function poblarFiltroClientes(ventas) {
+    const clientesUnicos = new Set();
+    ventas.forEach(venta => {
+        if (venta.cliente_nombre) {
+            clientesUnicos.add(venta.cliente_nombre);
+        }
+    });
+    
+    const select = $('#filtroCliente');
+    select.html('<option value="">Todos los clientes</option>');
+    
+    Array.from(clientesUnicos).sort().forEach(cliente => {
+        select.append(`<option value="${cliente}">${cliente}</option>`);
+    });
+}
+
+// Mostrar ventas en tabla
+function mostrarVentas(ventas) {
+    const tbody = $('#tablaVentas');
+    
+    if (ventas.length === 0) {
+        tbody.html('<tr><td colspan="7" class="text-center">No hay ventas registradas</td></tr>');
+        return;
+    }
+    
+    let html = '';
+    ventas.forEach(venta => {
+        html += `<tr>
+            <td>${venta.id_venta}</td>
+            <td>${new Date(venta.fecha_venta).toLocaleString('es-EC')}</td>
+            <td>${venta.cliente_nombre}</td>
+            <td>$${venta.total_general.toFixed(2)}</td>
+            <td>${venta.forma_pago}</td>
+            <td>${venta.nombre_usuario}</td>
+            <td>
+                <button class="btn btn-sm btn-info" onclick="verDetalle(${venta.id_venta})">
+                    <i class="fa fa-eye"></i> Ver
+                </button>
+            </td>
+        </tr>`;
+    });
+    
+    tbody.html(html);
+}
+
+// Ver detalle de venta
+function verDetalle(idVenta) {
+    const token = localStorage.getItem('token');
+    
+    $.ajax({
+        url: `http://127.0.0.1:5000/ventas-directas/${idVenta}`,
+        method: 'GET',
+        headers: {
+            'Authorization': 'Bearer ' + token
+        },
+        success: function(venta) {
+            ventaActual = venta;
+            
+            $('#detalleVentaId').text(venta.id_venta);
+            $('#detalleFecha').text(new Date(venta.fecha_venta).toLocaleString('es-EC'));
+            $('#detalleUsuario').text(venta.nombre_usuario);
+            $('#detalleCliente').text(`${venta.cliente_nombre} (${venta.tipo_cliente})`);
+            $('#detalleFormaPago').text(venta.forma_pago);
+            
+            // Validar y mostrar totales
+            const subtotal = venta.subtotal_general || 0;
+            const iva = venta.iva_general || 0;
+            const total = venta.total_general || 0;
+            
+            $('#detalleSubtotal').text(`$${Number(subtotal).toFixed(2)}`);
+            $('#detalleIVA').text(`$${Number(iva).toFixed(2)}`);
+            $('#detalleTotal').text(`$${Number(total).toFixed(2)}`);
+            
+            let productosHtml = '';
+            venta.productos.forEach(p => {
+                productosHtml += `<tr>
+                    <td>${p.nombre_material}</td>
+                    <td>${p.cantidad}</td>
+                    <td>$${Number(p.precio_unitario || 0).toFixed(2)}</td>
+                    <td>$${Number(p.subtotal || 0).toFixed(2)}</td>
+                    <td>$${Number(p.valor_iva || 0).toFixed(2)}</td>
+                    <td>$${Number(p.total || 0).toFixed(2)}</td>
+                </tr>`;
+            });
+            $('#detalleProductos').html(productosHtml);
+            
+            document.getElementById('modalDetalleVenta').style.display = 'block';
+        },
+        error: function(xhr) {
+            alert('Error al cargar detalle de venta');
+        }
+    });
+}
+
+// Aplicar filtros
+function aplicarFiltros() {
+    const fechaDesde = $('#filtroFechaDesde').val();
+    const fechaHasta = $('#filtroFechaHasta').val();
+    const cliente = $('#filtroCliente').val();
+    
+    let ventasFiltradas = todasLasVentas;
+    
+    if (fechaDesde) {
+        ventasFiltradas = ventasFiltradas.filter(v => new Date(v.fecha_venta) >= new Date(fechaDesde));
+    }
+    
+    if (fechaHasta) {
+        const hasta = new Date(fechaHasta);
+        hasta.setHours(23, 59, 59);
+        ventasFiltradas = ventasFiltradas.filter(v => new Date(v.fecha_venta) <= hasta);
+    }
+    
+    if (cliente) {
+        ventasFiltradas = ventasFiltradas.filter(v => v.cliente_nombre === cliente);
+    }
+    
+    mostrarVentas(ventasFiltradas);
+    actualizarEstadisticas(ventasFiltradas);
+}
+
+// Actualizar estadísticas
+function actualizarEstadisticas(ventas) {
+    $('#totalVentas').text(ventas.length);
+    
+    const total = ventas.reduce((sum, v) => sum + v.total_general, 0);
+    $('#totalRecaudado').text(`$${total.toFixed(2)}`);
+}
+
+// Document ready
+$(document).ready(function() {
+    // Verificar autenticación
+    const token = localStorage.getItem('token');
+    if (!token) {
+        window.location.href = 'index.html';
+        return;
+    }
+    
+    // Mostrar nombre de usuario
+    const username = localStorage.getItem('username');
+    if (username) {
+        $('#currentUserName').text(username);
+    }
+    
+    // Cargar ventas
+    cargarVentas();
+    
+    // Sidebar toggle
+    $('#sidebarCollapse').on('click', function() {
+        $('#sidebar').toggleClass('active');
+    });
+    
+    // Logout
+    $('#logoutButton').on('click', function(e) {
+        e.preventDefault();
+        localStorage.clear();
+        window.location.href = 'index.html';
+    });
+});
+</script>
+
+</body>
+</html>

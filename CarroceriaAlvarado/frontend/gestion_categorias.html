@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
     <title>Gestión de Categorías - Carrocerías  Alvarado</title>
@@ -211,7 +211,7 @@ function cargarCategorias() {
     const tbody = $('#categoriasTableBody');
     
     $.ajax({
-        url: 'https://553682876eea.ngrok-free.app/categorias-materiales',
+        url: 'http://127.0.0.1:5000/categorias-materiales',
         method: 'GET',
         headers: {'Authorization': 'Bearer ' + token},
         success: function(categorias) {
@@ -286,7 +286,7 @@ function guardarCategoria() {
     };
     
     $.ajax({
-        url: 'https://553682876eea.ngrok-free.app/categorias-materiales',
+        url: 'http://127.0.0.1:5000/categorias-materiales',
         method: 'POST',
         headers: {
             'Authorization': 'Bearer ' + token,
@@ -310,7 +310,7 @@ function abrirModalEditar(idCategoria) {
     const token = localStorage.getItem('token');
     
     $.ajax({
-        url: 'https://553682876eea.ngrok-free.app/categorias-materiales',
+        url: 'http://127.0.0.1:5000/categorias-materiales',
         method: 'GET',
         headers: {'Authorization': 'Bearer ' + token},
         success: function(categorias) {
@@ -347,7 +347,7 @@ function guardarCambiosCategoria() {
     };
     
     $.ajax({
-        url: `https://553682876eea.ngrok-free.app/categorias-materiales/${idCategoria}`,
+        url: `http://127.0.0.1:5000/categorias-materiales/${idCategoria}`,
         method: 'PUT',
         headers: {
             'Authorization': 'Bearer ' + token,
@@ -374,7 +374,7 @@ function eliminarCategoria(idCategoria, nombreCategoria) {
     const token = localStorage.getItem('token');
     
     $.ajax({
-        url: `https://553682876eea.ngrok-free.app/categorias-materiales/${idCategoria}`,
+        url: `http://127.0.0.1:5000/categorias-materiales/${idCategoria}`,
         method: 'DELETE',
         headers: {'Authorization': 'Bearer ' + token},
         success: function(response) {

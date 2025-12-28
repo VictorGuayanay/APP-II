@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -401,7 +401,7 @@
     let costoTotalActualDeLaOrden = 0;
 
     // Definiciones necesarias
-    const API_BASE_URL = 'https://553682876eea.ngrok-free.app';
+    const API_BASE_URL = 'http://127.0.0.1:5000';
     
     function getAuthHeaders() {
         const token = localStorage.getItem('token');
@@ -421,7 +421,7 @@
         $selectNuevoEmpleado.html('<option value="">Cargando empleados...</option>').prop('disabled', true);
 
         $.ajax({
-            url: 'https://553682876eea.ngrok-free.app/empleados',
+            url: 'http://127.0.0.1:5000/empleados',
             method: 'GET',
             headers: { 'Authorization': 'Bearer ' + token },
             success: function(empleados) {
@@ -448,7 +448,7 @@
         $selectMaterial.html('<option value="">Cargando...</option>').prop('disabled', true);
 
         $.ajax({
-            url: 'https://553682876eea.ngrok-free.app/materiales',
+            url: 'http://127.0.0.1:5000/materiales',
             method: 'GET',
             headers: { 'Authorization': 'Bearer ' + token },
             success: function(materiales) {
@@ -545,7 +545,7 @@
         $materialesTableBody.html('<tr><td colspan="5" class="text-center">Cargando...</td></tr>');
 
         $.ajax({
-            url: `https://553682876eea.ngrok-free.app/ordenes-trabajo/${idOrden}`,
+            url: `http://127.0.0.1:5000/ordenes-trabajo/${idOrden}`,
             method: 'GET',
             headers: { 'Authorization': 'Bearer ' + token },
             success: function(orden) {
@@ -732,7 +732,7 @@
             mensajeDiv.text('Procesando...').removeClass('alert-danger alert-success').addClass('alert alert-info');
 
             $.ajax({
-                url: `https://553682876eea.ngrok-free.app/ordenes-trabajo/${idOrden}/modificar-asignacion`,
+                url: `http://127.0.0.1:5000/ordenes-trabajo/${idOrden}/modificar-asignacion`,
                 method: 'PUT',
                 headers: {
                     'Authorization': 'Bearer ' + token,
@@ -775,7 +775,7 @@
             console.log("Enviando material a la orden:", dataToSend);
 
             $.ajax({
-                url: `https://553682876eea.ngrok-free.app/ordenes-trabajo/${idOrden}/materiales`,
+                url: `http://127.0.0.1:5000/ordenes-trabajo/${idOrden}/materiales`,
                 method: 'POST',
                 headers: {
                     'Authorization': 'Bearer ' + token,

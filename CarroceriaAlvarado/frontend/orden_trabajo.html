@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
     <title>Crear Orden de Trabajo - Carrocerías Alvarado</title>
@@ -227,7 +227,7 @@ function cargarSelectCliente() {
 
     // Cargar Clientes
     $.ajax({
-        url: 'https://553682876eea.ngrok-free.app/clientes',
+        url: 'http://127.0.0.1:5000/clientes',
         method: 'GET',
         headers: { 'Authorization': 'Bearer ' + token },
         success: function(clientes) {
@@ -256,7 +256,7 @@ function cargarEmpleadosParaAsignacionManual() {
     if (!token) { return; }
 
     $.ajax({
-        url: 'https://553682876eea.ngrok-free.app/empleados', // Reutilizamos el endpoint que lista empleados
+        url: 'http://127.0.0.1:5000/empleados', // Reutilizamos el endpoint que lista empleados
         method: 'GET',
         headers: { 'Authorization': 'Bearer ' + token },
         success: function(empleados) {
@@ -301,7 +301,7 @@ $(document).ready(function() {
     function cargarProveedores() {
         const $selectProveedor = $('#selectProveedor');
         $.ajax({
-            url: 'https://553682876eea.ngrok-free.app/proveedores',
+            url: 'http://127.0.0.1:5000/proveedores',
             method: 'GET',
             headers: { 'Authorization': 'Bearer ' + token },
             success: function(proveedores) {
@@ -331,7 +331,7 @@ $(document).ready(function() {
         if (proveedorId) {
             // Cargar materiales del proveedor seleccionado
             $.ajax({
-                url: `https://553682876eea.ngrok-free.app/proveedores/${proveedorId}/materiales`,
+                url: `http://127.0.0.1:5000/proveedores/${proveedorId}/materiales`,
                 method: 'GET',
                 headers: { 'Authorization': 'Bearer ' + token },
                 success: function(materiales) {
@@ -534,7 +534,7 @@ $(document).ready(function() {
         console.log("Enviando datos de nueva orden de trabajo:", ordenData);
 
         $.ajax({
-            url: 'https://553682876eea.ngrok-free.app/ordenes-trabajo',
+            url: 'http://127.0.0.1:5000/ordenes-trabajo',
             method: 'POST',
             headers: {
                 'Authorization': 'Bearer ' + token,

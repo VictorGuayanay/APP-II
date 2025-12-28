@@ -1,4 +1,4 @@
-$(document).ready(function () {
+﻿$(document).ready(function () {
     // Manejo del formulario de login
     $('#loginForm').on('submit', function (event) {
         event.preventDefault();
@@ -18,7 +18,7 @@ $(document).ready(function () {
         }
 
         $.ajax({
-            url: 'https://553682876eea.ngrok-free.app/login', // API Flask via ngrok
+            url: 'http://127.0.0.1:5000/login', // API Flask via ngrok
             method: 'POST',
             contentType: 'application/json',
             data: JSON.stringify({ username, password }),
@@ -87,7 +87,7 @@ $(document).ready(function () {
         }
 
         $.ajax({
-            url: 'https://553682876eea.ngrok-free.app/reset_password',
+            url: 'http://127.0.0.1:5000/reset_password',
             method: 'POST',
             contentType: 'application/json',
             data: JSON.stringify({ email }),
@@ -139,7 +139,7 @@ $(document).ready(function () {
         }
 
         $.ajax({
-            url: 'https://553682876eea.ngrok-free.app/new_password',
+            url: 'http://127.0.0.1:5000/new_password',
             method: 'POST',
             contentType: 'application/json',
             data: JSON.stringify({ token, password }),
@@ -207,7 +207,7 @@ $(document).ready(function () {
         }
 
         $.ajax({
-            url: 'https://553682876eea.ngrok-free.app/notificaciones',
+            url: 'http://127.0.0.1:5000/notificaciones',
             method: 'GET',
             headers: {
                 'Authorization': 'Bearer ' + token
@@ -263,7 +263,7 @@ $(document).ready(function () {
         if (!token) return;
 
         $.ajax({
-            url: `https://553682876eea.ngrok-free.app/ordenes-trabajo/${idOrden}/recursos-estimados`,
+            url: `http://127.0.0.1:5000/ordenes-trabajo/${idOrden}/recursos-estimados`,
             method: 'GET',
             headers: { 'Authorization': 'Bearer ' + token },
             success: function (response) {
@@ -300,7 +300,7 @@ $(document).ready(function () {
         }
 
         $.ajax({
-            url: 'https://553682876eea.ngrok-free.app/ordenes-trabajo',
+            url: 'http://127.0.0.1:5000/ordenes-trabajo',
             method: 'POST',
             contentType: 'application/json',
             headers: { 'Authorization': 'Bearer ' + token },

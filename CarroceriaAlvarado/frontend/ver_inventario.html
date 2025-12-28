@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
     <title>Ver Inventario - Carrocerías Alvarado</title>
@@ -307,7 +307,7 @@ function loadMateriales(umbralStockBajo) {
     console.log("loadMateriales() - Token que se usará para la API:", token);
 
     $.ajax({ 
-        url: 'https://553682876eea.ngrok-free.app/materiales',  // Endpoint para obtener materiales
+        url: 'http://127.0.0.1:5000/materiales',  // Endpoint para obtener materiales
         method: 'GET',
         headers: { 
             'Authorization': 'Bearer ' + token  
@@ -590,7 +590,7 @@ $(document).ready(function () {
     function cargarProveedoresEnModal() {
         const $selectProveedor = $('#editMaterialProveedor');
         $.ajax({
-            url: 'https://553682876eea.ngrok-free.app/proveedores',
+            url: 'http://127.0.0.1:5000/proveedores',
             method: 'GET',
             headers: { 'Authorization': 'Bearer ' + token },
             success: function(proveedores) {
@@ -613,7 +613,7 @@ $(document).ready(function () {
     function cargarCategoriasEnModal() {
         const $selectCategoria = $('#editMaterialCategoria');
         $.ajax({
-            url: 'https://553682876eea.ngrok-free.app/categorias-materiales',
+            url: 'http://127.0.0.1:5000/categorias-materiales',
             method: 'GET',
             headers: { 'Authorization': 'Bearer ' + token },
             success: function(categorias) {
@@ -683,7 +683,7 @@ $(document).ready(function () {
 
         // Obtener datos del material
         $.ajax({
-            url: `https://553682876eea.ngrok-free.app/materiales/${materialId}`,
+            url: `http://127.0.0.1:5000/materiales/${materialId}`,
             method: 'GET',
             headers: { 'Authorization': 'Bearer ' + token },
             success: function(material) {
@@ -773,7 +773,7 @@ $(document).ready(function () {
         setButtonLoading('#btnGuardarEdicion', 'Guardando...');
 
         $.ajax({
-            url: `https://553682876eea.ngrok-free.app/materiales/${materialId}`,
+            url: `http://127.0.0.1:5000/materiales/${materialId}`,
             method: 'PUT',
             headers: {
                 'Authorization': 'Bearer ' + token,
@@ -813,7 +813,7 @@ $(document).ready(function () {
     // --- Obtener Configuraciones y Luego Cargar Materiales ---
     console.log("ver_inventario.html - Obteniendo configuraciones del sistema...");
     $.ajax({
-        url: 'https://553682876eea.ngrok-free.app/configuraciones', // Endpoint GET para obtener configuraciones
+        url: 'http://127.0.0.1:5000/configuraciones', // Endpoint GET para obtener configuraciones
         method: 'GET',
         headers: { 'Authorization': 'Bearer ' + token }, // Reutilizar el token ya validado para esta p�gina
         success: function(config) {
@@ -886,7 +886,7 @@ $(document).ready(function () {
         console.log("Confirmada eliminación para material ID:", materialIdParaEliminar);
 
         $.ajax({
-            url: `https://553682876eea.ngrok-free.app/materiales/${materialIdParaEliminar}`, 
+            url: `http://127.0.0.1:5000/materiales/${materialIdParaEliminar}`, 
             method: 'DELETE',
             headers: {
                 'Authorization': 'Bearer ' + currentToken

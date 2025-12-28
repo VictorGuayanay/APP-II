@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
     <title>Reportes - Carrocerias Alvarado</title>
@@ -156,7 +156,7 @@ function cargarFiltros() {
 
     // Cargar Materiales
     $.ajax({
-        url: 'https://553682876eea.ngrok-free.app/materiales',
+        url: 'http://127.0.0.1:5000/materiales',
         method: 'GET',
         headers: { 'Authorization': 'Bearer ' + token },
         success: function(materiales) {
@@ -170,7 +170,7 @@ function cargarFiltros() {
 
     // Cargar Empleados
     $.ajax({
-        url: 'https://553682876eea.ngrok-free.app/empleados',
+        url: 'http://127.0.0.1:5000/empleados',
         method: 'GET',
         headers: { 'Authorization': 'Bearer ' + token },
         success: function(empleados) {
@@ -253,7 +253,7 @@ $(document).ready(function() {
         mensajeDiv.text('Generando reporte...').addClass('alert alert-info');
 
         // Construcción dinámica de la URL con los filtros
-        let urlReporte = `https://553682876eea.ngrok-free.app/reportes/uso-materiales?fecha_desde=${fechaDesde}&fecha_hasta=${fechaHasta}`;
+        let urlReporte = `http://127.0.0.1:5000/reportes/uso-materiales?fecha_desde=${fechaDesde}&fecha_hasta=${fechaHasta}`;
         if (idMaterial) {
             urlReporte += `&id_material=${idMaterial}`;
         }

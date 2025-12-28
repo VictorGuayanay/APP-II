@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+﻿from flask import Flask, request, jsonify
 from flask_cors import CORS
 import pyodbc
 import bcrypt
@@ -1090,7 +1090,7 @@ def get_todos_los_materiales(decoded_user_rol, decoded_user_id): # Argumentos de
             FROM Materiales m
             LEFT JOIN Proveedores p ON m.id_proveedor = p.id_proveedor
             LEFT JOIN Unidades_de_Medida u ON m.id_unidad = u.id_unidad
-            LEFT JOIN Categorias_Materiales c ON m.id_categoria = c.id_categoria
+            LEFT JOIN CategoriaMateriales c ON m.id_categoria = c.id_categoria
             ORDER BY m.nombre ASC 
         """
         cursor.execute(sql_query)
@@ -1144,7 +1144,7 @@ def crear_nuevo_material(decoded_user_rol, decoded_user_id): # El argumento depe
     
     # NUEVO: Soporte para sistema de doble precio
     precio_compra_str = data.get('precio_compra')
-    porcentaje_ganancia = data.get('porcentaje_ganancia')
+    precio_venta_str = data.get('precio_venta')  # Ahora recibimos precio de venta directamente
     id_proveedor = data.get('id_proveedor')  # Proveedor opcional
     id_unidad = data.get('id_unidad')  # Unidad de medida requerida
     
@@ -1165,6 +1165,8 @@ def crear_nuevo_material(decoded_user_rol, decoded_user_id): # El argumento depe
         return jsonify({'error': 'El código numérico es requerido'}), 400
     if precio_compra_str is None:
         return jsonify({'error': 'El precio de compra es requerido'}), 400
+    if precio_venta_str is None:
+        return jsonify({'error': 'El precio de venta es requerido'}), 400
     if not id_unidad:
         return jsonify({'error': 'La unidad de medida es requerida'}), 400
     
@@ -1187,19 +1189,20 @@ def crear_nuevo_material(decoded_user_rol, decoded_user_id): # El argumento depe
     except (ValueError, TypeError):
         return jsonify({'error': 'El precio de compra debe ser un número válido'}), 400
 
-    # Validar y calcular precio de venta
-    if porcentaje_ganancia is None:
-        porcentaje_ganancia = 20  # Default 20%
-    
+    # Validar precio de venta
     try:
-        porcentaje_ganancia = int(porcentaje_ganancia)
-        if porcentaje_ganancia < 5 or porcentaje_ganancia > 50:
-            return jsonify({'error': 'El porcentaje de ganancia debe estar entre 5% y 50%'}), 400
+        precio_venta = float(precio_venta_str)
+        if precio_venta < 0:
+            return jsonify({'error': 'El precio de venta no puede ser negativo'}), 400
     except (ValueError, TypeError):
-        return jsonify({'error': 'El porcentaje de ganancia debe ser un número válido'}), 400
+        return jsonify({'error': 'El precio de venta debe ser un número válido'}), 400
     
-    # Calcular precio de venta automáticamente
-    precio_venta = round(precio_compra * (1 + porcentaje_ganancia / 100), 2)
+    # Calcular porcentaje de ganancia como campo derivado (para referencia)
+    if precio_compra > 0:
+        porcentaje_ganancia = int(round(((precio_venta - precio_compra) / precio_compra) * 100))
+    else:
+        porcentaje_ganancia = 0
+    
 
     conn = None
     try:
@@ -1207,7 +1210,7 @@ def crear_nuevo_material(decoded_user_rol, decoded_user_id): # El argumento depe
         cursor = conn.cursor()
 
         # Validar que la categoría existe
-        cursor.execute("SELECT codigo_prefijo FROM Categorias_Materiales WHERE id_categoria = ?", (id_categoria,))
+        cursor.execute("SELECT codigo_prefijo FROM CategoriaMateriales WHERE id_categoria = ?", (id_categoria,))
         row = cursor.fetchone()
         if not row:
             conn.close()
@@ -1651,7 +1654,7 @@ def actualizar_material(decoded_user_rol, decoded_user_id, id_material):
             return jsonify({'error': 'Material no encontrado'}), 404
         
         # Validar que la categoría existe
-        cursor.execute("SELECT codigo_prefijo FROM Categorias_Materiales WHERE id_categoria = ?", (id_categoria,))
+        cursor.execute("SELECT codigo_prefijo FROM CategoriaMateriales WHERE id_categoria = ?", (id_categoria,))
         row = cursor.fetchone()
         if not row:
             return jsonify({'error': f'La categoría con ID {id_categoria} no existe'}), 404
@@ -1810,7 +1813,7 @@ def registrar_empleado(decoded_user_rol, decoded_user_id):
 
 # --- ENDPOINTS DE GESTION DE CLIENTES---
 @app.route('/clientes', methods=['GET'])
-@roles_required('Administrador', 'Supervisor')
+@roles_required('Administrador', 'Supervisor', 'Encargado de Inventario')
 def get_todos_los_clientes(decoded_user_rol, decoded_user_id):
     print(f"API GET /clientes: Solicitud recibida por usuario ID {decoded_user_id} con rol {decoded_user_rol}")
     
@@ -1819,9 +1822,13 @@ def get_todos_los_clientes(decoded_user_rol, decoded_user_id):
         conn = get_db_connection()
         cursor = conn.cursor()
         
-        # Seleccionar solo clientes activos
-        # Se seleccionan los campos que el frontend necesita (ID y nombre)
-        sql_query = "SELECT id_cliente, nombre FROM Clientes WHERE estado = 1 ORDER BY nombre ASC"
+        # Seleccionar clientes activos (estado = 1 porque es tipo BIT)
+        sql_query = """
+            SELECT id_cliente, cedula, nombre, telefono, email, estado 
+            FROM Clientes 
+            WHERE estado = 1
+            ORDER BY nombre ASC
+        """
         cursor.execute(sql_query)
         
         columns = [column[0] for column in cursor.description]
@@ -1901,7 +1908,7 @@ def registrar_cliente(decoded_user_rol, decoded_user_id):
 
 # --- ENDPOINTS DE GESTION DE PROVEEDORES---
 @app.route('/proveedores', methods=['GET'])
-@roles_required('Administrador', 'Supervisor')
+@roles_required('Administrador', 'Supervisor', 'Encargado de Inventario')
 def get_todos_los_proveedores(decoded_user_rol, decoded_user_id):
     print(f"API GET /proveedores: Solicitud recibida por usuario ID {decoded_user_id} con rol {decoded_user_rol}")
     
@@ -2479,7 +2486,7 @@ def eliminar_unidad(decoded_user_rol, decoded_user_id, id_unidad):
 
 @app.route('/categorias-materiales', methods=['GET'])
 @roles_required('Administrador', 'Supervisor', 'Encargado de Inventario')
-def get_categorias_materiales(decoded_user_rol, decoded_user_id):
+def get_CategoriaMateriales(decoded_user_rol, decoded_user_id):
     """Obtener todas las categorías de materiales"""
     print(f"API GET /categorias-materiales: Solicitud de usuario ID {decoded_user_id}")
     
@@ -2491,7 +2498,7 @@ def get_categorias_materiales(decoded_user_rol, decoded_user_id):
         cursor.execute("""
             SELECT id_categoria, codigo_prefijo, nombre_categoria, 
                    descripcion, estado, fecha_creacion
-            FROM Categorias_Materiales
+            FROM CategoriaMateriales
             ORDER BY codigo_prefijo
         """)
         
@@ -2552,13 +2559,13 @@ def crear_categoria_material(decoded_user_rol, decoded_user_id):
         cursor = conn.cursor()
         
         # Verificar que el código no exista
-        cursor.execute("SELECT id_categoria FROM Categorias_Materiales WHERE codigo_prefijo = ?", (codigo_prefijo,))
+        cursor.execute("SELECT id_categoria FROM CategoriaMateriales WHERE codigo_prefijo = ?", (codigo_prefijo,))
         if cursor.fetchone():
             return jsonify({'error': f'El código prefijo "{codigo_prefijo}" ya existe'}), 409
         
         # Insertar categoría
         cursor.execute("""
-            INSERT INTO Categorias_Materiales (codigo_prefijo, nombre_categoria, descripcion, estado)
+            INSERT INTO CategoriaMateriales (codigo_prefijo, nombre_categoria, descripcion, estado)
             VALUES (?, ?, ?, 1)
         """, (codigo_prefijo, nombre_categoria, descripcion))
         
@@ -2605,7 +2612,7 @@ def actualizar_categoria_material(decoded_user_rol, decoded_user_id, id_categori
         cursor = conn.cursor()
         
         # Verificar que la categoría existe
-        cursor.execute("SELECT codigo_prefijo FROM Categorias_Materiales WHERE id_categoria = ?", (id_categoria,))
+        cursor.execute("SELECT codigo_prefijo FROM CategoriaMateriales WHERE id_categoria = ?", (id_categoria,))
         row = cursor.fetchone()
         if not row:
             return jsonify({'error': f'Categoría con ID {id_categoria} no encontrada'}), 404
@@ -2614,7 +2621,7 @@ def actualizar_categoria_material(decoded_user_rol, decoded_user_id, id_categori
         
         # Actualizar categoría (NO se puede cambiar codigo_prefijo)
         cursor.execute("""
-            UPDATE Categorias_Materiales
+            UPDATE CategoriaMateriales
             SET nombre_categoria = ?, descripcion = ?, estado = ?
             WHERE id_categoria = ?
         """, (nombre_categoria, descripcion, estado, id_categoria))
@@ -2650,7 +2657,7 @@ def eliminar_categoria_material(decoded_user_rol, decoded_user_id, id_categoria)
         cursor = conn.cursor()
         
         # Verificar que la categoría existe
-        cursor.execute("SELECT codigo_prefijo, nombre_categoria FROM Categorias_Materiales WHERE id_categoria = ?", (id_categoria,))
+        cursor.execute("SELECT codigo_prefijo, nombre_categoria FROM CategoriaMateriales WHERE id_categoria = ?", (id_categoria,))
         row = cursor.fetchone()
         if not row:
             return jsonify({'error': f'Categoría con ID {id_categoria} no encontrada'}), 404
@@ -2667,7 +2674,7 @@ def eliminar_categoria_material(decoded_user_rol, decoded_user_id, id_categoria)
             }), 409
         
         # Eliminar categoría
-        cursor.execute("DELETE FROM Categorias_Materiales WHERE id_categoria = ?", (id_categoria,))
+        cursor.execute("DELETE FROM CategoriaMateriales WHERE id_categoria = ?", (id_categoria,))
         conn.commit()
         
         print(f"API DELETE /categorias-materiales/{id_categoria}: Categoría '{nombre_categoria}' eliminada")
@@ -3810,6 +3817,238 @@ def confirmar_y_finalizar_orden(decoded_user_rol, decoded_user_id, id_orden):
             conn.autocommit = True
             conn.close()
         
+
+# --- ENDPOINT DE VENTAS DIRECTAS ---
+@app.route('/ventas-directas', methods=['POST'])
+@roles_required('Administrador', 'Supervisor', 'Encargado de Inventario')
+def registrar_venta_directa(decoded_user_rol, decoded_user_id):
+    print(f"API POST /ventas-directas: Solicitud recibida por usuario ID {decoded_user_id}")
+    
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'No se recibieron datos JSON'}), 400
+
+    cliente = data.get('cliente')
+    productos = data.get('productos')
+    totales = data.get('totales')
+    forma_pago = data.get('forma_pago')
+
+    # Validaciones
+    if not cliente or not productos or not totales or not forma_pago:
+        return jsonify({'error': 'Datos incompletos'}), 400
+
+    if not isinstance(productos, list) or len(productos) == 0:
+        return jsonify({'error': 'Debe incluir al menos un producto'}), 400
+
+    conn = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        conn.autocommit = False
+
+        # Obtener nombre del usuario
+        cursor.execute("SELECT username FROM Usuarios WHERE id_usuario = ?", (decoded_user_id,))
+        row = cursor.fetchone()
+        nombre_usuario = row[0] if row else 'Desconocido'
+
+        # Insertar venta principal
+        sql_venta = """
+            INSERT INTO Ventas_Directas (
+                tipo_cliente, id_cliente, cliente_ruc_ci, cliente_nombre, 
+                cliente_telefono, cliente_email,
+                subtotal_general, ganancia_general, iva_general, total_general,
+                forma_pago, id_usuario, nombre_usuario
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """
+        
+        cursor.execute(sql_venta, (
+            cliente.get('tipo'),
+            cliente.get('id_cliente'),
+            cliente.get('ruc_ci'),
+            cliente.get('nombre'),
+            cliente.get('telefono'),
+            cliente.get('email'),
+            totales.get('subtotal'),
+            totales.get('ganancia'),
+            totales.get('iva'),
+            totales.get('total'),
+            forma_pago,
+            decoded_user_id,
+            nombre_usuario
+        ))
+
+        # Obtener ID de la venta insertada
+        cursor.execute("SELECT @@IDENTITY")
+        id_venta = cursor.fetchone()[0]
+
+        # Insertar detalles de productos y actualizar stock
+        sql_detalle = """
+            INSERT INTO Detalle_Venta_Directa (
+                id_venta, id_material, nombre_material, cantidad,
+                precio_unitario, subtotal, porcentaje_ganancia, ganancia,
+                porcentaje_iva, valor_iva, total
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """
+
+        for producto in productos:
+            # Insertar detalle
+            cursor.execute(sql_detalle, (
+                id_venta,
+                producto.get('id_material'),
+                producto.get('nombre_material'),
+                producto.get('cantidad'),
+                producto.get('precio_unitario'),
+                producto.get('subtotal'),
+                producto.get('porcentaje_ganancia'),
+                producto.get('ganancia'),
+                producto.get('porcentaje_iva'),
+                producto.get('iva'),
+                producto.get('total')
+            ))
+
+            # Actualizar stock del material
+            cursor.execute("""
+                UPDATE Materiales 
+                SET cantidad = cantidad - ? 
+                WHERE id_material = ?
+            """, (producto.get('cantidad'), producto.get('id_material')))
+
+            # Verificar que el stock no quedó negativo
+            cursor.execute("SELECT cantidad FROM Materiales WHERE id_material = ?", (producto.get('id_material'),))
+            stock_actual = cursor.fetchone()[0]
+            if stock_actual < 0:
+                raise ValueError(f"Stock insuficiente para {producto.get('nombre_material')}")
+
+        conn.commit()
+        print(f"API POST /ventas-directas: Venta {id_venta} registrada exitosamente")
+        
+        return jsonify({
+            'message': 'Venta registrada exitosamente',
+            'id_venta': id_venta,
+            'total': totales.get('total')
+        }), 201
+
+    except ValueError as ve:
+        if conn: conn.rollback()
+        print(f"Error de validación: {str(ve)}")
+        return jsonify({'error': str(ve)}), 400
+    except Exception as e:
+        if conn: conn.rollback()
+        print(f"Error en POST /ventas-directas: {str(e)}")
+        return jsonify({'error': f'Error interno del servidor: {str(e)}'}), 500
+    finally:
+        if conn:
+            conn.autocommit = True
+            conn.close()
+
+# --- ENDPOINTS PARA CONSULTAR VENTAS ---
+@app.route('/ventas-directas', methods=['GET'])
+@roles_required('Administrador', 'Supervisor', 'Encargado de Inventario')
+def listar_ventas_directas(decoded_user_rol, decoded_user_id):
+    print(f"API GET /ventas-directas: Solicitud recibida por usuario ID {decoded_user_id}")
+    
+    conn = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        sql_query = """
+            SELECT id_venta, fecha_venta, tipo_cliente, cliente_nombre, 
+                   total_general, forma_pago, nombre_usuario
+            FROM Ventas_Directas
+            ORDER BY fecha_venta DESC
+        """
+        cursor.execute(sql_query)
+        
+        columns = [column[0] for column in cursor.description]
+        ventas = []
+        
+        for row in cursor.fetchall():
+            venta = dict(zip(columns, row))
+            
+            # Convertir datetime a string
+            if venta.get('fecha_venta'):
+                venta['fecha_venta'] = venta['fecha_venta'].strftime('%Y-%m-%d %H:%M:%S')
+            
+            # Convertir Decimal a float
+            if venta.get('total_general'):
+                venta['total_general'] = float(venta['total_general'])
+            
+            ventas.append(venta)
+            
+        print(f"API GET /ventas-directas: Devolviendo {len(ventas)} ventas.")
+        return jsonify(ventas), 200
+
+    except Exception as e:
+        print(f"Error en GET /ventas-directas: {str(e)}")
+        return jsonify({'error': f'Error interno del servidor: {str(e)}'}), 500
+    finally:
+        if conn:
+            conn.close()
+
+@app.route('/ventas-directas/<int:id_venta>', methods=['GET'])
+@roles_required('Administrador', 'Supervisor', 'Encargado de Inventario')
+def obtener_detalle_venta(decoded_user_rol, decoded_user_id, id_venta):
+    print(f"API GET /ventas-directas/{id_venta}: Solicitud recibida")
+    
+    conn = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Obtener venta principal
+        sql_venta = """
+            SELECT * FROM Ventas_Directas WHERE id_venta = ?
+        """
+        cursor.execute(sql_venta, (id_venta,))
+        columns = [column[0] for column in cursor.description]
+        row = cursor.fetchone()
+        
+        if not row:
+            return jsonify({'error': 'Venta no encontrada'}), 404
+            
+        venta = dict(zip(columns, row))
+        
+        # Convertir datetime a string
+        if venta.get('fecha_venta'):
+            venta['fecha_venta'] = venta['fecha_venta'].strftime('%Y-%m-%d %H:%M:%S')
+        
+        # Convertir Decimals a float
+        decimal_fields = ['subtotal_general', 'ganancia_general', 'iva_general', 'total_general']
+        for field in decimal_fields:
+            if venta.get(field):
+                venta[field] = float(venta[field])
+        
+        # Obtener productos de la venta
+        sql_productos = """
+            SELECT * FROM Detalle_Venta_Directa WHERE id_venta = ?
+        """
+        cursor.execute(sql_productos, (id_venta,))
+        columns = [column[0] for column in cursor.description]
+        productos = []
+        
+        for row in cursor.fetchall():
+            producto = dict(zip(columns, row))
+            
+            # Convertir Decimals a float en productos
+            decimal_fields_producto = ['precio_unitario', 'subtotal', 'ganancia', 'valor_iva', 'total']
+            for field in decimal_fields_producto:
+                if producto.get(field):
+                    producto[field] = float(producto[field])
+            
+            productos.append(producto)
+        
+        venta['productos'] = productos
+        
+        return jsonify(venta), 200
+
+    except Exception as e:
+        print(f"Error en GET /ventas-directas/{id_venta}: {str(e)}")
+        return jsonify({'error': f'Error interno del servidor: {str(e)}'}), 500
+    finally:
+        if conn:
+            conn.close()
+
             
 # Ruta de prueba básica
 @app.route('/')
@@ -3818,3 +4057,4 @@ def hello():
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000) # Ejecutar en puerto 5000
+
