@@ -154,7 +154,7 @@
                             </div>
                             <div class="card-body">
                                 <div class="row">
-                                    <div class="col-md-4 mb-3">
+                                    <div class="col-md-6 mb-3">
                                         <label class="form-label">Subtotal (Materiales)</label>
                                         <div class="input-group">
                                             <span class="input-group-text">$</span>
@@ -162,7 +162,7 @@
                                         </div>
                                         <small class="text-muted">Suma de todos los materiales</small>
                                     </div>
-                                    <div class="col-md-4 mb-3">
+                                    <div class="col-md-3 mb-3">
                                         <label class="form-label">Margen de Ganancia (%)</label>
                                         <select id="margenGanancia" class="form-select">
                                             <option value="5">5%</option>
@@ -176,15 +176,44 @@
                                             <option value="45">45%</option>
                                             <option value="50">50%</option>
                                         </select>
-                                        <small class="text-muted">Seleccione el margen de ganancia</small>
+                                        <small class="text-muted">Aplicado al subtotal</small>
                                     </div>
-                                    <div class="col-md-4 mb-3">
-                                        <label class="form-label fw-bold">Total</label>
+                                    <div class="col-md-3 mb-3">
+                                        <label class="form-label">IVA (%)</label>
+                                        <select id="ivaOrden" class="form-select">
+                                            <option value="0">0% (Sin IVA)</option>
+                                            <option value="5">5%</option>
+                                            <option value="8">8%</option>
+                                            <option value="10">10%</option>
+                                            <option value="12" selected>12%</option>
+                                            <option value="15">15%</option>
+                                            <option value="20">20%</option>
+                                        </select>
+                                        <small class="text-muted">Aplicado al subtotal + margen</small>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-4 mb-2">
+                                        <label class="form-label text-muted">Subtotal con Margen</label>
                                         <div class="input-group">
-                                            <span class="input-group-text fw-bold">$</span>
-                                            <input type="text" id="totalOrden" class="form-control fw-bold text-success" readonly value="0.00">
+                                            <span class="input-group-text">$</span>
+                                            <input type="text" id="subtotalConMargen" class="form-control" readonly value="0.00">
                                         </div>
-                                        <small class="text-muted">Subtotal + Margen</small>
+                                    </div>
+                                    <div class="col-md-4 mb-2">
+                                        <label class="form-label text-muted">Monto IVA</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text">$</span>
+                                            <input type="text" id="montoIva" class="form-control" readonly value="0.00">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4 mb-2">
+                                        <label class="form-label fw-bold text-success">Total Final</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text fw-bold bg-success text-white">$</span>
+                                            <input type="text" id="totalOrden" class="form-control fw-bold text-success fs-5" readonly value="0.00">
+                                        </div>
+                                        <small class="text-muted">Subtotal + Margen + IVA</small>
                                     </div>
                                 </div>
                             </div>
@@ -420,19 +449,33 @@ $(document).ready(function() {
         return subtotal;
     }
 
-    function calcularTotal() {
+    function calcularSubtotalConMargen() {
         const subtotal = calcularSubtotal();
         const margen = parseFloat($('#margenGanancia').val()) || 20;
-        
-        const total = subtotal * (1 + margen / 100);
-        return total;
+        return subtotal * (1 + margen / 100);
+    }
+
+    function calcularMontoIva() {
+        const subtotalConMargen = calcularSubtotalConMargen();
+        const iva = parseFloat($('#ivaOrden').val()) || 0;
+        return subtotalConMargen * (iva / 100);
+    }
+
+    function calcularTotal() {
+        const subtotalConMargen = calcularSubtotalConMargen();
+        const montoIva = calcularMontoIva();
+        return subtotalConMargen + montoIva;
     }
 
     function actualizarResumenFinanciero() {
         const subtotal = calcularSubtotal();
+        const subtotalConMargen = calcularSubtotalConMargen();
+        const montoIva = calcularMontoIva();
         const total = calcularTotal();
         
         $('#subtotalMateriales').val(subtotal.toFixed(2));
+        $('#subtotalConMargen').val(subtotalConMargen.toFixed(2));
+        $('#montoIva').val(montoIva.toFixed(2));
         $('#totalOrden').val(total.toFixed(2));
         
         // Mostrar u ocultar el resumen según haya materiales
@@ -481,6 +524,12 @@ $(document).ready(function() {
         actualizarResumenFinanciero();
     });
 
+    // Event listener para recalcular cuando cambie el IVA
+    $('#ivaOrden').on('change', function() {
+        // Recalcular total cuando se seleccione un nuevo IVA
+        actualizarResumenFinanciero();
+    });
+
     // Lógica para el Formulario de Crear Orden (MODIFICADA PARA FLUJO HÍBRIDO)
     $('#formCrearOrden').on('submit', function(event) {
         event.preventDefault();
@@ -495,6 +544,9 @@ $(document).ready(function() {
             // Datos financieros
             subtotal_materiales: parseFloat($('#subtotalMateriales').val()) || 0,
             margen_ganancia: parseInt($('#margenGanancia').val()) || 20,
+            iva_porcentaje: parseInt($('#ivaOrden').val()) || 0,
+            subtotal_con_margen: parseFloat($('#subtotalConMargen').val()) || 0,
+            monto_iva: parseFloat($('#montoIva').val()) || 0,
             total_orden: parseFloat($('#totalOrden').val()) || 0,
             // Lista de materiales
             materiales: materialesAgregados

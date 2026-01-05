@@ -426,19 +426,42 @@ $(document).ready(function() {
             currentY = doc.lastAutoTable.finalY + 20;
             
             // --- RESUMEN FINANCIERO ---
-            const subtotalGeneral = costoTotalMateriales + costoTotalManoObra;
+            // Usar los valores ya calculados y almacenados en la orden
+            const subtotalMateriales = orden.subtotal_materiales || costoTotalMateriales;
             const margenPorcentaje = orden.margen_ganancia || 20;
-            const margenMonto = subtotalGeneral * (margenPorcentaje / 100);
-            const totalFinal = subtotalGeneral + margenMonto;
+            const ivaPorcentaje = orden.iva_porcentaje || 0;
+            const subtotalConMargen = orden.subtotal_con_margen || (subtotalMateriales * (1 + margenPorcentaje / 100));
+            const montoIva = orden.monto_iva || 0;
+            const totalFinal = orden.total_orden || (subtotalConMargen + montoIva);
+            
+            // Construir el cuerpo de la tabla financiera
+            const bodyFinanciero = [
+                [{ content: 'Subtotal Materiales:', styles: { halign: 'right', fontStyle: 'bold' }}, { content: `$${subtotalMateriales.toFixed(2)}`, styles: { halign: 'right' }}],
+                [{ content: 'Costo Mano de Obra:', styles: { halign: 'right', fontStyle: 'bold' }}, { content: `$${costoTotalManoObra.toFixed(2)}`, styles: { halign: 'right' }}]
+            ];
+            
+            // Solo mostrar margen si existe
+            if (margenPorcentaje > 0) {
+                const margenMonto = subtotalConMargen - subtotalMateriales;
+                bodyFinanciero.push(
+                    [{ content: `Margen de Ganancia (${margenPorcentaje}%):`, styles: { halign: 'right', fontStyle: 'bold' }}, { content: `$${margenMonto.toFixed(2)}`, styles: { halign: 'right' }}]
+                );
+            }
+            
+            // Solo mostrar IVA si existe
+            if (ivaPorcentaje > 0) {
+                bodyFinanciero.push(
+                    [{ content: `IVA (${ivaPorcentaje}%):`, styles: { halign: 'right', fontStyle: 'bold' }}, { content: `$${montoIva.toFixed(2)}`, styles: { halign: 'right' }}]
+                );
+            }
+            
+            // Agregar total final
+            bodyFinanciero.push(
+                [{ content: 'TOTAL A PAGAR:', styles: { halign: 'right', fontStyle: 'bold', fontSize: 14, fillColor: [45, 45, 45], textColor: [255, 255, 255] }}, { content: `$${totalFinal.toFixed(2)}`, styles: { halign: 'right', fontStyle: 'bold', fontSize: 14, fillColor: [45, 45, 45], textColor: [255, 255, 255] }}]
+            );
             
             doc.autoTable({
-                body: [
-                    [{ content: 'Subtotal Materiales:', styles: { halign: 'right', fontStyle: 'bold' }}, { content: `$${costoTotalMateriales.toFixed(2)}`, styles: { halign: 'right' }}],
-                    [{ content: 'Costo Mano de Obra:', styles: { halign: 'right', fontStyle: 'bold' }}, { content: `$${costoTotalManoObra.toFixed(2)}`, styles: { halign: 'right' }}],
-                    [{ content: 'Subtotal:', styles: { halign: 'right', fontStyle: 'bold' }}, { content: `$${subtotalGeneral.toFixed(2)}`, styles: { halign: 'right', fontStyle: 'bold' }}],
-                    [{ content: `Margen de Ganancia (${margenPorcentaje}%):`, styles: { halign: 'right', fontStyle: 'bold' }}, { content: `$${margenMonto.toFixed(2)}`, styles: { halign: 'right' }}],
-                    [{ content: 'TOTAL A PAGAR:', styles: { halign: 'right', fontStyle: 'bold', fontSize: 14, fillColor: [45, 45, 45], textColor: [255, 255, 255] }}, { content: `$${totalFinal.toFixed(2)}`, styles: { halign: 'right', fontStyle: 'bold', fontSize: 14, fillColor: [45, 45, 45], textColor: [255, 255, 255] }}]
-                ],
+                body: bodyFinanciero,
                 startY: currentY,
                 theme: 'plain',
                 columnStyles: {

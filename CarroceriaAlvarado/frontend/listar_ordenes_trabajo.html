@@ -222,13 +222,25 @@ function generarPDFDeOrden(orden) {
         doc.setFontSize(10);
         doc.text("Dirección: Av. Monseñor Leonidas Proaño (a pocos metros de la linea ferrea), Riobamba, Ecuador", 130, 60);
         doc.text("Teléfono: 099 991 1866| Email: carroceriasalvarado@hotmail.com", 150, 70);
+        
         // --- TÍTULO DEL DOCUMENTO ---
-        doc.setFontSize(22);
-        doc.text(`Orden de Trabajo #${orden.id_orden}`, 40, 100);
-        doc.line(40, 105, 555, 105); // Línea divisoria
+        doc.setFontSize(20);
+        doc.setFont(undefined, 'bold');
+        doc.text(`Orden de Trabajo #${orden.id_orden}`, doc.internal.pageSize.getWidth() / 2, 95, { align: 'center' });
+        doc.setFont(undefined, 'normal');
+        
+        // --- LEYENDA TRIBUTARIA EN ENCABEZADO ---
+        doc.setFontSize(9);
+        doc.setTextColor(200, 0, 0);
+        doc.setFont(undefined, 'bold');
+        doc.text("DOCUMENTO SIN VALOR TRIBUTARIO", doc.internal.pageSize.getWidth() / 2, 107, { align: 'center' });
+        doc.setFont(undefined, 'normal');
+        doc.setTextColor(40);
+        
+        doc.line(40, 115, 555, 115); // Línea divisoria
 
         // --- INFORMACIÓN GENERAL ---
-        let currentY = 120; // Posición Y inicial para el contenido
+        let currentY = 130; // Posición Y inicial para el contenido
         doc.setFontSize(12);
         doc.text(`Cliente: ${orden.nombre_cliente}`, 40, currentY);
         doc.text(`Estado: ${orden.estado}`, 350, currentY);
@@ -253,7 +265,7 @@ function generarPDFDeOrden(orden) {
             const fechaInicioDate = new Date(orden.fecha_inicio);
             const fechaFinDate = new Date(orden.fecha_fin);
             const diffTime = Math.abs(fechaFinDate - fechaInicioDate);
-            const diasLaborales = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+            const diasLaborales = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
             const horasPorDia = 8;
             const horasTotales = diasLaborales * horasPorDia;
             
@@ -282,18 +294,74 @@ function generarPDFDeOrden(orden) {
         }
 
         // --- RESUMEN FINANCIERO ---
-        const totalGeneral = costoTotalMateriales + costoTotalManoObra;
+        // Usar los valores almacenados en la orden y convertir a números
+        const subtotalMateriales = parseFloat(orden.subtotal_materiales) || costoTotalMateriales;
+        const margenPorcentaje = parseInt(orden.margen_ganancia) || 20;
+        const ivaPorcentaje = parseInt(orden.iva_porcentaje) || 0;
+        
+        // Si la orden tiene valores guardados, usarlos; si no, calcular
+        let subtotalConMargen, montoIva, totalFinal;
+        
+        if (orden.total_orden && parseFloat(orden.total_orden) > 0) {
+            // Usar valores guardados en la BD PERO siempre sumar la mano de obra
+            subtotalConMargen = parseFloat(orden.subtotal_con_margen);
+            montoIva = parseFloat(orden.monto_iva);
+            // IMPORTANTE: El total_orden en BD no incluye mano de obra, hay que sumarla
+            totalFinal = parseFloat(orden.total_orden) + costoTotalManoObra;
+        } else {
+            // Calcular: El margen e IVA se aplican sobre SOLO los materiales (no sobre mano de obra)
+            subtotalConMargen = subtotalMateriales * (1 + margenPorcentaje / 100);
+            montoIva = subtotalConMargen * (ivaPorcentaje / 100);
+            // El total final incluye: materiales con margen + IVA + mano de obra
+            totalFinal = subtotalConMargen + montoIva + costoTotalManoObra;
+        }
+        
+        // Construir tabla financiera
+        const bodyFinanciero = [
+            [{content: 'Costo Total de Materiales', styles: {halign: 'right', fontStyle: 'bold', fillColor: [240, 240, 240]}}, {content: `$${subtotalMateriales.toFixed(2)}`, styles: {fontStyle: 'bold', halign: 'right', fillColor: [240, 240, 240]}}],
+            [{content: 'Total Mano de Obra', styles: {halign: 'right', fontStyle: 'bold', fillColor: [240, 240, 240]}}, {content: `$${costoTotalManoObra.toFixed(2)}`, styles: {fontStyle: 'bold', halign: 'right', fillColor: [240, 240, 240]}}]
+        ];
+        
+        // Solo agregar margen si existe
+        if (margenPorcentaje > 0) {
+            const margenMonto = subtotalConMargen - subtotalMateriales;
+            bodyFinanciero.push(
+                [{content: `Margen de Ganancia (${margenPorcentaje}%)`, styles: {halign: 'right', fontStyle: 'bold', fillColor: [240, 240, 240]}}, {content: `$${margenMonto.toFixed(2)}`, styles: {fontStyle: 'bold', halign: 'right', fillColor: [240, 240, 240]}}]
+            );
+        }
+        
+        // Solo agregar IVA si existe
+        if (ivaPorcentaje > 0) {
+            bodyFinanciero.push(
+                [{content: `IVA (${ivaPorcentaje}%)`, styles: {halign: 'right', fontStyle: 'bold', fillColor: [240, 240, 240]}}, {content: `$${montoIva.toFixed(2)}`, styles: {fontStyle: 'bold', halign: 'right', fillColor: [240, 240, 240]}}]
+            );
+        }
+        
+        // Agregar total final
+        bodyFinanciero.push(
+            [{content: 'TOTAL A COBRAR AL CLIENTE', styles: {halign: 'right', fontStyle: 'bold', fontSize: 14, fillColor: [26, 188, 156], textColor: [255, 255, 255]}}, {content: `$${totalFinal.toFixed(2)}`, styles: {fontStyle: 'bold', fontSize: 14, fillColor: [26, 188, 156], textColor: [255, 255, 255], halign: 'right'}}]
+        );
         
         doc.autoTable({
-            body: [
-                [{content: 'Costo Total de Materiales', styles: {halign: 'right', fontStyle: 'bold'}}, {content: `$${costoTotalMateriales.toFixed(2)}`, styles: {fontStyle: 'bold', halign: 'right'}}],
-                [{content: 'Total Mano de Obra', styles: {halign: 'right', fontStyle: 'bold'}}, {content: `$${costoTotalManoObra.toFixed(2)}`, styles: {fontStyle: 'bold', halign: 'right'}}],
-                [{content: 'TOTAL A COBRAR AL CLIENTE', styles: {halign: 'right', fontStyle: 'bold', fontSize: 14, fillColor: [45, 45, 45], textColor: [255, 255, 255]}}, {content: `$${totalGeneral.toFixed(2)}`, styles: {fontStyle: 'bold', fontSize: 14, fillColor: [45, 45, 45], textColor: [255, 255, 255], halign: 'right'}}]
-            ],
+            body: bodyFinanciero,
             startY: currentY,
-            theme: 'grid',
+            theme: 'plain',
             margin: { left: 40, right: 40 }
         });
+        
+        // --- PIE DE PÁGINA CON LEYENDA TRIBUTARIA ---
+        const pageHeight = doc.internal.pageSize.getHeight();
+        let footerY = pageHeight - 50;
+        
+        doc.setFontSize(9);
+        doc.setTextColor(100);
+        doc.text("Este documento es un resumen informativo de la orden de trabajo.", doc.internal.pageSize.getWidth() / 2, footerY, { align: 'center' });
+        
+        footerY += 15;
+        doc.setFontSize(11);
+        doc.setTextColor(200, 0, 0);
+        doc.setFont(undefined, 'bold');
+        doc.text("DOCUMENTO SIN VALOR TRIBUTARIO", doc.internal.pageSize.getWidth() / 2, footerY, { align: 'center' });
 
         // Guardar el PDF
         doc.save(`orden_de_trabajo_${orden.id_orden}.pdf`);

@@ -183,9 +183,18 @@
                                         </select>
                                     </div>
                                     <div class="col-md-4">
+                                        <label class="form-label">IVA (%)</label>
+                                        <select id="ivaPorcentaje" class="form-select">
+                                            <option value="0" selected>Sin IVA (0%)</option>
+                                            <option value="10">10%</option>
+                                            <option value="12">12%</option>
+                                            <option value="15">15%</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4">
                                         <label class="form-label">Total</label>
                                         <input type="text" id="totalOrden" class="form-control" readonly value="$0.00">
-                                        <small class="text-muted">Subtotal + Margen</small>
+                                        <small class="text-muted">Subtotal + Margen + IVA</small>
                                     </div>
                                 </div>
                             </div>
@@ -575,13 +584,23 @@ $(document).ready(function() {
     function actualizarResumenFinanciero() {
         subtotalMateriales = materialesAgregados.reduce((sum, mat) => sum + mat.costo_total, 0);
         const margen = parseInt($('#margenGanancia').val()) || 0;
-        const total = subtotalMateriales * (1 + margen / 100);
+        const ivaPorcentaje = parseInt($('#ivaPorcentaje').val()) || 0;
+        
+        // Calcular subtotal con margen
+        const subtotalConMargen = subtotalMateriales * (1 + margen / 100);
+        
+        // Calcular IVA sobre el subtotal con margen
+        const montoIva = subtotalConMargen * (ivaPorcentaje / 100);
+        
+        // Total final
+        const total = subtotalConMargen + montoIva;
         
         $('#subtotalMateriales').val('$' + subtotalMateriales.toFixed(2));
         $('#totalOrden').val('$' + total.toFixed(2));
     }
     
     $('#margenGanancia').on('change', actualizarResumenFinanciero);
+    $('#ivaPorcentaje').on('change', actualizarResumenFinanciero);
     
     
     // Guardar cambios
@@ -603,7 +622,10 @@ $(document).ready(function() {
             materiales: materialesAgregados,
             subtotal_materiales: subtotalMateriales,
             margen_ganancia: parseInt($('#margenGanancia').val()) || 20,
-            total_orden: subtotalMateriales * (1 + (parseInt($('#margenGanancia').val()) || 20) / 100)
+            iva_porcentaje: parseInt($('#ivaPorcentaje').val()) || 0,
+            subtotal_con_margen: subtotalMateriales * (1 + (parseInt($('#margenGanancia').val()) || 20) / 100),
+            monto_iva: (subtotalMateriales * (1 + (parseInt($('#margenGanancia').val()) || 20) / 100)) * ((parseInt($('#ivaPorcentaje').val()) || 0) / 100),
+            total_orden: subtotalMateriales * (1 + (parseInt($('#margenGanancia').val()) || 20) / 100) * (1 + (parseInt($('#ivaPorcentaje').val()) || 0) / 100)
         };
         
         // Validaci�n
@@ -663,6 +685,14 @@ $(document).ready(function() {
             $('#fechaInicio').val(orden.fecha_inicio.split('T')[0]);
             $('#fechaFin').val(orden.fecha_fin ? orden.fecha_fin.split('T')[0] : '');
             $('#descripcionOrden').val(orden.descripcion);
+            
+            // Cargar margen e IVA
+            if (orden.margen_ganancia) {
+                $('#margenGanancia').val(orden.margen_ganancia);
+            }
+            if (orden.iva_porcentaje) {
+                $('#ivaPorcentaje').val(orden.iva_porcentaje);
+            }
             
             // Cargar empleados asignados
             if (orden.empleados_asignados && orden.empleados_asignados.length > 0) {

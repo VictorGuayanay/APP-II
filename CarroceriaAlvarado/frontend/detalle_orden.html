@@ -135,6 +135,14 @@
                                     <td class="text-end"><strong>Margen de Ganancia (<span id="resumenMargenPorcentaje">20</span>%):</strong></td>
                                     <td class="text-end" id="resumenMargenMonto">$0.00</td>
                                 </tr>
+                                <tr id="resumenSubtotalConMargenRow" style="display: none;">
+                                    <td class="text-end"><strong>Subtotal con Margen:</strong></td>
+                                    <td class="text-end" id="resumenSubtotalConMargen">$0.00</td>
+                                </tr>
+                                <tr id="resumenIvaRow" style="display: none;">
+                                    <td class="text-end"><strong>IVA (<span id="resumenIvaPorcentaje">0</span>%):</strong></td>
+                                    <td class="text-end" id="resumenIvaMonto">$0.00</td>
+                                </tr>
                                 <tr class="table-group-divider">
                                     <td class="text-end"><h5 class="mb-0"><strong>TOTAL A COBRAR:</strong></h5></td>
                                     <td class="text-end"><h5 class="mb-0 text-success"><strong id="resumenTotalFinal">$0.00</strong></h5></td>
@@ -237,7 +245,7 @@
                 </div>
                 <div class="modal-body">
                     <p>Se generará un comprobante de pago para la Orden de Trabajo #<span id="modalOrderId"></span>.</p>
-                    <p>El monto total calculado de los materiales es: <strong id="modalMontoTotal">0.00</strong></p>
+                    <p>El <strong>TOTAL A COBRAR</strong> (materiales + mano de obra + margen + IVA) es: <strong id="modalMontoTotal">0.00</strong></p>
                     <div class="form-group">
                         <label for="metodoPagoSelect">Seleccione el método de pago:</label>
                         <select class="form-control" id="metodoPagoSelect">
@@ -369,6 +377,14 @@
                                             <td>Margen de Ganancia (<span id="modalMargenPorcentaje">20</span>%):</td>
                                             <td class="text-end" id="modalMargenMonto">$0.00</td>
                                         </tr>
+                                        <tr id="modalSubtotalConMargenRow" style="display: none;">
+                                            <td><strong>Subtotal con Margen:</strong></td>
+                                            <td class="text-end"><strong id="modalSubtotalConMargen">$0.00</strong></td>
+                                        </tr>
+                                        <tr id="modalIvaRow" style="display: none;">
+                                            <td>IVA (<span id="modalIvaPorcentaje">0</span>%):</td>
+                                            <td class="text-end" id="modalIvaMonto">$0.00</td>
+                                        </tr>
                                         <tr class="table-group-divider">
                                             <td><h5 class="mb-0"><strong>TOTAL A COBRAR:</strong></h5></td>
                                             <td class="text-end"><h5 class="mb-0 text-success"><strong id="modalTotalFinal">$0.00</strong></h5></td>
@@ -399,6 +415,7 @@
 
 <script>
     let costoTotalActualDeLaOrden = 0;
+    let totalFinalACobrar = 0; // Total completo incluyendo materiales, mano de obra, margen e IVA
 
     // Definiciones necesarias
     const API_BASE_URL = 'http://127.0.0.1:5000';
@@ -509,11 +526,14 @@
         // Convertir a n�mero y usar 0 si es null/undefined
         const subtotalMateriales = parseFloat(orden.subtotal_materiales) || 0;
         const margenPorcentaje = parseInt(orden.margen_ganancia) || 20;
+        const ivaPorcentaje = parseInt(orden.iva_porcentaje) || 0;
         const costoManoObraNum = parseFloat(costoManoObra) || 0;
         
         const subtotalGeneral = subtotalMateriales + costoManoObraNum;
         const margenMonto = subtotalGeneral * (margenPorcentaje / 100);
-        const totalFinal = subtotalGeneral + margenMonto;
+        const subtotalConMargen = subtotalGeneral + margenMonto;
+        const montoIva = subtotalConMargen * (ivaPorcentaje / 100);
+        const totalFinal = subtotalConMargen + montoIva;
         
         console.log("Mostrando resumen financiero:", {
             subtotalMateriales,
@@ -529,7 +549,23 @@
         $('#resumenSubtotalGeneral').text(`$${subtotalGeneral.toFixed(2)}`);
         $('#resumenMargenPorcentaje').text(margenPorcentaje);
         $('#resumenMargenMonto').text(`$${margenMonto.toFixed(2)}`);
+        
+        // Mostrar IVA solo si es mayor a 0
+        if (ivaPorcentaje > 0) {
+            $('#resumenSubtotalConMargenRow').show();
+            $('#resumenSubtotalConMargen').text(`$${subtotalConMargen.toFixed(2)}`);
+            $('#resumenIvaRow').show();
+            $('#resumenIvaPorcentaje').text(ivaPorcentaje);
+            $('#resumenIvaMonto').text(`$${montoIva.toFixed(2)}`);
+        } else {
+            $('#resumenSubtotalConMargenRow').hide();
+            $('#resumenIvaRow').hide();
+        }
+        
         $('#resumenTotalFinal').text(`$${totalFinal.toFixed(2)}`);
+        
+        // Guardar el total final para usar en el comprobante
+        totalFinalACobrar = totalFinal;
     }
 
     function cargarDetallesDeOrden(idOrden) {
@@ -804,7 +840,7 @@
                 return;
             }
             $('#modalOrderId').text(idOrden);
-            $('#modalMontoTotal').text(costoTotalActualDeLaOrden.toFixed(2) || '0.00');
+            $('#modalMontoTotal').text(totalFinalACobrar.toFixed(2) || '0.00');
             try {
                 const myModal = new bootstrap.Modal(document.getElementById('confirmPaymentModal'), {});
                 console.log('Intentando mostrar modal de comprobante');
@@ -874,8 +910,16 @@
                             const fechaInicio = new Date(orden.fecha_inicio);
                             const fechaFin = new Date(orden.fecha_fin);
                             const diffTime = Math.abs(fechaFin - fechaInicio);
-                            diasLaborales = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+                            diasLaborales = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
                             horasTotales = diasLaborales * 8; // 8 horas por día
+                            
+                            console.log('DEBUG MODAL - Cálculo de días:', {
+                                fecha_inicio: orden.fecha_inicio,
+                                fecha_fin: orden.fecha_fin,
+                                diffTime,
+                                diasLaborales,
+                                horasTotales
+                            });
                         }
                         
                         // Llenar empleados asignados
@@ -930,14 +974,30 @@
                         // Calcular resumen financiero
                         const subtotalGeneral = subtotalMateriales + costoTotalManoObra;
                         const margenPorcentaje = orden.margen_ganancia || 20;
+                        const ivaPorcentaje = orden.iva_porcentaje || 0;
                         const margenMonto = subtotalGeneral * (margenPorcentaje / 100);
-                        const totalFinal = subtotalGeneral + margenMonto;
+                        const subtotalConMargen = subtotalGeneral + margenMonto;
+                        const montoIva = subtotalConMargen * (ivaPorcentaje / 100);
+                        const totalFinal = subtotalConMargen + montoIva;
                         
                         $('#modalResumenSubtotalMateriales').text('$' + subtotalMateriales.toFixed(2));
                         $('#modalResumenManoObra').text('$' + costoTotalManoObra.toFixed(2));
                         $('#modalResumenSubtotal').text('$' + subtotalGeneral.toFixed(2));
                         $('#modalMargenPorcentaje').text(margenPorcentaje);
                         $('#modalMargenMonto').text('$' + margenMonto.toFixed(2));
+                        
+                        // Mostrar IVA solo si es mayor a 0
+                        if (ivaPorcentaje > 0) {
+                            $('#modalSubtotalConMargenRow').show();
+                            $('#modalSubtotalConMargen').text('$' + subtotalConMargen.toFixed(2));
+                            $('#modalIvaRow').show();
+                            $('#modalIvaPorcentaje').text(ivaPorcentaje);
+                            $('#modalIvaMonto').text('$' + montoIva.toFixed(2));
+                        } else {
+                            $('#modalSubtotalConMargenRow').hide();
+                            $('#modalIvaRow').hide();
+                        }
+                        
                         $('#modalTotalFinal').text('$' + totalFinal.toFixed(2));
                         
                         // Mostrar modal

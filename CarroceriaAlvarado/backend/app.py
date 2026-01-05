@@ -2230,7 +2230,10 @@ def get_materiales_por_proveedor(decoded_user_rol, decoded_user_id, id_proveedor
                 nombre, 
                 descripcion, 
                 cantidad, 
-                precio_unitario, 
+                precio_unitario,
+                precio_compra,
+                precio_venta,
+                porcentaje_ganancia,
                 fecha_ultima_actualizacion
             FROM Materiales
             WHERE id_proveedor = ?
@@ -2247,6 +2250,12 @@ def get_materiales_por_proveedor(decoded_user_rol, decoded_user_id, id_proveedor
                 material_dict['cantidad'] = int(material_dict['cantidad'])
             if 'precio_unitario' in material_dict and material_dict['precio_unitario'] is not None:
                 material_dict['precio_unitario'] = float(material_dict['precio_unitario'])
+            if 'precio_compra' in material_dict and material_dict['precio_compra'] is not None:
+                material_dict['precio_compra'] = float(material_dict['precio_compra'])
+            if 'precio_venta' in material_dict and material_dict['precio_venta'] is not None:
+                material_dict['precio_venta'] = float(material_dict['precio_venta'])
+            if 'porcentaje_ganancia' in material_dict and material_dict['porcentaje_ganancia'] is not None:
+                material_dict['porcentaje_ganancia'] = int(material_dict['porcentaje_ganancia'])
             if 'fecha_ultima_actualizacion' in material_dict and material_dict['fecha_ultima_actualizacion'] is not None:
                 material_dict['fecha_ultima_actualizacion'] = material_dict['fecha_ultima_actualizacion'].isoformat()
             
@@ -2709,6 +2718,9 @@ def crear_orden_trabajo(decoded_user_rol, decoded_user_id):
     # Datos financieros
     subtotal_materiales = data.get('subtotal_materiales', 0.0)
     margen_ganancia = data.get('margen_ganancia', 20)
+    iva_porcentaje = data.get('iva_porcentaje', 0)
+    subtotal_con_margen = data.get('subtotal_con_margen', 0.0)
+    monto_iva = data.get('monto_iva', 0.0)
     total_orden = data.get('total_orden', 0.0)
     materiales = data.get('materiales', [])  # Lista de materiales agregados
 
@@ -2733,6 +2745,14 @@ def crear_orden_trabajo(decoded_user_rol, decoded_user_id):
             return jsonify({'error': 'El margen de ganancia debe estar entre 5% y 50%.'}), 400
     except (ValueError, TypeError):
         return jsonify({'error': 'El margen de ganancia debe ser un número entero.'}), 400
+    
+    # Validar IVA
+    try:
+        iva_porcentaje = int(iva_porcentaje)
+        if iva_porcentaje < 0 or iva_porcentaje > 20:
+            return jsonify({'error': 'El IVA debe estar entre 0% y 20%.'}), 400
+    except (ValueError, TypeError):
+        return jsonify({'error': 'El IVA debe ser un número entero.'}), 400
 
     conn = None
     try:
@@ -2779,21 +2799,33 @@ def crear_orden_trabajo(decoded_user_rol, decoded_user_id):
 
             ids_empleados_a_asignar = [row[0] for row in empleados_encontrados]
 
-        # --- CORRECCIÓN DE LA SENTENCIA INSERT ---
-        # La tabla OrdenesTrabajo tiene estas columnas para insertar:
-        # id_cliente, fecha_inicio, fecha_fin, descripcion, estado, id_usuario_creador, 
-        # fecha_ultima_actualizacion, id_usuario_ultima_actualizacion,
-        # subtotal_materiales, margen_ganancia, total_orden
+        # --- CORRECCIÓN DE LA SENTENCIA INSERT CON CAMPOS DE IVA ---
         sql_insert_orden = """
             INSERT INTO OrdenesTrabajo 
                 (id_cliente, fecha_inicio, fecha_fin, descripcion, estado, 
                  id_usuario_creador, fecha_ultima_actualizacion, id_usuario_ultima_actualizacion,
-                 subtotal_materiales, margen_ganancia, total_orden)
-            VALUES (?, ?, ?, ?, ?, ?, GETDATE(), ?, ?, ?, ?)
+                 subtotal_materiales, margen_ganancia, iva_porcentaje, subtotal_con_margen, monto_iva, total_orden, costo_mano_obra)
+            VALUES (?, ?, ?, ?, ?, ?, GETDATE(), ?, ?, ?, ?, ?, ?, ?, ?)
         """
-        # 10 placeholders (?) y 1 función (GETDATE())
         
-        # La tupla de parámetros ahora tiene 10 elementos que coinciden con los '?'
+        # Calcular costo de mano de obra
+        costo_mano_obra = 0.0
+        if fecha_inicio and fecha_fin and len(ids_empleados_a_asignar) > 0:
+            # Calcular días laborales
+            dias_laborales = (fecha_fin - fecha_inicio).days
+            horas_totales = dias_laborales * 8
+            
+            # Obtener costo_hora de cada empleado y calcular costo total
+            for id_empleado in ids_empleados_a_asignar:
+                cursor.execute("SELECT costo_hora FROM Empleados WHERE id_empleado = ?", id_empleado)
+                result = cursor.fetchone()
+                if result:
+                    costo_hora = float(result[0]) if result[0] else 0.0
+                    costo_mano_obra += horas_totales * costo_hora
+            
+            print(f"Costo de mano de obra calculado: ${costo_mano_obra:.2f} ({dias_laborales} días, {horas_totales} horas, {len(ids_empleados_a_asignar)} empleado(s))")
+        
+        # La tupla de parámetros ahora tiene 14 elementos
         params_orden = (
             id_cliente,                 # 1
             fecha_inicio,               # 2
@@ -2804,7 +2836,11 @@ def crear_orden_trabajo(decoded_user_rol, decoded_user_id):
             decoded_user_id,            # 7 (para 'id_usuario_ultima_actualizacion')
             subtotal_materiales,        # 8 (para 'subtotal_materiales')
             margen_ganancia,            # 9 (para 'margen_ganancia')
-            total_orden                 # 10 (para 'total_orden')
+            iva_porcentaje,             # 10 (para 'iva_porcentaje')
+            subtotal_con_margen,        # 11 (para 'subtotal_con_margen')
+            monto_iva,                  # 12 (para 'monto_iva')
+            total_orden,                # 13 (para 'total_orden')
+            costo_mano_obra             # 14 (para 'costo_mano_obra')
         )
         
         cursor.execute(sql_insert_orden, params_orden)
@@ -2981,7 +3017,8 @@ def get_detalles_orden(decoded_user_rol, decoded_user_id, id_orden):
             SELECT 
                 ot.id_orden, ot.descripcion, ot.estado, ot.fecha_inicio, ot.fecha_fin, 
                 c.nombre as nombre_cliente, c.id_cliente,
-                ot.subtotal_materiales, ot.margen_ganancia, ot.total_orden
+                ot.subtotal_materiales, ot.margen_ganancia, ot.iva_porcentaje, 
+                ot.subtotal_con_margen, ot.monto_iva, ot.total_orden, ot.costo_mano_obra
             FROM OrdenesTrabajo ot
             JOIN Clientes c ON ot.id_cliente = c.id_cliente
             WHERE ot.id_orden = ?
@@ -3079,6 +3116,9 @@ def actualizar_orden_trabajo(decoded_user_rol, decoded_user_id, id_orden):
         materiales = data.get('materiales', [])  # Lista de materiales
         subtotal_materiales = data.get('subtotal_materiales', 0.0)
         margen_ganancia = data.get('margen_ganancia', 20)
+        iva_porcentaje = data.get('iva_porcentaje', 0)
+        subtotal_con_margen = data.get('subtotal_con_margen', 0.0)
+        monto_iva = data.get('monto_iva', 0.0)
         total_orden = data.get('total_orden', 0.0)
         
         # Validaciones básicas
@@ -3120,6 +3160,23 @@ def actualizar_orden_trabajo(decoded_user_rol, decoded_user_id, id_orden):
             if not cursor.fetchone():
                 return jsonify({'error': f'Cliente con ID {id_cliente} no encontrado'}), 404
             
+            # Calcular costo de mano de obra
+            costo_mano_obra = 0.0
+            if fecha_inicio and fecha_fin and empleados_asignados and len(empleados_asignados) > 0:
+                # Calcular días laborales
+                dias_laborales = (fecha_fin - fecha_inicio).days
+                horas_totales = dias_laborales * 8
+                
+                # Obtener costo_hora de cada empleado y calcular costo total
+                for id_empleado in empleados_asignados:
+                    cursor.execute("SELECT costo_hora FROM Empleados WHERE id_empleado = ?", (id_empleado,))
+                    result = cursor.fetchone()
+                    if result:
+                        costo_hora = float(result[0]) if result[0] else 0.0
+                        costo_mano_obra += horas_totales * costo_hora
+                
+                print(f"Costo de mano de obra calculado: ${costo_mano_obra:.2f} ({dias_laborales} días, {horas_totales} horas, {len(empleados_asignados)} empleado(s))")
+            
             # 1. Actualizar datos básicos de la orden
             sql_update = """
                 UPDATE OrdenesTrabajo 
@@ -3129,13 +3186,18 @@ def actualizar_orden_trabajo(decoded_user_rol, decoded_user_id, id_orden):
                     descripcion = ?,
                     subtotal_materiales = ?,
                     margen_ganancia = ?,
+                    iva_porcentaje = ?,
+                    subtotal_con_margen = ?,
+                    monto_iva = ?,
                     total_orden = ?,
+                    costo_mano_obra = ?,
                     fecha_ultima_actualizacion = GETDATE(),
                     id_usuario_ultima_actualizacion = ?
                 WHERE id_orden = ?
             """
             cursor.execute(sql_update, (id_cliente, fecha_inicio, fecha_fin, descripcion, 
-                                       subtotal_materiales, margen_ganancia, total_orden,
+                                       subtotal_materiales, margen_ganancia, iva_porcentaje,
+                                       subtotal_con_margen, monto_iva, total_orden, costo_mano_obra,
                                        decoded_user_id, id_orden))
             
             # 2. Actualizar empleados asignados
