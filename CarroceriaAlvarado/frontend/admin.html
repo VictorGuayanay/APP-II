@@ -83,7 +83,12 @@
         </nav>
 
         <div class="content-area container-fluid pt-4"> 
-            <h2 class="card-header-title">Gestión de Usuarios</h2>
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h2 class="card-header-title mb-0">Gestión de Usuarios</h2>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createUserModal">
+                    <i class="fa fa-plus"></i> Crear Nuevo Usuario
+                </button>
+            </div>
             <div class="card">
                 <div class="card-body">
                     <div class="table-responsive">
@@ -181,6 +186,48 @@
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                         <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para Crear Nuevo Usuario -->
+<div class="modal fade" id="createUserModal" tabindex="-1" aria-labelledby="createUserModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="createUserModalLabel">Crear Nuevo Usuario</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="createUserForm">
+                    <div class="mb-3">
+                        <label for="createUsername" class="form-label">Nombre de Usuario</label>
+                        <input type="text" class="form-control" id="createUsername" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="createEmail" class="form-label">Correo Electrónico</label>
+                        <input type="email" class="form-control" id="createEmail" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="createPassword" class="form-label">Contraseña</label>
+                        <input type="password" class="form-control" id="createPassword" required minlength="3">
+                        <div class="form-text">La contraseña debe tener al menos 3 caracteres.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="createRol" class="form-label">Rol</label>
+                        <select class="form-select" id="createRol" required>
+                            <option value="">Seleccione un rol...</option>
+                            <option value="Empleado">Empleado</option>
+                            <option value="Supervisor">Supervisor</option>
+                            <option value="Administrador">Administrador</option>
+                        </select>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Crear Usuario</button>
                     </div>
                 </form>
             </div>
@@ -827,6 +874,76 @@ $(document).ready(function () {
         if (confirm(`¿Está seguro de que desea DESBLOQUEAR al usuario "${username}" (ID: ${userId}) que fue bloqueado por intentos fallidos?`)) {
             desbloquearUsuarioPorAdmin(userId);
         }
+    });
+
+    // MANEJADOR PARA EL SUBMIT DEL FORMULARIO DE CREACIÓN DE USUARIO
+    $('#createUserForm').on('submit', function(event) {
+        event.preventDefault(); // Evitar el envío tradicional del formulario
+        
+        // Recoger los datos del formulario
+        const newUserData = {
+            username: $('#createUsername').val().trim(),
+            email: $('#createEmail').val().trim(),
+            password: $('#createPassword').val(),
+            rol: $('#createRol').val()
+        };
+        
+        // Validar que los campos no estén vacíos
+        if (!newUserData.username || !newUserData.email || !newUserData.password || !newUserData.rol) {
+            alert("Todos los campos son requeridos para crear un usuario.");
+            return;
+        }
+        
+        // Validar longitud mínima de contraseña
+        if (newUserData.password.length < 3) {
+            alert("La contraseña debe tener al menos 3 caracteres.");
+            return;
+        }
+        
+        console.log("Creando nuevo usuario con datos:", { ...newUserData, password: '******' });
+        const currentToken = localStorage.getItem('token');
+        
+        if (!currentToken) {
+            alert("Token no encontrado. Por favor, inicie sesión de nuevo.");
+            window.location.href = 'index.html';
+            return;
+        }
+        
+        $.ajax({
+            url: 'http://127.0.0.1:5000/registro',
+            method: 'POST',
+            headers: {
+                'Authorization': 'Bearer ' + currentToken,
+                'Content-Type': 'application/json'
+            },
+            data: JSON.stringify(newUserData),
+            success: function(response) {
+                console.log("Respuesta de creación de usuario:", response);
+                alert(response.message || "Usuario creado exitosamente.");
+                
+                // Cerrar el modal
+                var createModalInstance = bootstrap.Modal.getInstance(document.getElementById('createUserModal'));
+                if (createModalInstance) {
+                    createModalInstance.hide();
+                }
+                
+                // Limpiar el formulario
+                $('#createUserForm')[0].reset();
+                
+                // Recargar la lista de usuarios
+                loadUsers();
+            },
+            error: function(xhr) {
+                console.error("Error al crear usuario. Status:", xhr.status, "Response:", xhr.responseText);
+                alert(xhr.responseJSON?.error || "Error al crear el usuario.");
+                if (xhr.status === 401 || xhr.status === 403) {
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('userRol');
+                    localStorage.removeItem('loggedInUsername');
+                    window.location.href = 'index.html';
+                }
+            }
+        });
     });
 
     

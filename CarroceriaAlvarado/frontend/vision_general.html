@@ -118,6 +118,43 @@
                     </div>
                 </div>
             </div>
+            
+            <!-- Nueva sección: Órdenes por Vencer y Vencidas -->
+            <div class="row mt-4">
+                <div class="col-md-12">
+                    <div class="card dashboard-card">
+                        <div class="card-header">
+                            <h5 class="card-title">
+                                <i class="fa fa-exclamation-triangle text-danger"></i> 
+                                Órdenes de Trabajo - Atención Requerida
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <!-- Órdenes por Vencer (7 días o menos) -->
+                                <div class="col-md-6">
+                                    <h6 class="text-warning">
+                                        <i class="fa fa-clock-o"></i> Próximas a Vencer (≤7 días)
+                                    </h6>
+                                    <div id="ordenes-por-vencer-list">
+                                        <p class="text-center">Cargando...</p>
+                                    </div>
+                                </div>
+                                
+                                <!-- Órdenes Vencidas -->
+                                <div class="col-md-6">
+                                    <h6 class="text-danger">
+                                        <i class="fa fa-times-circle"></i> Órdenes Vencidas
+                                    </h6>
+                                    <div id="ordenes-vencidas-list">
+                                        <p class="text-center">Cargando...</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div> </div> </div> <script src="vendor/jquery/jquery-3.2.1.min.js"></script>
 <script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
 <script>
@@ -178,6 +215,191 @@ function cargarVisionGeneral() {
     });
 }
 
+// Función para cargar órdenes por vencer y vencidas
+function cargarOrdenesVencimiento() {
+    console.log("Cargando órdenes por vencer y vencidas...");
+    const token = localStorage.getItem('token');
+    const $ordenesPorVencer = $('#ordenes-por-vencer-list');
+    const $ordenesVencidas = $('#ordenes-vencidas-list');
+    
+    if (!token) { return; }
+    
+    $.ajax({
+        url: 'http://127.0.0.1:5000/ordenes-trabajo',
+        method: 'GET',
+        headers: { 'Authorization': 'Bearer ' + token },
+        success: function(ordenes) {
+            console.log("Órdenes recibidas para análisis de vencimiento:", ordenes);
+            
+            const hoy = new Date();
+            hoy.setHours(0, 0, 0, 0); // Normalizar a medianoche
+            
+            const fechaLimite = new Date();
+            fechaLimite.setDate(hoy.getDate() + 7);
+            fechaLimite.setHours(23, 59, 59, 999);
+            
+            let ordenesPorVencer = [];
+            let ordenesVencidas = [];
+            
+            // Filtrar órdenes
+            ordenes.forEach(function(orden) {
+                // Solo considerar órdenes no finalizadas
+                if (orden.estado === 'Finalizado' || orden.estado === 'Completado' || orden.estado === 'Cancelado') {
+                    return;
+                }
+                
+                if (!orden.fecha_fin) {
+                    return; // Ignorar órdenes sin fecha de finalización
+                }
+                
+                const fechaFin = new Date(orden.fecha_fin);
+                fechaFin.setHours(0, 0, 0, 0);
+                
+                const diasRestantes = Math.ceil((fechaFin - hoy) / (1000 * 60 * 60 * 24));
+                
+                if (diasRestantes < 0) {
+                    // Orden vencida
+                    ordenesVencidas.push({
+                        ...orden,
+                        diasRestantes: diasRestantes,
+                        fechaFinFormateada: orden.fecha_fin.split('T')[0].split('-').reverse().join('/')
+                    });
+                } else if (diasRestantes <= 7) {
+                    // Orden por vencer
+                    ordenesPorVencer.push({
+                        ...orden,
+                        diasRestantes: diasRestantes,
+                        fechaFinFormateada: orden.fecha_fin.split('T')[0].split('-').reverse().join('/')
+                    });
+                }
+            });
+            
+            // Ordenar por días restantes (más urgente primero)
+            ordenesPorVencer.sort((a, b) => a.diasRestantes - b.diasRestantes);
+            ordenesVencidas.sort((a, b) => a.diasRestantes - b.diasRestantes);
+            
+            // Mostrar órdenes por vencer
+            $ordenesPorVencer.empty();
+            if (ordenesPorVencer.length > 0) {
+                const listGroup = $('<ul class="list-group list-group-flush"></ul>');
+                ordenesPorVencer.forEach(function(orden) {
+                    let urgenciaClass = 'bg-warning';
+                    let urgenciaText = `${orden.diasRestantes} día(s)`;
+                    
+                    if (orden.diasRestantes === 0) {
+                        urgenciaClass = 'bg-danger';
+                        urgenciaText = '¡HOY!';
+                    } else if (orden.diasRestantes === 1) {
+                        urgenciaClass = 'bg-warning';
+                        urgenciaText = 'Mañana';
+                    }
+                    
+                    listGroup.append(`
+                        <li class="list-group-item d-flex justify-content-between align-items-start">
+                            <div class="ms-2 me-auto">
+                                <div class="fw-bold">Orden #${orden.id_orden} - ${orden.nombre_cliente}</div>
+                                <small class="text-muted">Vence: ${orden.fechaFinFormateada}</small>
+                            </div>
+                            <span class="badge ${urgenciaClass} rounded-pill">${urgenciaText}</span>
+                        </li>
+                    `);
+                });
+                $ordenesPorVencer.append(listGroup);
+                $ordenesPorVencer.append(`<div class="mt-2 text-end"><a href="listar_ordenes_trabajo.html" class="btn btn-sm btn-warning">Ver Todas</a></div>`);
+            } else {
+                $ordenesPorVencer.append('<p class="text-muted">No hay órdenes próximas a vencer.</p>');
+            }
+            
+            // Mostrar órdenes vencidas
+            $ordenesVencidas.empty();
+            if (ordenesVencidas.length > 0) {
+                const listGroup = $('<ul class="list-group list-group-flush"></ul>');
+                ordenesVencidas.forEach(function(orden) {
+                    const diasVencidos = Math.abs(orden.diasRestantes);
+                    listGroup.append(`
+                        <li class="list-group-item d-flex justify-content-between align-items-start">
+                            <div class="ms-2 me-auto">
+                                <div class="fw-bold text-danger">Orden #${orden.id_orden} - ${orden.nombre_cliente}</div>
+                                <small class="text-muted">Venció: ${orden.fechaFinFormateada}</small>
+                            </div>
+                            <span class="badge bg-danger rounded-pill">${diasVencidos} día(s) atrás</span>
+                        </li>
+                    `);
+                });
+                $ordenesVencidas.append(listGroup);
+                $ordenesVencidas.append(`<div class="mt-2 text-end"><a href="listar_ordenes_trabajo.html" class="btn btn-sm btn-danger">Ver Todas</a></div>`);
+            } else {
+                $ordenesVencidas.append('<p class="text-muted">No hay órdenes vencidas. ¡Excelente!</p>');
+            }
+        },
+        error: function(xhr) {
+            console.error("Error al cargar órdenes para vencimiento:", xhr.responseText);
+            $ordenesPorVencer.html('<p class="text-danger">Error al cargar datos.</p>');
+            $ordenesVencidas.html('<p class="text-danger">Error al cargar datos.</p>');
+        }
+    });
+}
+
+// Función para cargar notificaciones
+function cargarNotificaciones() {
+    console.log("cargarNotificaciones() - Iniciando carga de notificaciones...");
+    const token = localStorage.getItem('token');
+    const $notificationCount = $('#notificationCount');
+    const $notificationList = $('#notificationList');
+
+    if (!token) {
+        console.error("cargarNotificaciones() - No hay token. No se puede llamar a la API.");
+        return;
+    }
+
+    $.ajax({
+        url: 'http://127.0.0.1:5000/notificaciones',
+        method: 'GET',
+        headers: {
+            'Authorization': 'Bearer ' + token
+        },
+        success: function(notificaciones) {
+            console.log("cargarNotificaciones() - Notificaciones recibidas:", notificaciones);
+            $notificationList.empty();
+
+            if (notificaciones && Array.isArray(notificaciones) && notificaciones.length > 0) {
+                $notificationCount.text(notificaciones.length).show();
+
+                notificaciones.forEach(function(notif) {
+                    let iconClass = 'fa-info-circle';
+                    if (notif.tipo === 'stock_bajo') {
+                        iconClass = 'fa-warning text-warning';
+                    } else if (notif.tipo === 'orden_vencimiento') {
+                        iconClass = 'fa-calendar text-danger';
+                    }
+
+                    const notificacionHtml = `
+                        <li>
+                            <a class="dropdown-item" href="#">
+                                <i class="fa ${iconClass}"></i> ${notif.mensaje}
+                            </a>
+                        </li>
+                    `;
+                    $notificationList.append(notificacionHtml);
+                });
+
+            } else {
+                console.log("cargarNotificaciones() - No hay notificaciones nuevas.");
+                $notificationCount.hide();
+                $notificationList.append('<li><span class="dropdown-item-text">No hay notificaciones nuevas.</span></li>');
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error("cargarNotificaciones() - Error al cargar notificaciones. Status:", xhr.status, "Response:", xhr.responseText);
+            $notificationCount.hide();
+            $notificationList.empty().append('<li><span class="dropdown-item-text text-danger">Error al cargar notificaciones.</span></li>');
+            if (xhr.status === 401) {
+                window.location.reload();
+            }
+        }
+    });
+}
+
 // Script principal de la página
 $(document).ready(function () {
     // Lógica estandar: sidebar, protección, nombre de usuario, logout
@@ -204,10 +426,10 @@ $(document).ready(function () {
         window.location.href = 'index.html';
     });
 
-    // Cargar los datos del dashboard y las notificaciones
+    // Cargar los datos del dashboard, notificaciones y órdenes de vencimiento
     cargarVisionGeneral();
-    // Si tu lógica de notificaciones esté en otro archivo, asegúrate de llamarla también
-    // cargarNotificaciones(); 
+    cargarNotificaciones();
+    cargarOrdenesVencimiento(); 
 });
 </script>
 

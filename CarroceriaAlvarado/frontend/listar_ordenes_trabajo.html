@@ -64,6 +64,17 @@
                     <i class="fa fa-align-left"></i> <span>Menú</span>
                 </button>
                 <div class="user-info">
+                    <div class="dropdown me-3">
+                        <a href="#" class="nav-link text-secondary" id="notificationBell" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fa fa-bell" style="font-size: 1.2rem;"></i>
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" id="notificationCount" style="display: none;">
+                            0
+                            </span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="notificationBell" id="notificationList" style="min-width: 300px; max-height: 400px; overflow-y: auto;">
+                            <li><a class="dropdown-item" href="#">Cargando notificaciones...</a></li>
+                        </ul>
+                    </div>
                     <span>Hola, <strong id="currentUserName">Usuario</strong>!</span>
                     <a href="#" id="logoutButton" class="ms-3">Cerrar Sesión</a>
                 </div>
@@ -149,18 +160,43 @@ function loadOrdenesDeTrabajo() {
         success: function(ordenes) {
             $tableBody.empty();
             if (ordenes && ordenes.length > 0) {
+                // Calcular fecha límite para órdenes por vencer (7 días)
+                const hoy = new Date();
+                const fechaLimite = new Date();
+                fechaLimite.setDate(hoy.getDate() + 7);
+                
                 ordenes.forEach(function(orden) {
                     // Formatear fechas sin conversión de zona horaria
                     const fechaInicio = orden.fecha_inicio ? orden.fecha_inicio.split('T')[0].split('-').reverse().join('/') : 'N/A';
                     const fechaFin = orden.fecha_fin ? orden.fecha_fin.split('T')[0].split('-').reverse().join('/') : 'N/A';
                     
-                    // --- INICIO DE LA MODIFICACIÓN ---
+                    // Verificar si la orden está por vencer
+                    let rowClass = '';
+                    let alertIcon = '';
+                    if (orden.fecha_fin && orden.estado !== 'Finalizado' && orden.estado !== 'Completado' && orden.estado !== 'Cancelado') {
+                        const fechaFinDate = new Date(orden.fecha_fin);
+                        const diasRestantes = Math.ceil((fechaFinDate - hoy) / (1000 * 60 * 60 * 24));
+                        
+                        if (diasRestantes <= 7 && diasRestantes >= 0) {
+                            rowClass = 'table-warning'; // Fondo amarillo para órdenes por vencer
+                            if (diasRestantes === 0) {
+                                alertIcon = '<i class="fa fa-exclamation-triangle text-danger" title="¡Vence hoy!"></i> ';
+                            } else if (diasRestantes === 1) {
+                                alertIcon = '<i class="fa fa-exclamation-triangle text-warning" title="Vence mañana"></i> ';
+                            } else {
+                                alertIcon = `<i class="fa fa-clock-o text-warning" title="Vence en ${diasRestantes} días"></i> `;
+                            }
+                        } else if (diasRestantes < 0) {
+                            rowClass = 'table-danger'; // Fondo rojo para órdenes vencidas
+                            alertIcon = '<i class="fa fa-times-circle text-danger" title="¡Orden vencida!"></i> ';
+                        }
+                    }
+                    
                     // Convertir la lista de empleados en un string separado por comas
                     let empleadosAsignadosStr = "Sin asignar";
                     if (orden.empleados_asignados && orden.empleados_asignados.length > 0) {
                         empleadosAsignadosStr = orden.empleados_asignados.join(', ');
                     }
-                    // --- FIN DE LA MODIFICACIÓN ---
 
                     const botonCalcular = `<button class="btn btn-info btn-sm btn-calcular-recursos me-1" data-id="${orden.id_orden}" title="Calcular Recursos"><i class="fa fa-calculator"></i></button>`;
                     const botonEditar = `<a href="editar_orden.html?id=${orden.id_orden}" class="btn btn-warning btn-sm me-1" title="Editar Orden"><i class="fa fa-edit"></i></a>`;
@@ -178,11 +214,12 @@ function loadOrdenesDeTrabajo() {
                     }
                     
                     const fila = `
-                        <tr>
-                            <td>${orden.id_orden}</td>
+                        <tr class="${rowClass}">
+                            <td>${alertIcon}${orden.id_orden}</td>
                             <td>${orden.nombre_cliente}</td>
                             <td>${orden.descripcion}</td>
-                            <td>${empleadosAsignadosStr}</td> <td>${fechaInicio} - ${fechaFin}</td>
+                            <td>${empleadosAsignadosStr}</td>
+                            <td>${fechaInicio} - ${fechaFin}</td>
                             <td><span class="badge ${badgeColor}">${orden.estado}</span></td>
                             <td class="text-nowrap">
                                 ${botonCalcular}${botonEditar}${botonDetalles}${botonImprimir}
@@ -373,6 +410,66 @@ function generarPDFDeOrden(orden) {
 }
 
 
+// Función para cargar notificaciones
+function cargarNotificaciones() {
+    console.log("cargarNotificaciones() - Iniciando carga de notificaciones...");
+    const token = localStorage.getItem('token');
+    const $notificationCount = $('#notificationCount');
+    const $notificationList = $('#notificationList');
+
+    if (!token) {
+        console.error("cargarNotificaciones() - No hay token. No se puede llamar a la API.");
+        return;
+    }
+
+    $.ajax({
+        url: 'http://127.0.0.1:5000/notificaciones',
+        method: 'GET',
+        headers: {
+            'Authorization': 'Bearer ' + token
+        },
+        success: function(notificaciones) {
+            console.log("cargarNotificaciones() - Notificaciones recibidas:", notificaciones);
+            $notificationList.empty();
+
+            if (notificaciones && Array.isArray(notificaciones) && notificaciones.length > 0) {
+                $notificationCount.text(notificaciones.length).show();
+
+                notificaciones.forEach(function(notif) {
+                    let iconClass = 'fa-info-circle';
+                    if (notif.tipo === 'stock_bajo') {
+                        iconClass = 'fa-warning text-warning';
+                    } else if (notif.tipo === 'orden_vencimiento') {
+                        iconClass = 'fa-calendar text-danger';
+                    }
+
+                    const notificacionHtml = `
+                        <li>
+                            <a class="dropdown-item" href="#">
+                                <i class="fa ${iconClass}"></i> ${notif.mensaje}
+                            </a>
+                        </li>
+                    `;
+                    $notificationList.append(notificacionHtml);
+                });
+
+            } else {
+                console.log("cargarNotificaciones() - No hay notificaciones nuevas.");
+                $notificationCount.hide();
+                $notificationList.append('<li><span class="dropdown-item-text">No hay notificaciones nuevas.</span></li>');
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error("cargarNotificaciones() - Error al cargar notificaciones. Status:", xhr.status, "Response:", xhr.responseText);
+            $notificationCount.hide();
+            $notificationList.empty().append('<li><span class="dropdown-item-text text-danger">Error al cargar notificaciones.</span></li>');
+            if (xhr.status === 401) {
+                window.location.reload();
+            }
+        }
+    });
+}
+
 $(document).ready(function() {
     // Lógica estándar
     $('#sidebarCollapse').on('click', function() { $('#sidebar').toggleClass('active'); });
@@ -381,6 +478,11 @@ $(document).ready(function() {
     const loggedInUsername = localStorage.getItem('loggedInUsername');
     if (loggedInUsername) { $('#currentUserName').text(loggedInUsername); }
     $('#logoutButton').on('click', function(e) { e.preventDefault(); localStorage.clear(); window.location.href = 'index.html'; });
+
+    // Cargar notificaciones
+    if (localStorage.getItem('token')) {
+        cargarNotificaciones();
+    }
 
     // Cargar órdenes al iniciar
     loadOrdenesDeTrabajo();

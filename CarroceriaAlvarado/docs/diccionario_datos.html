@@ -1,0 +1,1031 @@
+
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="UTF-8">
+        <title>Diccionario de Datos</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                max-width: 1200px;
+                margin: 20px auto;
+                padding: 20px;
+                line-height: 1.6;
+            }
+            h1 {
+                color: #2c3e50;
+                border-bottom: 3px solid #3498db;
+                padding-bottom: 10px;
+            }
+            h2 {
+                color: #34495e;
+                border-bottom: 2px solid #95a5a6;
+                padding-bottom: 5px;
+                margin-top: 30px;
+            }
+            h3 {
+                color: #7f8c8d;
+                margin-top: 20px;
+            }
+            table {
+                border-collapse: collapse;
+                width: 100%;
+                margin: 20px 0;
+            }
+            th {
+                background-color: #3498db;
+                color: white;
+                padding: 10px;
+                text-align: left;
+            }
+            td {
+                padding: 8px;
+            }
+            tr:nth-child(even) {
+                background-color: #f9f9f9;
+            }
+            code {
+                background-color: #f4f4f4;
+                padding: 2px 5px;
+                border-radius: 3px;
+                font-family: Courier New, monospace;
+            }
+            strong {
+                color: #2c3e50;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>Diccionario de Datos - Sistema Carrocería Alvarado</h1></h2></h3>
+#<h1>Base de Datos: CarroceriaAlvaradoDB</h2></h3>
+</h2></h3>
+---</h2></h3>
+</h2></h3>
+#<h1>📋 Tabla 1: Usuarios</h2></h3>
+</h2></h3>
+<strong>Descripción:</strong> Almacena información de los usuarios del sistema con credenciales de acceso.</h2></h3>
+</h2></h3>
+<table border="1" cellpadding="5" cellspacing="0">
+<tr>
+<th>Campo</th>
+<th>Tipo de Dato</th>
+<th>Nulo</th>
+<th>Clave</th>
+<th>Descripción</th>
+<th>Valores Válidos</th>
+</tr>
+<tr>
+<th><code>id_usuario</code></th>
+<th>INT IDENTITY(1,1)</th>
+<th>NO</th>
+<th>PK</th>
+<th>Identificador único del usuario</th>
+<th>Auto-generado</th>
+</tr>
+<tr>
+<th><code>nombre</code></th>
+<th>NVARCHAR(255)</th>
+<th>NO</th>
+<th>-</th>
+<th>Nombre completo del usuario</th>
+<th>Texto alfanumérico</th>
+</tr>
+<tr>
+<th><code>email</code></th>
+<th>NVARCHAR(255)</th>
+<th>NO</th>
+<th>UNIQUE</th>
+<th>Correo electrónico (login)</th>
+<th>Formato email válido</th>
+</tr>
+<tr>
+<th><code>password_hash</code></th>
+<th>NVARCHAR(255)</th>
+<th>NO</th>
+<th>-</th>
+<th>Contraseña encriptada con bcrypt</th>
+<th>Hash bcrypt</th>
+</tr>
+<tr>
+<th><code>rol</code></th>
+<th>NVARCHAR(50)</th>
+<th>NO</th>
+<th>-</th>
+<th>Rol del usuario en el sistema</th>
+<th>'Administrador', 'Supervisor', 'Empleado'</th>
+</tr>
+<tr>
+<th><code>estado</code></th>
+<th>BIT</th>
+<th>NO</th>
+<th>-</th>
+<th>Estado activo/inactivo del usuario</th>
+<th>1 (activo), 0 (inactivo)</th>
+</tr>
+<tr>
+<th><code>fecha_creacion</code></th>
+<th>DATETIME</th>
+<th>NO</th>
+<th>-</th>
+<th>Fecha y hora de creación del usuario</th>
+<th>Timestamp automático</th>
+</tr>
+<tr>
+<th><code>intentos_fallidos</code></th>
+<th>INT</th>
+<th>NO</th>
+<th>-</th>
+<th>Contador de intentos de login fallidos</th>
+<th>0-5 (máximo configurado)</th>
+</tr>
+<tr>
+<th><code>bloqueado_hasta</code></th>
+<th>DATETIME</th>
+<th>SÍ</th>
+<th>-</th>
+<th>Fecha hasta la cual el usuario está bloqueado</th>
+<th>NULL o fecha futura</th>
+</tr>
+</table>
+</h2></h3>
+<strong>Restricciones:</strong></h2></h3>
+- <code>email</code> debe ser único</h2></h3>
+- <code>rol</code> debe ser uno de los valores permitidos</h2></h3>
+- <code>intentos_fallidos</code> máximo 5 antes de bloqueo</h2></h3>
+</h2></h3>
+---</h2></h3>
+</h2></h3>
+#<h1>📋 Tabla 2: Clientes</h2></h3>
+</h2></h3>
+<strong>Descripción:</strong> Almacena información de los clientes que solicitan servicios de carrocería.</h2></h3>
+</h2></h3>
+<table border="1" cellpadding="5" cellspacing="0">
+<tr>
+<th>Campo</th>
+<th>Tipo de Dato</th>
+<th>Nulo</th>
+<th>Clave</th>
+<th>Descripción</th>
+<th>Valores Válidos</th>
+</tr>
+<tr>
+<th><code>id_cliente</code></th>
+<th>INT IDENTITY(1,1)</th>
+<th>NO</th>
+<th>PK</th>
+<th>Identificador único del cliente</th>
+<th>Auto-generado</th>
+</tr>
+<tr>
+<th><code>nombre</code></th>
+<th>NVARCHAR(255)</th>
+<th>NO</th>
+<th>-</th>
+<th>Nombre completo o razón social</th>
+<th>Texto alfanumérico</th>
+</tr>
+<tr>
+<th><code>cedula_ruc</code></th>
+<th>NVARCHAR(20)</th>
+<th>NO</th>
+<th>UNIQUE</th>
+<th>Cédula o RUC del cliente</th>
+<th>10 o 13 dígitos</th>
+</tr>
+<tr>
+<th><code>telefono</code></th>
+<th>NVARCHAR(20)</th>
+<th>SÍ</th>
+<th>-</th>
+<th>Número de teléfono de contacto</th>
+<th>Formato telefónico</th>
+</tr>
+<tr>
+<th><code>email</code></th>
+<th>NVARCHAR(255)</th>
+<th>SÍ</th>
+<th>-</th>
+<th>Correo electrónico del cliente</th>
+<th>Formato email válido o NULL</th>
+</tr>
+<tr>
+<th><code>direccion</code></th>
+<th>NVARCHAR(500)</th>
+<th>SÍ</th>
+<th>-</th>
+<th>Dirección física del cliente</th>
+<th>Texto libre o NULL</th>
+</tr>
+<tr>
+<th><code>fecha_registro</code></th>
+<th>DATETIME</th>
+<th>NO</th>
+<th>-</th>
+<th>Fecha de registro en el sistema</th>
+<th>Timestamp automático</th>
+</tr>
+<tr>
+<th><code>estado</code></th>
+<th>BIT</th>
+<th>NO</th>
+<th>-</th>
+<th>Estado activo/inactivo</th>
+<th>1 (activo), 0 (inactivo)</th>
+</tr>
+</table>
+</h2></h3>
+<strong>Restricciones:</strong></h2></h3>
+- <code>cedula_ruc</code> debe ser único</h2></h3>
+- <code>cedula_ruc</code> debe tener 10 o 13 caracteres numéricos</h2></h3>
+</h2></h3>
+---</h2></h3>
+</h2></h3>
+#<h1>📋 Tabla 3: Empleados</h2></h3>
+</h2></h3>
+<strong>Descripción:</strong> Almacena información de los empleados que trabajan en las órdenes.</h2></h3>
+</h2></h3>
+<table border="1" cellpadding="5" cellspacing="0">
+<tr>
+<th>Campo</th>
+<th>Tipo de Dato</th>
+<th>Nulo</th>
+<th>Clave</th>
+<th>Descripción</th>
+<th>Valores Válidos</th>
+</tr>
+<tr>
+<th><code>id_empleado</code></th>
+<th>INT IDENTITY(1,1)</th>
+<th>NO</th>
+<th>PK</th>
+<th>Identificador único del empleado</th>
+<th>Auto-generado</th>
+</tr>
+<tr>
+<th><code>nombre</code></th>
+<th>NVARCHAR(255)</th>
+<th>NO</th>
+<th>-</th>
+<th>Nombre completo del empleado</th>
+<th>Texto alfanumérico</th>
+</tr>
+<tr>
+<th><code>cedula</code></th>
+<th>NVARCHAR(10)</th>
+<th>NO</th>
+<th>UNIQUE</th>
+<th>Cédula de identidad</th>
+<th>10 dígitos</th>
+</tr>
+<tr>
+<th><code>rol</code></th>
+<th>NVARCHAR(100)</th>
+<th>NO</th>
+<th>-</th>
+<th>Especialidad o cargo del empleado</th>
+<th>'Pintor', 'Electricista', 'Enderezador', 'Tapicero', 'Mecánico'</th>
+</tr>
+<tr>
+<th><code>telefono</code></th>
+<th>NVARCHAR(20)</th>
+<th>SÍ</th>
+<th>-</th>
+<th>Número de teléfono</th>
+<th>Formato telefónico o NULL</th>
+</tr>
+<tr>
+<th><code>email</code></th>
+<th>NVARCHAR(255)</th>
+<th>SÍ</th>
+<th>-</th>
+<th>Correo electrónico</th>
+<th>Formato email válido o NULL</th>
+</tr>
+<tr>
+<th><code>costo_hora</code></th>
+<th>DECIMAL(10,2)</th>
+<th>NO</th>
+<th>-</th>
+<th>Costo por hora de trabajo</th>
+<th>Valor > 0, típicamente 5.00-20.00</th>
+</tr>
+<tr>
+<th><code>fecha_contratacion</code></th>
+<th>DATE</th>
+<th>SÍ</th>
+<th>-</th>
+<th>Fecha de ingreso a la empresa</th>
+<th>Fecha válida o NULL</th>
+</tr>
+<tr>
+<th><code>estado</code></th>
+<th>BIT</th>
+<th>NO</th>
+<th>-</th>
+<th>Estado activo/inactivo</th>
+<th>1 (activo), 0 (inactivo)</th>
+</tr>
+</table>
+</h2></h3>
+<strong>Restricciones:</strong></h2></h3>
+- <code>cedula</code> debe ser único</h2></h3>
+- <code>costo_hora</code> debe ser mayor a 0</h2></h3>
+- <code>rol</code> debe coincidir con especialidades definidas</h2></h3>
+</h2></h3>
+---</h2></h3>
+</h2></h3>
+#<h1>📋 Tabla 4: Unidades_de_Medida</h2></h3>
+</h2></h3>
+<strong>Descripción:</strong> Catálogo de unidades de medida para materiales.</h2></h3>
+</h2></h3>
+<table border="1" cellpadding="5" cellspacing="0">
+<tr>
+<th>Campo</th>
+<th>Tipo de Dato</th>
+<th>Nulo</th>
+<th>Clave</th>
+<th>Descripción</th>
+<th>Valores Válidos</th>
+</tr>
+<tr>
+<th><code>id_unidad</code></th>
+<th>INT IDENTITY(1,1)</th>
+<th>NO</th>
+<th>PK</th>
+<th>Identificador único de la unidad</th>
+<th>Auto-generado</th>
+</tr>
+<tr>
+<th><code>nombre</code></th>
+<th>NVARCHAR(50)</th>
+<th>NO</th>
+<th>UNIQUE</th>
+<th>Nombre de la unidad de medida</th>
+<th>'Unidad', 'Metro', 'Litro', 'Kilogramo', 'Caja', etc.</th>
+</tr>
+<tr>
+<th><code>abreviatura</code></th>
+<th>NVARCHAR(10)</th>
+<th>NO</th>
+<th>-</th>
+<th>Abreviatura de la unidad</th>
+<th>'ud', 'm', 'L', 'kg', 'cj', etc.</th>
+</tr>
+<tr>
+<th><code>descripcion</code></th>
+<th>NVARCHAR(255)</th>
+<th>SÍ</th>
+<th>-</th>
+<th>Descripción adicional</th>
+<th>Texto libre o NULL</th>
+</tr>
+</table>
+</h2></h3>
+<strong>Restricciones:</strong></h2></h3>
+- <code>nombre</code> debe ser único</h2></h3>
+</h2></h3>
+---</h2></h3>
+</h2></h3>
+#<h1>📋 Tabla 5: Materiales</h2></h3>
+</h2></h3>
+<strong>Descripción:</strong> Inventario de materiales disponibles para usar en órdenes de trabajo.</h2></h3>
+</h2></h3>
+<table border="1" cellpadding="5" cellspacing="0">
+<tr>
+<th>Campo</th>
+<th>Tipo de Dato</th>
+<th>Nulo</th>
+<th>Clave</th>
+<th>Descripción</th>
+<th>Valores Válidos</th>
+</tr>
+<tr>
+<th><code>id_material</code></th>
+<th>INT IDENTITY(1,1)</th>
+<th>NO</th>
+<th>PK</th>
+<th>Identificador único del material</th>
+<th>Auto-generado</th>
+</tr>
+<tr>
+<th><code>nombre</code></th>
+<th>NVARCHAR(255)</th>
+<th>NO</th>
+<th>-</th>
+<th>Nombre descriptivo del material</th>
+<th>Texto alfanumérico</th>
+</tr>
+<tr>
+<th><code>descripcion</code></th>
+<th>NVARCHAR(MAX)</th>
+<th>SÍ</th>
+<th>-</th>
+<th>Descripción detallada del material</th>
+<th>Texto libre o NULL</th>
+</tr>
+<tr>
+<th><code>cantidad_stock</code></th>
+<th>INT</th>
+<th>NO</th>
+<th>-</th>
+<th>Cantidad disponible en inventario</th>
+<th>Entero >= 0</th>
+</tr>
+<tr>
+<th><code>precio_unitario</code></th>
+<th>DECIMAL(10,2)</th>
+<th>NO</th>
+<th>-</th>
+<th>Precio por unidad del material</th>
+<th>Valor >= 0</th>
+</tr>
+<tr>
+<th><code>id_unidad</code></th>
+<th>INT</th>
+<th>SÍ</th>
+<th>FK</th>
+<th>Unidad de medida del material</th>
+<th>Referencia a Unidades_de_Medida</th>
+</tr>
+<tr>
+<th><code>ubicacion</code></th>
+<th>NVARCHAR(255)</th>
+<th>SÍ</th>
+<th>-</th>
+<th>Ubicación física en bodega</th>
+<th>Texto libre o NULL</th>
+</tr>
+<tr>
+<th><code>factura</code></th>
+<th>NVARCHAR(100)</th>
+<th>SÍ</th>
+<th>-</th>
+<th>Número de factura de compra</th>
+<th>Texto alfanumérico o NULL</th>
+</tr>
+<tr>
+<th><code>umbral_stock_bajo</code></th>
+<th>INT</th>
+<th>NO</th>
+<th>-</th>
+<th>Cantidad mínima antes de alerta</th>
+<th>Entero >= 0, típicamente 10</th>
+</tr>
+<tr>
+<th><code>estado</code></th>
+<th>BIT</th>
+<th>NO</th>
+<th>-</th>
+<th>Estado activo/inactivo</th>
+<th>1 (activo), 0 (inactivo)</th>
+</tr>
+</table>
+</h2></h3>
+<strong>Restricciones:</strong></h2></h3>
+- <code>cantidad_stock</code> >= 0</h2></h3>
+- <code>precio_unitario</code> >= 0</h2></h3>
+- <code>umbral_stock_bajo</code> >= 0</h2></h3>
+- FK: <code>id_unidad</code> → <code>Unidades_de_Medida(id_unidad)</code></h2></h3>
+</h2></h3>
+---</h2></h3>
+</h2></h3>
+#<h1>📋 Tabla 6: OrdenesTrabajo</h2></h3>
+</h2></h3>
+<strong>Descripción:</strong> Órdenes de trabajo solicitadas por clientes.</h2></h3>
+</h2></h3>
+<table border="1" cellpadding="5" cellspacing="0">
+<tr>
+<th>Campo</th>
+<th>Tipo de Dato</th>
+<th>Nulo</th>
+<th>Clave</th>
+<th>Descripción</th>
+<th>Valores Válidos</th>
+</tr>
+<tr>
+<th><code>id_orden</code></th>
+<th>INT IDENTITY(1,1)</th>
+<th>NO</th>
+<th>PK</th>
+<th>Identificador único de la orden</th>
+<th>Auto-generado</th>
+</tr>
+<tr>
+<th><code>id_cliente</code></th>
+<th>INT</th>
+<th>NO</th>
+<th>FK</th>
+<th>Cliente que solicita el trabajo</th>
+<th>Referencia a Clientes</th>
+</tr>
+<tr>
+<th><code>fecha_inicio</code></th>
+<th>DATE</th>
+<th>NO</th>
+<th>-</th>
+<th>Fecha de inicio del trabajo</th>
+<th>Fecha válida</th>
+</tr>
+<tr>
+<th><code>fecha_fin</code></th>
+<th>DATE</th>
+<th>SÍ</th>
+<th>-</th>
+<th>Fecha de finalización del trabajo</th>
+<th>Fecha >= fecha_inicio o NULL</th>
+</tr>
+<tr>
+<th><code>descripcion</code></th>
+<th>NVARCHAR(MAX)</th>
+<th>NO</th>
+<th>-</th>
+<th>Descripción del trabajo a realizar</th>
+<th>Texto libre</th>
+</tr>
+<tr>
+<th><code>estado</code></th>
+<th>NVARCHAR(50)</th>
+<th>NO</th>
+<th>-</th>
+<th>Estado actual de la orden</th>
+<th>'Asignado', 'En Proceso', 'Finalizado', 'Cancelado'</th>
+</tr>
+<tr>
+<th><code>subtotal_materiales</code></th>
+<th>DECIMAL(10,2)</th>
+<th>NO</th>
+<th>-</th>
+<th>Suma de costos de materiales</th>
+<th>Valor >= 0</th>
+</tr>
+<tr>
+<th><code>margen_ganancia</code></th>
+<th>INT</th>
+<th>NO</th>
+<th>-</th>
+<th>Porcentaje de margen de ganancia</th>
+<th>5-50 (%)</th>
+</tr>
+<tr>
+<th><code>iva_porcentaje</code></th>
+<th>INT</th>
+<th>NO</th>
+<th>-</th>
+<th>Porcentaje de IVA aplicado</th>
+<th>0, 10, 12, 15 (%)</th>
+</tr>
+<tr>
+<th><code>subtotal_con_margen</code></th>
+<th>DECIMAL(10,2)</th>
+<th>NO</th>
+<th>-</th>
+<th>Subtotal materiales + margen</th>
+<th>Calculado</th>
+</tr>
+<tr>
+<th><code>monto_iva</code></th>
+<th>DECIMAL(10,2)</th>
+<th>NO</th>
+<th>-</th>
+<th>Monto del IVA calculado</th>
+<th>Calculado</th>
+</tr>
+<tr>
+<th><code>total_orden</code></th>
+<th>DECIMAL(10,2)</th>
+<th>NO</th>
+<th>-</th>
+<th>Total final a cobrar</th>
+<th>Calculado</th>
+</tr>
+<tr>
+<th><code>costo_mano_obra</code></th>
+<th>DECIMAL(10,2)</th>
+<th>NO</th>
+<th>-</th>
+<th>Costo total de mano de obra</th>
+<th>Calculado y persistido</th>
+</tr>
+<tr>
+<th><code>id_usuario_creador</code></th>
+<th>INT</th>
+<th>NO</th>
+<th>FK</th>
+<th>Usuario que creó la orden</th>
+<th>Referencia a Usuarios</th>
+</tr>
+<tr>
+<th><code>fecha_ultima_actualizacion</code></th>
+<th>DATETIME</th>
+<th>NO</th>
+<th>-</th>
+<th>Última modificación</th>
+<th>Timestamp automático</th>
+</tr>
+<tr>
+<th><code>id_usuario_ultima_actualizacion</code></th>
+<th>INT</th>
+<th>NO</th>
+<th>FK</th>
+<th>Usuario que hizo última modificación</th>
+<th>Referencia a Usuarios</th>
+</tr>
+</table>
+</h2></h3>
+<strong>Restricciones:</strong></h2></h3>
+- <code>fecha_fin</code> >= <code>fecha_inicio</code> (si no es NULL)</h2></h3>
+- <code>margen_ganancia</code> entre 5 y 50</h2></h3>
+- <code>iva_porcentaje</code> entre 0 y 20</h2></h3>
+- <code>subtotal_materiales</code> >= 0</h2></h3>
+- <code>total_orden</code> >= 0</h2></h3>
+- <code>costo_mano_obra</code> >= 0</h2></h3>
+- FK: <code>id_cliente</code> → <code>Clientes(id_cliente)</code></h2></h3>
+- FK: <code>id_usuario_creador</code> → <code>Usuarios(id_usuario)</code></h2></h3>
+- FK: <code>id_usuario_ultima_actualizacion</code> → <code>Usuarios(id_usuario)</code></h2></h3>
+</h2></h3>
+<strong>Cálculos:</strong></h2></h3>
+<code></code>`</h2></h3>
+subtotal_con_margen = subtotal_materiales × (1 + margen_ganancia/100)</h2></h3>
+monto_iva = subtotal_con_margen × (iva_porcentaje/100)</h2></h3>
+total_orden = subtotal_con_margen + monto_iva</h2></h3>
+costo_mano_obra = Σ(días_laborales × 8 horas × costo_hora_empleado)</h2></h3>
+<code></code>`</h2></h3>
+</h2></h3>
+---</h2></h3>
+</h2></h3>
+#<h1>📋 Tabla 7: AsignacionesOrdenEmpleado</h2></h3>
+</h2></h3>
+<strong>Descripción:</strong> Relación muchos a muchos entre órdenes y empleados asignados.</h2></h3>
+</h2></h3>
+<table border="1" cellpadding="5" cellspacing="0">
+<tr>
+<th>Campo</th>
+<th>Tipo de Dato</th>
+<th>Nulo</th>
+<th>Clave</th>
+<th>Descripción</th>
+<th>Valores Válidos</th>
+</tr>
+<tr>
+<th><code>id_asignacion</code></th>
+<th>INT IDENTITY(1,1)</th>
+<th>NO</th>
+<th>PK</th>
+<th>Identificador único de la asignación</th>
+<th>Auto-generado</th>
+</tr>
+<tr>
+<th><code>id_orden</code></th>
+<th>INT</th>
+<th>NO</th>
+<th>FK</th>
+<th>Orden de trabajo</th>
+<th>Referencia a OrdenesTrabajo</th>
+</tr>
+<tr>
+<th><code>id_empleado</code></th>
+<th>INT</th>
+<th>NO</th>
+<th>FK</th>
+<th>Empleado asignado</th>
+<th>Referencia a Empleados</th>
+</tr>
+<tr>
+<th><code>fecha_asignacion</code></th>
+<th>DATETIME</th>
+<th>NO</th>
+<th>-</th>
+<th>Fecha de asignación</th>
+<th>Timestamp automático</th>
+</tr>
+</table>
+</h2></h3>
+<strong>Restricciones:</strong></h2></h3>
+- Combinación (<code>id_orden</code>, <code>id_empleado</code>) debe ser única</h2></h3>
+- FK: <code>id_orden</code> → <code>OrdenesTrabajo(id_orden)</code> ON DELETE CASCADE</h2></h3>
+- FK: <code>id_empleado</code> → <code>Empleados(id_empleado)</code></h2></h3>
+</h2></h3>
+---</h2></h3>
+</h2></h3>
+#<h1>📋 Tabla 8: DetalleOrdenMateriales</h2></h3>
+</h2></h3>
+<strong>Descripción:</strong> Materiales utilizados en cada orden de trabajo.</h2></h3>
+</h2></h3>
+<table border="1" cellpadding="5" cellspacing="0">
+<tr>
+<th>Campo</th>
+<th>Tipo de Dato</th>
+<th>Nulo</th>
+<th>Clave</th>
+<th>Descripción</th>
+<th>Valores Válidos</th>
+</tr>
+<tr>
+<th><code>id_detalle</code></th>
+<th>INT IDENTITY(1,1)</th>
+<th>NO</th>
+<th>PK</th>
+<th>Identificador único del detalle</th>
+<th>Auto-generado</th>
+</tr>
+<tr>
+<th><code>id_orden</code></th>
+<th>INT</th>
+<th>NO</th>
+<th>FK</th>
+<th>Orden de trabajo</th>
+<th>Referencia a OrdenesTrabajo</th>
+</tr>
+<tr>
+<th><code>id_material</code></th>
+<th>INT</th>
+<th>NO</th>
+<th>FK</th>
+<th>Material utilizado</th>
+<th>Referencia a Materiales</th>
+</tr>
+<tr>
+<th><code>cantidad_usada</code></th>
+<th>DECIMAL(10,2)</th>
+<th>NO</th>
+<th>-</th>
+<th>Cantidad del material utilizado</th>
+<th>Valor > 0</th>
+</tr>
+<tr>
+<th><code>costo_total</code></th>
+<th>DECIMAL(10,2)</th>
+<th>NO</th>
+<th>-</th>
+<th>Costo total (cantidad × precio_unitario)</th>
+<th>Valor >= 0</th>
+</tr>
+<tr>
+<th><code>fecha_registro</code></th>
+<th>DATETIME</th>
+<th>NO</th>
+<th>-</th>
+<th>Fecha de registro del uso</th>
+<th>Timestamp automático</th>
+</tr>
+</table>
+</h2></h3>
+<strong>Restricciones:</strong></h2></h3>
+- <code>cantidad_usada</code> > 0</h2></h3>
+- <code>costo_total</code> >= 0</h2></h3>
+- FK: <code>id_orden</code> → <code>OrdenesTrabajo(id_orden)</code> ON DELETE CASCADE</h2></h3>
+- FK: <code>id_material</code> → <code>Materiales(id_material)</code></h2></h3>
+</h2></h3>
+<strong>Cálculo:</strong></h2></h3>
+<code></code>`</h2></h3>
+costo_total = cantidad_usada × precio_unitario (del material)</h2></h3>
+<code></code>`</h2></h3>
+</h2></h3>
+---</h2></h3>
+</h2></h3>
+#<h1>🔗 Diagrama de Relaciones</h2></h3>
+</h2></h3>
+<code></code>`</h2></h3>
+Usuarios (1) ──────┬──────> (N) OrdenesTrabajo [id_usuario_creador]</h2></h3>
+                   └──────> (N) OrdenesTrabajo [id_usuario_ultima_actualizacion]</h2></h3>
+</h2></h3>
+Clientes (1) ─────────────> (N) OrdenesTrabajo</h2></h3>
+</h2></h3>
+OrdenesTrabajo (1) ───────> (N) AsignacionesOrdenEmpleado</h2></h3>
+                    └──────> (N) DetalleOrdenMateriales</h2></h3>
+</h2></h3>
+Empleados (1) ────────────> (N) AsignacionesOrdenEmpleado</h2></h3>
+</h2></h3>
+Materiales (1) ───────────> (N) DetalleOrdenMateriales</h2></h3>
+</h2></h3>
+Unidades_de_Medida (1) ──> (N) Materiales</h2></h3>
+<code></code>`</h2></h3>
+</h2></h3>
+---</h2></h3>
+</h2></h3>
+#<h1>📊 Resumen de Tablas</h2></h3>
+</h2></h3>
+<table border="1" cellpadding="5" cellspacing="0">
+<tr>
+<th>Tabla</th>
+<th>Registros Típicos</th>
+<th>Propósito Principal</th>
+</tr>
+<tr>
+<th><code>Usuarios</code></th>
+<th>5-20</th>
+<th>Autenticación y autorización</th>
+</tr>
+<tr>
+<th><code>Clientes</code></th>
+<th>100-1000+</th>
+<th>Gestión de clientes</th>
+</tr>
+<tr>
+<th><code>Empleados</code></th>
+<th>10-50</th>
+<th>Recursos humanos</th>
+</tr>
+<tr>
+<th><code>Unidades_de_Medida</code></th>
+<th>10-20</th>
+<th>Catálogo de unidades</th>
+</tr>
+<tr>
+<th><code>Materiales</code></th>
+<th>50-500</th>
+<th>Inventario de materiales</th>
+</tr>
+<tr>
+<th><code>OrdenesTrabajo</code></th>
+<th>500-5000+</th>
+<th>Órdenes de servicio</th>
+</tr>
+<tr>
+<th><code>AsignacionesOrdenEmpleado</code></th>
+<th>500-10000+</th>
+<th>Asignación de recursos</th>
+</tr>
+<tr>
+<th><code>DetalleOrdenMateriales</code></th>
+<th>1000-20000+</th>
+<th>Consumo de materiales</th>
+</tr>
+</table>
+</h2></h3>
+---</h2></h3>
+</h2></h3>
+#<h1>🔒 Integridad Referencial</h2></h3>
+</h2></h3>
+##<h1>Cascadas Configuradas</h2></h3>
+</h2></h3>
+<table border="1" cellpadding="5" cellspacing="0">
+<tr>
+<th>Tabla Padre</th>
+<th>Tabla Hija</th>
+<th>Acción ON DELETE</th>
+</tr>
+<tr>
+<th><code>OrdenesTrabajo</code></th>
+<th><code>AsignacionesOrdenEmpleado</code></th>
+<th>CASCADE</th>
+</tr>
+<tr>
+<th><code>OrdenesTrabajo</code></th>
+<th><code>DetalleOrdenMateriales</code></th>
+<th>CASCADE</th>
+</tr>
+<tr>
+<th><code>Clientes</code></th>
+<th><code>OrdenesTrabajo</code></th>
+<th>RESTRICT</th>
+</tr>
+<tr>
+<th><code>Empleados</code></th>
+<th><code>AsignacionesOrdenEmpleado</code></th>
+<th>RESTRICT</th>
+</tr>
+<tr>
+<th><code>Materiales</code></th>
+<th><code>DetalleOrdenMateriales</code></th>
+<th>RESTRICT</th>
+</tr>
+<tr>
+<th><code>Usuarios</code></th>
+<th><code>OrdenesTrabajo</code></th>
+<th>RESTRICT</th>
+</tr>
+<tr>
+<th><code>Unidades_de_Medida</code></th>
+<th><code>Materiales</code></th>
+<th>RESTRICT</th>
+</tr>
+</table>
+</h2></h3>
+<strong>Nota:</strong> RESTRICT previene eliminación si existen registros relacionados.</h2></h3>
+</h2></h3>
+---</h2></h3>
+</h2></h3>
+#<h1>📝 Índices Recomendados</h2></h3>
+</h2></h3>
+##<h1>Índices de Performance</h2></h3>
+</h2></h3>
+<code></code>`sql</h2></h3>
+-- Búsquedas frecuentes por email</h2></h3>
+CREATE INDEX IX_Usuarios_Email ON Usuarios(email);</h2></h3>
+CREATE INDEX IX_Clientes_Email ON Clientes(email);</h2></h3>
+</h2></h3>
+-- Búsquedas por cédula/RUC</h2></h3>
+CREATE INDEX IX_Clientes_CedulaRuc ON Clientes(cedula_ruc);</h2></h3>
+CREATE INDEX IX_Empleados_Cedula ON Empleados(cedula);</h2></h3>
+</h2></h3>
+-- Filtros por estado</h2></h3>
+CREATE INDEX IX_OrdenesTrabajo_Estado ON OrdenesTrabajo(estado);</h2></h3>
+CREATE INDEX IX_Materiales_Estado ON Materiales(estado);</h2></h3>
+</h2></h3>
+-- Búsquedas por fecha</h2></h3>
+CREATE INDEX IX_OrdenesTrabajo_FechaInicio ON OrdenesTrabajo(fecha_inicio);</h2></h3>
+CREATE INDEX IX_OrdenesTrabajo_FechaFin ON OrdenesTrabajo(fecha_fin);</h2></h3>
+</h2></h3>
+-- Foreign keys (automáticos en SQL Server)</h2></h3>
+-- Ya existen índices en todas las columnas FK</h2></h3>
+<code></code>`</h2></h3>
+</h2></h3>
+---</h2></h3>
+</h2></h3>
+#<h1>✅ Validaciones de Negocio</h2></h3>
+</h2></h3>
+##<h1>A Nivel de Base de Datos</h2></h3>
+</h2></h3>
+<code></code>`sql</h2></h3>
+-- Validación de margen de ganancia</h2></h3>
+ALTER TABLE OrdenesTrabajo </h2></h3>
+ADD CONSTRAINT CK_MargenGanancia </h2></h3>
+CHECK (margen_ganancia >= 5 AND margen_ganancia <= 50);</h2></h3>
+</h2></h3>
+-- Validación de IVA</h2></h3>
+ALTER TABLE OrdenesTrabajo </h2></h3>
+ADD CONSTRAINT CK_IVA </h2></h3>
+CHECK (iva_porcentaje >= 0 AND iva_porcentaje <= 20);</h2></h3>
+</h2></h3>
+-- Validación de fechas</h2></h3>
+ALTER TABLE OrdenesTrabajo </h2></h3>
+ADD CONSTRAINT CK_Fechas </h2></h3>
+CHECK (fecha_fin IS NULL OR fecha_fin >= fecha_inicio);</h2></h3>
+</h2></h3>
+-- Validación de stock</h2></h3>
+ALTER TABLE Materiales </h2></h3>
+ADD CONSTRAINT CK_Stock </h2></h3>
+CHECK (cantidad_stock >= 0);</h2></h3>
+</h2></h3>
+-- Validación de costo hora</h2></h3>
+ALTER TABLE Empleados </h2></h3>
+ADD CONSTRAINT CK_CostoHora </h2></h3>
+CHECK (costo_hora > 0);</h2></h3>
+<code></code>`</h2></h3>
+</h2></h3>
+---</h2></h3>
+</h2></h3>
+#<h1>🎯 Valores por Defecto</h2></h3>
+</h2></h3>
+<table border="1" cellpadding="5" cellspacing="0">
+<tr>
+<th>Tabla</th>
+<th>Campo</th>
+<th>Valor Default</th>
+</tr>
+<tr>
+<th><code>Usuarios</code></th>
+<th><code>estado</code></th>
+<th>1 (activo)</th>
+</tr>
+<tr>
+<th><code>Usuarios</code></th>
+<th><code>intentos_fallidos</code></th>
+<th>0</th>
+</tr>
+<tr>
+<th><code>Clientes</code></th>
+<th><code>estado</code></th>
+<th>1 (activo)</th>
+</tr>
+<tr>
+<th><code>Empleados</code></th>
+<th><code>estado</code></th>
+<th>1 (activo)</th>
+</tr>
+<tr>
+<th><code>Materiales</code></th>
+<th><code>estado</code></th>
+<th>1 (activo)</th>
+</tr>
+<tr>
+<th><code>Materiales</code></th>
+<th><code>umbral_stock_bajo</code></th>
+<th>10</th>
+</tr>
+<tr>
+<th><code>OrdenesTrabajo</code></th>
+<th><code>estado</code></th>
+<th>'Asignado'</th>
+</tr>
+<tr>
+<th><code>OrdenesTrabajo</code></th>
+<th><code>margen_ganancia</code></th>
+<th>20</th>
+</tr>
+<tr>
+<th><code>OrdenesTrabajo</code></th>
+<th><code>iva_porcentaje</code></th>
+<th>0</th>
+</tr>
+<tr>
+<th><code>OrdenesTrabajo</code></th>
+<th><code>costo_mano_obra</code></th>
+<th>0</th>
+</tr>
+</table>
+
+    </body>
+    </html>
+    
