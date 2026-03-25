@@ -136,7 +136,8 @@
     </div> 
 </div>  
 
-<script src="vendor/jquery/jquery-3.2.1.min.js"></script>
+<script src="js/config.js"></script>
+    <script src="vendor/jquery/jquery-3.2.1.min.js"></script>
 <script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -156,7 +157,7 @@ function cargarFiltros() {
 
     // Cargar Materiales
     $.ajax({
-        url: 'http://127.0.0.1:5000/materiales',
+        url: `${API_BASE_URL}/materiales`,
         method: 'GET',
         headers: { 'Authorization': 'Bearer ' + token },
         success: function(materiales) {
@@ -170,7 +171,7 @@ function cargarFiltros() {
 
     // Cargar Empleados
     $.ajax({
-        url: 'http://127.0.0.1:5000/empleados',
+        url: `${API_BASE_URL}/empleados`,
         method: 'GET',
         headers: { 'Authorization': 'Bearer ' + token },
         success: function(empleados) {
@@ -253,7 +254,7 @@ $(document).ready(function() {
         mensajeDiv.text('Generando reporte...').addClass('alert alert-info');
 
         // Construcción dinámica de la URL con los filtros
-        let urlReporte = `http://127.0.0.1:5000/reportes/uso-materiales?fecha_desde=${fechaDesde}&fecha_hasta=${fechaHasta}`;
+        let urlReporte = `${API_BASE_URL}/reportes/uso-materiales?fecha_desde=${fechaDesde}&fecha_hasta=${fechaHasta}`;
         if (idMaterial) {
             urlReporte += `&id_material=${idMaterial}`;
         }

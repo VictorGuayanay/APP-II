@@ -175,7 +175,8 @@
     </div>
 </div>
 
-<script src="vendor/jquery/jquery-3.2.1.min.js"></script>
+<script src="js/config.js"></script>
+    <script src="vendor/jquery/jquery-3.2.1.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
@@ -194,7 +195,7 @@ function loadProveedores() {
     }
 
     $.ajax({ 
-        url: 'http://127.0.0.1:5000/proveedores',
+        url: `${API_BASE_URL}/proveedores`,
         method: 'GET',
         headers: { 
             'Authorization': 'Bearer ' + token
@@ -283,7 +284,7 @@ $(document).ready(function () {
         console.log("Editando proveedor ID:", proveedorIdParaEditar);
 
         $.ajax({
-            url: `http://127.0.0.1:5000/proveedores/${proveedorIdParaEditar}`,
+            url: `${API_BASE_URL}/proveedores/${proveedorIdParaEditar}`,
             method: 'GET',
             headers: { 
                 'Authorization': 'Bearer ' + token
@@ -322,7 +323,7 @@ $(document).ready(function () {
         };
 
         $.ajax({
-            url: `http://127.0.0.1:5000/proveedores/${proveedorId}`,
+            url: `${API_BASE_URL}/proveedores/${proveedorId}`,
             method: 'PUT',
             headers: {
                 'Authorization': 'Bearer ' + token,
@@ -363,7 +364,7 @@ $(document).ready(function () {
         }
 
         $.ajax({
-            url: `http://127.0.0.1:5000/proveedores/${proveedorIdParaEliminar}`,
+            url: `${API_BASE_URL}/proveedores/${proveedorIdParaEliminar}`,
             method: 'DELETE',
             headers: {
                 'Authorization': 'Bearer ' + token

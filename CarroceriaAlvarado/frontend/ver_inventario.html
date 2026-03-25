@@ -280,7 +280,8 @@
     </div>
 </div>
 
-<script src="vendor/jquery/jquery-3.2.1.min.js"></script>
+<script src="js/config.js"></script>
+    <script src="vendor/jquery/jquery-3.2.1.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
 <script src="js/toast.js"></script>
 <script src="js/loading.js"></script>
@@ -307,7 +308,7 @@ function loadMateriales(umbralStockBajo) {
     console.log("loadMateriales() - Token que se usará para la API:", token);
 
     $.ajax({ 
-        url: 'http://127.0.0.1:5000/materiales',  // Endpoint para obtener materiales
+        url: `${API_BASE_URL}/materiales`,  // Endpoint para obtener materiales
         method: 'GET',
         headers: { 
             'Authorization': 'Bearer ' + token  
@@ -590,7 +591,7 @@ $(document).ready(function () {
     function cargarProveedoresEnModal() {
         const $selectProveedor = $('#editMaterialProveedor');
         $.ajax({
-            url: 'http://127.0.0.1:5000/proveedores',
+            url: `${API_BASE_URL}/proveedores`,
             method: 'GET',
             headers: { 'Authorization': 'Bearer ' + token },
             success: function(proveedores) {
@@ -613,7 +614,7 @@ $(document).ready(function () {
     function cargarCategoriasEnModal() {
         const $selectCategoria = $('#editMaterialCategoria');
         $.ajax({
-            url: 'http://127.0.0.1:5000/categorias-materiales',
+            url: `${API_BASE_URL}/categorias-materiales`,
             method: 'GET',
             headers: { 'Authorization': 'Bearer ' + token },
             success: function(categorias) {
@@ -683,7 +684,7 @@ $(document).ready(function () {
 
         // Obtener datos del material
         $.ajax({
-            url: `http://127.0.0.1:5000/materiales/${materialId}`,
+            url: `${API_BASE_URL}/materiales/${materialId}`,
             method: 'GET',
             headers: { 'Authorization': 'Bearer ' + token },
             success: function(material) {
@@ -773,7 +774,7 @@ $(document).ready(function () {
         setButtonLoading('#btnGuardarEdicion', 'Guardando...');
 
         $.ajax({
-            url: `http://127.0.0.1:5000/materiales/${materialId}`,
+            url: `${API_BASE_URL}/materiales/${materialId}`,
             method: 'PUT',
             headers: {
                 'Authorization': 'Bearer ' + token,
@@ -813,7 +814,7 @@ $(document).ready(function () {
     // --- Obtener Configuraciones y Luego Cargar Materiales ---
     console.log("ver_inventario.html - Obteniendo configuraciones del sistema...");
     $.ajax({
-        url: 'http://127.0.0.1:5000/configuraciones', // Endpoint GET para obtener configuraciones
+        url: `${API_BASE_URL}/configuraciones`, // Endpoint GET para obtener configuraciones
         method: 'GET',
         headers: { 'Authorization': 'Bearer ' + token }, // Reutilizar el token ya validado para esta p�gina
         success: function(config) {
@@ -886,7 +887,7 @@ $(document).ready(function () {
         console.log("Confirmada eliminación para material ID:", materialIdParaEliminar);
 
         $.ajax({
-            url: `http://127.0.0.1:5000/materiales/${materialIdParaEliminar}`, 
+            url: `${API_BASE_URL}/materiales/${materialIdParaEliminar}`, 
             method: 'DELETE',
             headers: {
                 'Authorization': 'Bearer ' + currentToken

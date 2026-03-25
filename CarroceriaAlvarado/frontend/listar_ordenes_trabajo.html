@@ -135,7 +135,8 @@
     </div>
 </div>
 
-<script src="vendor/jquery/jquery-3.2.1.min.js"></script>
+<script src="js/config.js"></script>
+    <script src="vendor/jquery/jquery-3.2.1.min.js"></script>
 <script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -154,7 +155,7 @@ function loadOrdenesDeTrabajo() {
     $tableBody.html('<tr><td colspan="7" class="text-center">Cargando...</td></tr>');
 
     $.ajax({
-        url: 'http://127.0.0.1:5000/ordenes-trabajo',
+        url: `${API_BASE_URL}/ordenes-trabajo`,
         method: 'GET',
         headers: { 'Authorization': 'Bearer ' + token },
         success: function(ordenes) {
@@ -423,7 +424,7 @@ function cargarNotificaciones() {
     }
 
     $.ajax({
-        url: 'http://127.0.0.1:5000/notificaciones',
+        url: `${API_BASE_URL}/notificaciones`,
         method: 'GET',
         headers: {
             'Authorization': 'Bearer ' + token
@@ -498,7 +499,7 @@ $(document).ready(function() {
         recursosModal.show();
 
         $.ajax({
-            url: `http://127.0.0.1:5000/ordenes-trabajo/${ordenId}/calcular-recursos`,
+            url: `${API_BASE_URL}/ordenes-trabajo/${ordenId}/calcular-recursos`,
             method: 'GET',
             headers: { 'Authorization': 'Bearer ' + token },
             success: function(response) {
@@ -530,7 +531,7 @@ $(document).ready(function() {
 
         // 1. Obtener todos los detalles de la orden específica
         $.ajax({
-            url: `http://127.0.0.1:5000/ordenes-trabajo/${ordenId}`,
+            url: `${API_BASE_URL}/ordenes-trabajo/${ordenId}`,
             method: 'GET',
             headers: { 'Authorization': 'Bearer ' + token },
             success: function(orden) {

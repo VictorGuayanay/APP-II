@@ -18,7 +18,7 @@
         }
 
         $.ajax({
-            url: 'http://127.0.0.1:5000/login', // API Flask via ngrok
+            url: `${API_BASE_URL}/login`, // API Flask
             method: 'POST',
             contentType: 'application/json',
             data: JSON.stringify({ username, password }),
@@ -87,7 +87,7 @@
         }
 
         $.ajax({
-            url: 'http://127.0.0.1:5000/reset_password',
+            url: `${API_BASE_URL}/reset_password`,
             method: 'POST',
             contentType: 'application/json',
             data: JSON.stringify({ email }),
@@ -139,7 +139,7 @@
         }
 
         $.ajax({
-            url: 'http://127.0.0.1:5000/new_password',
+            url: `${API_BASE_URL}/new_password`,
             method: 'POST',
             contentType: 'application/json',
             data: JSON.stringify({ token, password }),
@@ -207,7 +207,7 @@
         }
 
         $.ajax({
-            url: 'http://127.0.0.1:5000/notificaciones',
+            url: `${API_BASE_URL}/notificaciones`,
             method: 'GET',
             headers: {
                 'Authorization': 'Bearer ' + token
@@ -263,7 +263,7 @@
         if (!token) return;
 
         $.ajax({
-            url: `http://127.0.0.1:5000/ordenes-trabajo/${idOrden}/recursos-estimados`,
+            url: `${API_BASE_URL}/ordenes-trabajo/${idOrden}/recursos-estimados`,
             method: 'GET',
             headers: { 'Authorization': 'Bearer ' + token },
             success: function (response) {
@@ -300,7 +300,7 @@
         }
 
         $.ajax({
-            url: 'http://127.0.0.1:5000/ordenes-trabajo',
+            url: `${API_BASE_URL}/ordenes-trabajo`,
             method: 'POST',
             contentType: 'application/json',
             headers: { 'Authorization': 'Bearer ' + token },

@@ -185,7 +185,8 @@
 </div>
 
 <!-- Scripts -->
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="js/config.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
 $(document).ready(function() {
@@ -211,7 +212,7 @@ function cargarCategorias() {
     const tbody = $('#categoriasTableBody');
     
     $.ajax({
-        url: 'http://127.0.0.1:5000/categorias-materiales',
+        url: `${API_BASE_URL}/categorias-materiales`,
         method: 'GET',
         headers: {'Authorization': 'Bearer ' + token},
         success: function(categorias) {
@@ -286,7 +287,7 @@ function guardarCategoria() {
     };
     
     $.ajax({
-        url: 'http://127.0.0.1:5000/categorias-materiales',
+        url: `${API_BASE_URL}/categorias-materiales`,
         method: 'POST',
         headers: {
             'Authorization': 'Bearer ' + token,
@@ -310,7 +311,7 @@ function abrirModalEditar(idCategoria) {
     const token = localStorage.getItem('token');
     
     $.ajax({
-        url: 'http://127.0.0.1:5000/categorias-materiales',
+        url: `${API_BASE_URL}/categorias-materiales`,
         method: 'GET',
         headers: {'Authorization': 'Bearer ' + token},
         success: function(categorias) {
@@ -347,7 +348,7 @@ function guardarCambiosCategoria() {
     };
     
     $.ajax({
-        url: `http://127.0.0.1:5000/categorias-materiales/${idCategoria}`,
+        url: `${API_BASE_URL}/categorias-materiales/${idCategoria}`,
         method: 'PUT',
         headers: {
             'Authorization': 'Bearer ' + token,
@@ -374,7 +375,7 @@ function eliminarCategoria(idCategoria, nombreCategoria) {
     const token = localStorage.getItem('token');
     
     $.ajax({
-        url: `http://127.0.0.1:5000/categorias-materiales/${idCategoria}`,
+        url: `${API_BASE_URL}/categorias-materiales/${idCategoria}`,
         method: 'DELETE',
         headers: {'Authorization': 'Bearer ' + token},
         success: function(response) {

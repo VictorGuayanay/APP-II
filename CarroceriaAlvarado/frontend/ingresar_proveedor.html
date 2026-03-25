@@ -112,7 +112,8 @@
     </div>
 </div>
 
-<script src="vendor/jquery/jquery-3.2.1.min.js"></script>
+<script src="js/config.js"></script>
+    <script src="vendor/jquery/jquery-3.2.1.min.js"></script>
 <script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
 <script>
 $(document).ready(function () {
@@ -164,7 +165,7 @@ $(document).ready(function () {
         }
 
         $.ajax({
-            url: 'http://127.0.0.1:5000/proveedores',
+            url: `${API_BASE_URL}/proveedores`,
             method: 'POST',
             headers: {
                 'Authorization': 'Bearer ' + token,

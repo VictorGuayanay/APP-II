@@ -209,7 +209,8 @@
     </div>
 </div>
 
-<script src="vendor/jquery/jquery-3.2.1.min.js"></script>
+<script src="js/config.js"></script>
+    <script src="vendor/jquery/jquery-3.2.1.min.js"></script>
 <script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
 
 <script>
@@ -249,7 +250,7 @@ $(document).ready(function () {
     // --- Cargar Proveedores ---
     function cargarProveedores() {
         $.ajax({
-            url: 'http://127.0.0.1:5000/proveedores',
+            url: `${API_BASE_URL}/proveedores`,
             method: 'GET',
             headers: { 'Authorization': 'Bearer ' + token },
             success: function(proveedores) {
@@ -270,7 +271,7 @@ $(document).ready(function () {
     // --- Cargar Unidades de Medida ---
     function cargarUnidadesDeMedida() {
         $.ajax({
-            url: 'http://127.0.0.1:5000/unidades',
+            url: `${API_BASE_URL}/unidades`,
             method: 'GET',
             headers: { 'Authorization': 'Bearer ' + token },
             success: function(unidades) {
@@ -292,7 +293,7 @@ $(document).ready(function () {
     // --- Cargar Categor�as de Materiales ---
     function cargarCategorias() {
         $.ajax({
-            url: 'http://127.0.0.1:5000/categorias-materiales',
+            url: `${API_BASE_URL}/categorias-materiales`,
             method: 'GET',
             headers: { 'Authorization': 'Bearer ' + token },
             success: function(categorias) {
@@ -428,7 +429,7 @@ $(document).ready(function () {
 
         $.ajax({
             
-            url: 'http://127.0.0.1:5000/materiales', 
+            url: `${API_BASE_URL}/materiales`, 
             method: 'POST',
             headers: {
                 'Authorization': 'Bearer ' + token,

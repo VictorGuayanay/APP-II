@@ -9,6 +9,7 @@
     <link rel="stylesheet" type="text/css" href="css/main.css">
     <link rel="stylesheet" href="css/fixed-layout.css">
     <!-- jsPDF para generar PDFs -->
+    <script src="js/config.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
@@ -380,7 +381,7 @@ function cargarVentas() {
     const token = localStorage.getItem('token');
     
     $.ajax({
-        url: 'http://127.0.0.1:5000/ventas-directas',
+        url: `${API_BASE_URL}/ventas-directas`,
         method: 'GET',
         headers: {
             'Authorization': 'Bearer ' + token
@@ -449,7 +450,7 @@ function verDetalle(idVenta) {
     const token = localStorage.getItem('token');
     
     $.ajax({
-        url: `http://127.0.0.1:5000/ventas-directas/${idVenta}`,
+        url: `${API_BASE_URL}/ventas-directas/${idVenta}`,
         method: 'GET',
         headers: {
             'Authorization': 'Bearer ' + token

@@ -158,7 +158,8 @@
 </div>
 
 <!-- Scripts -->
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="js/config.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
 $(document).ready(function () {
@@ -179,7 +180,7 @@ function cargarEmpleados() {
     const tbody = $('#empleadosTableBody');
     
     $.ajax({
-        url: 'http://127.0.0.1:5000/empleados',
+        url: `${API_BASE_URL}/empleados`,
         method: 'GET',
         headers: {'Authorization': 'Bearer ' + token},
         success: function(empleados) {
@@ -230,7 +231,7 @@ function abrirModalEditar(idEmpleado) {
     
     // Obtener datos del empleado
     $.ajax({
-        url: 'http://127.0.0.1:5000/empleados',
+        url: `${API_BASE_URL}/empleados`,
         method: 'GET',
         headers: {'Authorization': 'Bearer ' + token},
         success: function(empleados) {
@@ -278,7 +279,7 @@ function guardarCambiosEmpleado() {
     mensajeDiv.html('<div class="alert alert-info">Guardando cambios...</div>');
     
     $.ajax({
-        url: `http://127.0.0.1:5000/empleados/${idEmpleado}`,
+        url: `${API_BASE_URL}/empleados/${idEmpleado}`,
         method: 'PUT',
         headers: {
             'Authorization': 'Bearer ' + token,
@@ -307,7 +308,7 @@ function eliminarEmpleado(idEmpleado, nombreEmpleado) {
     const token = localStorage.getItem('token');
     
     $.ajax({
-        url: `http://127.0.0.1:5000/empleados/${idEmpleado}`,
+        url: `${API_BASE_URL}/empleados/${idEmpleado}`,
         method: 'DELETE',
         headers: {'Authorization': 'Bearer ' + token},
         success: function(response) {

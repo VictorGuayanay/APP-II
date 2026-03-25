@@ -224,7 +224,8 @@
 <div id="settingsModalPlaceholder"></div>
 
 <!-- Scripts -->
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="js/config.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="js/settings_modal.js"></script>
 
@@ -261,7 +262,7 @@ $(document).ready(function() {
     // Cargar clientes
     function cargarClientes() {
         $.ajax({
-            url: 'http://127.0.0.1:5000/clientes',
+            url: `${API_BASE_URL}/clientes`,
             method: 'GET',
             headers: { 'Authorization': 'Bearer ' + token },
             success: function(clientes) {
@@ -284,7 +285,7 @@ $(document).ready(function() {
     // Cargar todos los empleados del sistema
     function cargarTodosLosEmpleados() {
         $.ajax({
-            url: 'http://127.0.0.1:5000/empleados',
+            url: `${API_BASE_URL}/empleados`,
             method: 'GET',
             headers: { 'Authorization': 'Bearer ' + token },
             success: function(empleados) {
@@ -330,7 +331,7 @@ $(document).ready(function() {
     // Obtener empleados disponibles (excluyendo los que est�n en otras �rdenes activas)
     function obtenerEmpleadosDisponibles(callback) {
         $.ajax({
-            url: 'http://127.0.0.1:5000/empleados/disponibles',
+            url: `${API_BASE_URL}/empleados/disponibles`,
             method: 'GET',
             headers: { 'Authorization': 'Bearer ' + token },
             success: function(empleados) {
@@ -441,7 +442,7 @@ $(document).ready(function() {
     function cargarProveedores() {
         const $selectProveedor = $('#selectProveedor');
         $.ajax({
-            url: 'http://127.0.0.1:5000/proveedores',
+            url: `${API_BASE_URL}/proveedores`,
             method: 'GET',
             headers: { 'Authorization': 'Bearer ' + token },
             success: function(proveedores) {
@@ -471,7 +472,7 @@ $(document).ready(function() {
         }
         
         $.ajax({
-            url: `http://127.0.0.1:5000/proveedores/${idProveedor}/materiales`,
+            url: `${API_BASE_URL}/proveedores/${idProveedor}/materiales`,
             method: 'GET',
             headers: { 'Authorization': 'Bearer ' + token },
             success: function(materiales) {
@@ -637,7 +638,7 @@ $(document).ready(function() {
         console.log('Enviando datos:', ordenData);
         
         $.ajax({
-            url: `http://127.0.0.1:5000/ordenes-trabajo/${idOrden}`,
+            url: `${API_BASE_URL}/ordenes-trabajo/${idOrden}`,
             method: 'PUT',
             headers: {
                 'Authorization': 'Bearer ' + token,
@@ -673,7 +674,7 @@ $(document).ready(function() {
     
     // Cargar datos de la orden (esto llamar� a mostrarEmpleadosAsignados internamente)
     $.ajax({
-        url: `http://127.0.0.1:5000/ordenes-trabajo/${idOrden}`,
+        url: `${API_BASE_URL}/ordenes-trabajo/${idOrden}`,
         method: 'GET',
         headers: { 'Authorization': 'Bearer ' + token },
         success: function(orden) {

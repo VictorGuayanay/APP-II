@@ -1,4 +1,5 @@
-﻿from flask import Flask, request, jsonify
+﻿import os
+from flask import Flask, request, jsonify
 from flask_cors import CORS
 import pyodbc
 import bcrypt
@@ -40,11 +41,11 @@ conn_str = (
     "Trusted_Connection=yes;"
 )
 
-SMTP_SERVER = "smtp.gmail.com"
-SMTP_PORT = 587
-SMTP_USERNAME = "victorguayanay@gmail.com" 
-SMTP_PASSWORD = "qzgl wxpz stvw uxdp" 
-
+SMTP_SERVER = os.environ.get('SMTP_SERVER', 'smtp.gmail.com')
+SMTP_PORT = int(os.environ.get('SMTP_PORT', 587))
+SMTP_USERNAME = os.environ.get('SMTP_USERNAME', 'victorguayanay@gmail.com')
+SMTP_PASSWORD = os.environ.get('SMTP_PASSWORD', 'qzgl wxpz stvw uxdp')
+FRONTEND_BASE_URL = os.environ.get('FRONTEND_BASE_URL', 'http://127.0.0.1:8000')
 
 
 def get_db_connection():
@@ -56,20 +57,7 @@ def get_db_connection():
         raise Exception(f"Error al conectar a la base de datos: {str(e)}")
 
 
-# Manejador global para peticiones OPTIONS (CORS preflight)
-@app.route('/', defaults={'path': ''}, methods=['OPTIONS'])
-@app.route('/<path:path>', methods=['OPTIONS'])
-def handle_options(path):
-    response = app.make_default_options_response()
-    return response
-
-# Hook para agregar headers CORS a todas las respuestas
-@app.after_request
-def after_request(response):
-    response.headers.add('Access-Control-Allow-Origin', '*')
-    response.headers.add('Access-Control-Allow-Headers', '*')
-    response.headers.add('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
-    return response
+# CORS es manejado automáticamente por flask_cors (configurado arriba)
 
 
 
@@ -90,7 +78,7 @@ def send_reset_email(email, user_id):
         
         print(f"DEBUG send_reset_email: Token de reseteo GENERADO para user_id {user_id}: {token}")
 
-        reset_link = f"http://127.0.0.1:8000/new_pass.html?token={token}" 
+        reset_link = f"{FRONTEND_BASE_URL}/new_pass.html?token={token}" 
 
         msg = MIMEMultipart()
         msg['From'] = SMTP_USERNAME
@@ -870,28 +858,47 @@ def crear_empleado(decoded_user_rol, decoded_user_id):
 @roles_required('Administrador', 'Supervisor')
 def get_empleados(decoded_user_rol, decoded_user_id):
     """
-    Endpoint para obtener la lista de todos los empleados.
+    Endpoint para obtener la lista de empleados.
+    Parámetro opcional: ?activos=true para filtrar solo empleados activos.
     """
     print(f"API GET /empleados: Solicitud de usuario ID {decoded_user_id} con rol {decoded_user_rol}")
+    
+    solo_activos = request.args.get('activos', 'false').lower() == 'true'
     
     conn = None
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
         
-        sql_query = """
-            SELECT 
-                id_empleado,
-                nombre,
-                cedula,
-                rol,
-                telefono,
-                fecha_contratacion,
-                costo_hora,
-                estado
-            FROM Empleados
-            ORDER BY nombre ASC
-        """
+        if solo_activos:
+            sql_query = """
+                SELECT 
+                    id_empleado,
+                    nombre,
+                    cedula,
+                    rol,
+                    telefono,
+                    fecha_contratacion,
+                    costo_hora,
+                    estado
+                FROM Empleados
+                WHERE estado = 1
+                ORDER BY nombre ASC
+            """
+        else:
+            sql_query = """
+                SELECT 
+                    id_empleado,
+                    nombre,
+                    cedula,
+                    rol,
+                    telefono,
+                    fecha_contratacion,
+                    costo_hora,
+                    estado
+                FROM Empleados
+                ORDER BY nombre ASC
+            """
         cursor.execute(sql_query)
         
         columns = [column[0] for column in cursor.description]
@@ -1717,98 +1724,7 @@ def actualizar_material(decoded_user_rol, decoded_user_id, id_material):
             conn.close()
 
 
-# --- ENDPOINTS DE GESTION DE EMPLEADOS---
-@app.route('/empleados', methods=['GET'])
-@roles_required('Administrador')
-def get_todos_los_empleados(decoded_user_rol, decoded_user_id):
-    print(f"API GET /empleados: Solicitud recibida por usuario ID {decoded_user_id} con rol {decoded_user_rol}")
-    
-    conn = None
-    try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        
-        # Seleccionar solo empleados activos para asignarlos a nuevas órdenes
-        # Se seleccionan los campos que el frontend necesita para el combobox (ID y nombre)
-        sql_query = "SELECT id_empleado, nombre, rol FROM Empleados WHERE estado = 1 ORDER BY nombre ASC"
-        cursor.execute(sql_query)
-        
-        columns = [column[0] for column in cursor.description]
-        empleados = [dict(zip(columns, row)) for row in cursor.fetchall()]
-            
-        print(f"API GET /empleados: Devolviendo {len(empleados)} empleados activos.")
-        return jsonify(empleados), 200
-
-    except Exception as e:
-        print(f"Error en GET /empleados: {str(e)}")
-        return jsonify({'error': f'Error interno del servidor al obtener empleados: {str(e)}'}), 500
-    finally:
-        if conn:
-            conn.close()
-            print("API GET /empleados: Conexión a BD cerrada desde el bloque finally.")
-
-@app.route('/empleados', methods=['POST'])
-@roles_required('Administrador')
-def registrar_empleado(decoded_user_rol, decoded_user_id):
-    print(f"API POST /empleados: Solicitud de admin ID {decoded_user_rol, decoded_user_id} para registrar nuevo empleado.")
-    
-    data = request.get_json()
-    if not data:
-        return jsonify({'error': 'No se recibieron datos JSON'}), 400
-
-    # Obtener datos del frontend
-    nombre = data.get('nombre')
-    cedula = data.get('cedula')
-    rol = data.get('rol')
-    telefono = data.get('telefono')
-    fecha_contratacion_str = data.get('fecha_contratacion')
-
-    # Validación de datos de entrada
-    if not all([nombre, cedula, rol, telefono, fecha_contratacion_str]):
-        return jsonify({'error': 'Faltan campos requeridos (nombre, cedula, rol, telefono, fecha_contratacion).'}), 400
-
-    # Validación y conversión de la fecha
-    try:
-        fecha_contratacion = datetime.date.fromisoformat(fecha_contratacion_str)
-    except (ValueError, TypeError):
-        return jsonify({'error': 'El formato de fecha_contratacion es inválido. Use AAAA-MM-DD.'}), 400
-
-    conn = None
-    try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
-
-        # Verificar si la cédula ya existe para evitar duplicados
-        cursor.execute("SELECT id_empleado FROM Empleados WHERE cedula = ?", (cedula,))
-        if cursor.fetchone():
-            return jsonify({'error': 'La cédula ya está registrada para otro empleado.'}), 409 # Conflict
-
-        # Preparar el INSERT a la tabla Empleados. El estado por defecto es 1 (activo).
-        sql_insert = "INSERT INTO Empleados (nombre, cedula, rol, telefono, fecha_contratacion) VALUES (?, ?, ?, ?, ?)"
-        params = (nombre, cedula, rol, telefono, fecha_contratacion)
-        
-        cursor.execute(sql_insert, params)
-        
-        # Obtener el ID del empleado recién creado
-        cursor.execute("SELECT @@IDENTITY AS id;")
-        nuevo_empleado_id = cursor.fetchone()[0]
-        
-        conn.commit()
-        
-        print(f"API POST /empleados: Empleado creado con ID: {nuevo_empleado_id}")
-        return jsonify({
-            'message': 'Empleado registrado exitosamente.',
-            'id_empleado_creado': nuevo_empleado_id
-        }), 201 # 201 Created
-
-    except Exception as e:
-        if conn: conn.rollback()
-        print(f"Error en POST /empleados: {str(e)}")
-        return jsonify({'error': f'Error interno del servidor al registrar el empleado: {str(e)}'}), 500
-    finally:
-        if conn:
-            conn.close()
-            print("API POST /empleados: Conexión a BD cerrada.")
+# (Endpoints duplicados de empleados eliminados — se usa la versión completa definida arriba)
 
 
 # --- ENDPOINTS DE GESTION DE CLIENTES---

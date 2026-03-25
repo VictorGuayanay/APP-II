@@ -272,7 +272,8 @@
     </div>
 </div>
 
-<script src="vendor/jquery/jquery-3.2.1.min.js"></script>
+<script src="js/config.js"></script>
+    <script src="vendor/jquery/jquery-3.2.1.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
 
 <script>
@@ -295,7 +296,7 @@ function loadUsers() {
     console.log("loadUsers() - Token recuperado para la API:", token);
 
     $.ajax({ 
-        url: 'http://127.0.0.1:5000/usuarios',  // [VERIFICAR] ¿Es esta la URL y puerto correctos de tu API Flask?
+        url: `${API_BASE_URL}/usuarios`,  // [VERIFICAR] ¿Es esta la URL y puerto correctos de tu API Flask?
         method: 'GET',
         headers: { 
             'Authorization': 'Bearer ' + token  // [VERIFICAR] ¿Se está enviando el token correctamente?
@@ -381,7 +382,7 @@ function actualizarEstadoManualUsuario(userId, nuevoEstadoManual) { // nuevoEsta
     // Esta función ahora llamará a /usuarios/<id>/estado y enviará { "estado": nuevoEstadoManual }
     console.log(`actualizarEstadoManualUsuario() - Solicitud para cambiar estado MANUAL de usuario ${userId} a ${nuevoEstadoManual}`);
     $.ajax({
-        url: `http://127.0.0.1:5000/usuarios/${userId}/estado`, // Sigue siendo el mismo endpoint para estado
+        url: `${API_BASE_URL}/usuarios/${userId}/estado`, // Sigue siendo el mismo endpoint para estado
         method: 'PUT',
         headers: {
             'Authorization': 'Bearer ' + token,
@@ -416,7 +417,7 @@ function desbloquearUsuarioPorAdmin(userId) {
     }
     console.log(`desbloquearUsuarioPorAdmin() - Solicitud para DESBLOQUEAR usuario ${userId}`);
     $.ajax({
-        url: `http://127.0.0.1:5000/usuarios/${userId}/desbloquear`, // Nuevo endpoint
+        url: `${API_BASE_URL}/usuarios/${userId}/desbloquear`, // Nuevo endpoint
         method: 'PUT', // O POST si lo definiste así
         headers: {
             'Authorization': 'Bearer ' + token
@@ -455,7 +456,7 @@ function cargarNotificaciones() {
     }
 
     $.ajax({
-        url: 'http://127.0.0.1:5000/notificaciones',
+        url: `${API_BASE_URL}/notificaciones`,
         method: 'GET',
         headers: {
             'Authorization': 'Bearer ' + token
@@ -597,7 +598,7 @@ $(document).ready(function () {
 
         // Llamada AJAX para obtener los datos actuales del usuario y pre-llenar el modal
         $.ajax({ 
-            url: `http://127.0.0.1:5000/usuarios/${userId}`, // Endpoint GET /usuarios/<id> [cite: 32
+            url: `${API_BASE_URL}/usuarios/${userId}`, // Endpoint GET /usuarios/<id> [cite: 32
             method: 'GET', 
             headers: {  
                 'Authorization': 'Bearer ' + currentToken  
@@ -654,7 +655,7 @@ $(document).ready(function () {
         }
         
         $.ajax({ 
-            url: `http://127.0.0.1:5000/usuarios/${userId}`, // Endpoint PUT /usuarios/<id> [cite: 38
+            url: `${API_BASE_URL}/usuarios/${userId}`, // Endpoint PUT /usuarios/<id> [cite: 38
             method: 'PUT', 
             headers: { 
                 'Authorization': 'Bearer ' + currentToken, 
@@ -718,7 +719,7 @@ $(document).ready(function () {
 
 
         $.ajax({
-            url: 'http://127.0.0.1:5000/configuraciones', // Endpoint GET para obtener configuraciones
+            url: `${API_BASE_URL}/configuraciones`, // Endpoint GET para obtener configuraciones
             method: 'GET',
             headers: { 'Authorization': 'Bearer ' + token },
             success: function(config) {
@@ -808,7 +809,7 @@ $(document).ready(function () {
         }
 
         $.ajax({
-            url: 'http://127.0.0.1:5000/configuraciones', // Endpoint PUT para actualizar configuraciones
+            url: `${API_BASE_URL}/configuraciones`, // Endpoint PUT para actualizar configuraciones
             method: 'PUT',
             headers: {
                 'Authorization': 'Bearer ' + token,
@@ -910,7 +911,7 @@ $(document).ready(function () {
         }
         
         $.ajax({
-            url: 'http://127.0.0.1:5000/registro',
+            url: `${API_BASE_URL}/registro`,
             method: 'POST',
             headers: {
                 'Authorization': 'Bearer ' + currentToken,

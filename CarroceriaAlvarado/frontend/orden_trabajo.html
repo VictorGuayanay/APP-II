@@ -242,7 +242,8 @@
     </div> 
 </div> 
 
-<script src="vendor/jquery/jquery-3.2.1.min.js"></script>
+<script src="js/config.js"></script>
+    <script src="vendor/jquery/jquery-3.2.1.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
 
 <script>
@@ -256,7 +257,7 @@ function cargarSelectCliente() {
 
     // Cargar Clientes
     $.ajax({
-        url: 'http://127.0.0.1:5000/clientes',
+        url: `${API_BASE_URL}/clientes`,
         method: 'GET',
         headers: { 'Authorization': 'Bearer ' + token },
         success: function(clientes) {
@@ -285,7 +286,7 @@ function cargarEmpleadosParaAsignacionManual() {
     if (!token) { return; }
 
     $.ajax({
-        url: 'http://127.0.0.1:5000/empleados', // Reutilizamos el endpoint que lista empleados
+        url: `${API_BASE_URL}/empleados`, // Reutilizamos el endpoint que lista empleados
         method: 'GET',
         headers: { 'Authorization': 'Bearer ' + token },
         success: function(empleados) {
@@ -330,7 +331,7 @@ $(document).ready(function() {
     function cargarProveedores() {
         const $selectProveedor = $('#selectProveedor');
         $.ajax({
-            url: 'http://127.0.0.1:5000/proveedores',
+            url: `${API_BASE_URL}/proveedores`,
             method: 'GET',
             headers: { 'Authorization': 'Bearer ' + token },
             success: function(proveedores) {
@@ -360,7 +361,7 @@ $(document).ready(function() {
         if (proveedorId) {
             // Cargar materiales del proveedor seleccionado
             $.ajax({
-                url: `http://127.0.0.1:5000/proveedores/${proveedorId}/materiales`,
+                url: `${API_BASE_URL}/proveedores/${proveedorId}/materiales`,
                 method: 'GET',
                 headers: { 'Authorization': 'Bearer ' + token },
                 success: function(materiales) {
@@ -586,7 +587,7 @@ $(document).ready(function() {
         console.log("Enviando datos de nueva orden de trabajo:", ordenData);
 
         $.ajax({
-            url: 'http://127.0.0.1:5000/ordenes-trabajo',
+            url: `${API_BASE_URL}/ordenes-trabajo`,
             method: 'POST',
             headers: {
                 'Authorization': 'Bearer ' + token,

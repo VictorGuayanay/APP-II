@@ -26,7 +26,7 @@ $('#settingsModal').on('show.bs.modal', function () {
     }
 
     $.ajax({
-        url: 'http://127.0.0.1:5000/configuraciones',
+        url: `${API_BASE_URL}/configuraciones`,
         method: 'GET',
         headers: { 'Authorization': 'Bearer ' + token },
         success: function (config) {
@@ -106,7 +106,7 @@ $('#settingsForm').on('submit', function (event) {
     }
 
     $.ajax({
-        url: 'http://127.0.0.1:5000/configuraciones',
+        url: `${API_BASE_URL}/configuraciones`,
         method: 'PUT',
         headers: {
             'Authorization': 'Bearer ' + token,

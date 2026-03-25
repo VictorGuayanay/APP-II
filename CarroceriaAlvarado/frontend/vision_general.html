@@ -155,7 +155,8 @@
                     </div>
                 </div>
             </div>
-        </div> </div> </div> <script src="vendor/jquery/jquery-3.2.1.min.js"></script>
+        </div> </div> </div> <script src="js/config.js"></script>
+    <script src="vendor/jquery/jquery-3.2.1.min.js"></script>
 <script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
 <script>
 // Función para cargar los datos del dashboard
@@ -168,7 +169,7 @@ function cargarVisionGeneral() {
     if (!token) { /* La protección de página ya debería haber actuado */ return; }
 
     $.ajax({
-        url: 'http://127.0.0.1:5000/dashboard/overview',
+        url: `${API_BASE_URL}/dashboard/overview`,
         method: 'GET',
         headers: { 'Authorization': 'Bearer ' + token },
         success: function(data) {
@@ -225,7 +226,7 @@ function cargarOrdenesVencimiento() {
     if (!token) { return; }
     
     $.ajax({
-        url: 'http://127.0.0.1:5000/ordenes-trabajo',
+        url: `${API_BASE_URL}/ordenes-trabajo`,
         method: 'GET',
         headers: { 'Authorization': 'Bearer ' + token },
         success: function(ordenes) {
@@ -353,7 +354,7 @@ function cargarNotificaciones() {
     }
 
     $.ajax({
-        url: 'http://127.0.0.1:5000/notificaciones',
+        url: `${API_BASE_URL}/notificaciones`,
         method: 'GET',
         headers: {
             'Authorization': 'Bearer ' + token

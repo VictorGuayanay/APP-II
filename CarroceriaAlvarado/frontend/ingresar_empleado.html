@@ -121,7 +121,8 @@
 </div>
 
 <!-- Scripts -->
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="js/config.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
 $(document).ready(function () {
@@ -159,7 +160,7 @@ $(document).ready(function () {
         }
 
         $.ajax({
-            url: 'http://127.0.0.1:5000/empleados',
+            url: `${API_BASE_URL}/empleados`,
             method: 'POST',
             headers: {
                 'Authorization': 'Bearer ' + token,

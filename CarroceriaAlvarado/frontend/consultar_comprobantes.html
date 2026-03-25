@@ -109,7 +109,8 @@
     </div> 
 </div> 
 
-<script src="vendor/jquery/jquery-3.2.1.min.js"></script>
+<script src="js/config.js"></script>
+    <script src="vendor/jquery/jquery-3.2.1.min.js"></script>
 <script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
@@ -148,7 +149,7 @@ $(document).ready(function() {
         }
 
         mensajeDiv.text('Buscando comprobantes...').addClass('alert alert-info');
-        const urlConsulta = `http://127.0.0.1:5000/comprobantes-pago?fecha_desde=${fechaDesde}&fecha_hasta=${fechaHasta}`;
+        const urlConsulta = `${API_BASE_URL}/comprobantes-pago?fecha_desde=${fechaDesde}&fecha_hasta=${fechaHasta}`;
 
         $.ajax({
             url: urlConsulta,
@@ -281,7 +282,7 @@ $(document).ready(function() {
         
         // Cargar datos de la orden
         $.ajax({
-            url: `http://127.0.0.1:5000/ordenes-trabajo/${idOrden}`,
+            url: `${API_BASE_URL}/ordenes-trabajo/${idOrden}`,
             method: 'GET',
             headers: { 'Authorization': 'Bearer ' + token },
             success: function(orden) {
