@@ -1,0 +1,100 @@
+╔════════════════════════════════════════════════════════════════════════════╗
+║                      GUÍA DE ACTUALIZACIÓN - v2.0                          ║
+║                    (Estructura de Rol_Usuario implementada)                 ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+═════════════════════════════════════════════════════════════════════════════
+📊 ESTADO ACTUAL DE LA BD
+═════════════════════════════════════════════════════════════════════════════
+
+✅ Tablas Existentes:
+   • Usuarios (4 usuarios)
+   • Rol (3 roles: Administrador, Supervisor, Empleado)
+   • Rol_Usuario (2 asignaciones, falta completar 2)
+
+⚠️  Lo que falta:
+   • Asignar rol a victor (id=24) → Supervisor
+   • Asignar rol a Admin1 (id=26) → Administrador
+
+═════════════════════════════════════════════════════════════════════════════
+✅ PASO 1: ASIGNAR ROLES FALTANTES EN SQL SERVER
+═════════════════════════════════════════════════════════════════════════════
+
+En SQL Server Management Studio, ejecuta:
+
+```sql
+USE CarroceriaAlvaradoDB;
+GO
+
+-- Asignar Supervisor a victor
+IF NOT EXISTS (SELECT 1 FROM Rol_Usuario WHERE id_usuario = 24)
+    INSERT INTO Rol_Usuario (id_rol, id_usuario, usuario) 
+    VALUES (2, 24, 'victor');
+ELSE
+    UPDATE Rol_Usuario SET id_rol = 2 WHERE id_usuario = 24;
+
+-- Asignar Administrador a Admin1
+IF NOT EXISTS (SELECT 1 FROM Rol_Usuario WHERE id_usuario = 26)
+    INSERT INTO Rol_Usuario (id_rol, id_usuario, usuario) 
+    VALUES (1, 26, 'Admin1');
+ELSE
+    UPDATE Rol_Usuario SET id_rol = 1 WHERE id_usuario = 26;
+
+-- Verificar
+SELECT u.id_usuario, u.username, r.rol 
+FROM Usuarios u
+LEFT JOIN Rol_Usuario ru ON u.id_usuario = ru.id_usuario
+LEFT JOIN Rol r ON ru.id_rol = r.id_rol;
+```
+
+O ejecuta el archivo: scripts/asignar_roles_faltantes.sql
+
+═════════════════════════════════════════════════════════════════════════════
+✅ PASO 2: INICIAR LA APLICACIÓN
+═════════════════════════════════════════════════════════════════════════════
+
+Terminal 1 - Backend (Puerto 5001):
+cd C:\Users\ASUS\Proyectos\APP-II\CarroceriaAlvarado\backend
+python app.py
+
+Terminal 2 - Frontend (Puerto 8000):
+cd C:\Users\ASUS\Proyectos\APP-II\CarroceriaAlvarado\frontend
+python -m http.server 8000
+
+═════════════════════════════════════════════════════════════════════════════
+✅ PASO 3: PROBAR EN NAVEGADOR
+═════════════════════════════════════════════════════════════════════════════
+
+URL: http://127.0.0.1:8000
+
+Usuarios disponibles para login:
+  • Admin / (password) → Rol: Administrador
+  • victor / (password) → Rol: Supervisor
+  • kevin / (password) → Rol: Administrador
+  • Admin1 / (password) → Rol: Administrador
+
+═════════════════════════════════════════════════════════════════════════════
+✅ CÓDIGO EN APP.PY - QUERIES ACTUALIZADOS
+═════════════════════════════════════════════════════════════════════════════
+
+El código en app.py ya está actualizado con:
+
+1. LOGIN: Usa LEFT JOIN para obtener rol desde Rol_Usuario
+   SELECT ... FROM Usuarios u 
+   LEFT JOIN Rol_Usuario ru ON u.id_usuario = ru.id_usuario 
+   LEFT JOIN Rol r ON ru.id_rol = r.id_rol
+
+2. REGISTRO: Inserta en Usuarios y luego en Rol_Usuario
+
+3. GET /usuarios: Trae todos con sus roles via JOIN
+
+4. PUT /usuarios: Actualiza rol en Rol_Usuario, no en Usuarios
+
+═════════════════════════════════════════════════════════════════════════════
+📝 ARCHIVO DE REFERENCIA
+═════════════════════════════════════════════════════════════════════════════
+
+Lee el archivo ESQUEMA_BASE_DATOS.txt para ver la estructura completa
+
+═════════════════════════════════════════════════════════════════════════════
+

@@ -552,17 +552,9 @@ $(document).ready(function () {
     }
 
     console.log("admin.html - Acceso de administrador concedido. Cargando usuarios..."); 
-    loadUsers(); // Cargar la lista de usuarios al iniciar la página si el usuario es admin [cite: 28]
+    loadUsers(); // Cargar la lista de usuarios al iniciar la página si el usuario es admin
 
-    // Manejador del botón de Logout
-    $('#logoutButtonAdmin').on('click', function(e) { 
-        e.preventDefault(); 
-        console.log("admin.html - Cerrando sesión..."); 
-        localStorage.removeItem('token'); 
-        localStorage.removeItem('userRol'); 
-        localStorage.removeItem('loggedInUsername'); // Asegurarse de remover el username [cite: 28]
-        window.location.href = 'index.html'; 
-    });
+    // Nota: El manejo de logout se realiza mediante logout.js
 
     // MANEJADOR PARA BOTONES DE DESACTIVAR (usando delegación de eventos) [cite: 29]
     $(document).on('click', '.btn-deactivate', function() { 
@@ -950,5 +942,8 @@ $(document).ready(function () {
     
 });
 </script>
+
+<!-- Módulo de Logout Global -->
+<script src="js/logout.js"></script>
 </body>
 </html>

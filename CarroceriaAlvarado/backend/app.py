@@ -144,9 +144,25 @@ def registrar_usuario():
             if cursor.fetchone():
                 return jsonify({'error': 'El correo electrónico ya está registrado'}), 409
 
+            # Insertar usuario en tabla Usuarios (sin rol, que va en tabla Rol_Usuario)
             cursor.execute(
-                "INSERT INTO Usuarios (username, email, password_hash, rol, estado) VALUES (?, ?, ?, ?, ?)",
-                (username, email, hashed_password, rol, estado_bit)
+                "INSERT INTO Usuarios (username, email, password_hash, estado) VALUES (?, ?, ?, ?)",
+                (username, email, hashed_password, estado_bit)
+            )
+            conn.commit()
+            
+            # Obtener el id_usuario recién creado
+            cursor.execute("SELECT @@IDENTITY AS id")
+            new_user_id = cursor.fetchone()[0]
+            
+            # Mapear rol string a id_rol
+            rol_mapping = {'Administrador': 1, 'Supervisor': 2, 'Empleado': 3}
+            id_rol = rol_mapping.get(rol, 3)  # Por defecto Empleado
+            
+            # Insertar en Rol_Usuario
+            cursor.execute(
+                "INSERT INTO Rol_Usuario (id_rol, id_usuario, usuario) VALUES (?, ?, ?)",
+                (id_rol, new_user_id, username)
             )
             conn.commit()
             return jsonify({'message': 'Usuario registrado exitosamente'}), 201
@@ -182,9 +198,13 @@ def login():
             conn = get_db_connection()
             cursor = conn.cursor()
             
-            # Obtener id_usuario, hash, rol, estado, intentos_fallidos y si está bloqueado
+            # Obtener usuario con su rol desde Rol_Usuario
             cursor.execute(
-                "SELECT id_usuario, email, password_hash, rol, estado, intentos_fallidos, bloqueado FROM Usuarios WHERE username = ?",
+                """SELECT u.id_usuario, u.email, u.password_hash, COALESCE(r.rol, 'Empleado') AS rol, u.estado, u.intentos_fallidos, u.bloqueado 
+                   FROM Usuarios u 
+                   LEFT JOIN Rol_Usuario ru ON u.id_usuario = ru.id_usuario 
+                   LEFT JOIN Rol r ON ru.id_rol = r.id_rol 
+                   WHERE u.username = ?""",
                 (username,)
             )
             user_db_data = cursor.fetchone()
@@ -396,7 +416,38 @@ def set_new_password():
     except Exception as e: 
         print(f"Error general no esperado en /new_password: {str(e)}")
         return jsonify({'error': f'Error interno del servidor: {str(e)}'}), 500
+
+# --- ENDPOINT DE LOGOUT ---
+@app.route('/logout', methods=['POST', 'OPTIONS'])
+def logout():
+    """
+    Endpoint simple de logout
+    En JWT no se requiere hacer nada en el servidor, solo limpiar el token en cliente
+    Este endpoint sirve para logging y auditoría
+    """
+    if request.method == 'OPTIONS':
+        return '', 200
     
+    try:
+        # Obtener el token del header para logging
+        auth_header = request.headers.get('Authorization')
+        if auth_header and auth_header.startswith("Bearer "):
+            token = auth_header.split(" ")[1]
+            try:
+                secret_key = app.config.get('SECRET_KEY')
+                decoded_token = jwt.decode(token, secret_key, algorithms=["HS256"])
+                user_id = decoded_token.get('user_id')
+                username = decoded_token.get('username')
+                print(f"API /logout POST: Usuario {username} (ID: {user_id}) ha cerrado sesión")
+            except:
+                print("API /logout POST: Token inválido, logout de todas formas")
+        
+        # Responder con éxito (el cliente limpiará su localStorage)
+        return jsonify({'message': 'Sesión cerrada correctamente'}), 200
+    except Exception as e:
+        print(f"Error en /logout: {str(e)}")
+        return jsonify({'error': f'Error al cerrar sesión: {str(e)}'}), 500
+
 # --- DECORADORES ---
 def token_required(f):
     @wraps(f)
@@ -484,8 +535,14 @@ def get_all_usuarios(decoded_user_rol, decoded_user_id):
     try:
         conn = get_db_connection() # Obtener la conexión
         cursor = conn.cursor()
-        # Se incluye 'bloqueado' en la consulta SELECT
-        cursor.execute("SELECT id_usuario, username, email, rol, estado, bloqueado FROM Usuarios")
+        # Obtener usuarios con sus roles desde Rol_Usuario
+        cursor.execute(
+            """SELECT u.id_usuario, u.username, u.email, COALESCE(r.rol, 'Empleado') AS rol, u.estado, u.bloqueado 
+               FROM Usuarios u 
+               LEFT JOIN Rol_Usuario ru ON u.id_usuario = ru.id_usuario 
+               LEFT JOIN Rol r ON ru.id_rol = r.id_rol 
+               ORDER BY u.username"""
+        )
         
         columns = [column[0] for column in cursor.description]
         usuarios = []
@@ -616,7 +673,15 @@ def actualizar_usuario(decoded_user_rol, decoded_user_id, user_id):
             conn = get_db_connection()
             cursor = conn.cursor()
 
-            cursor.execute("SELECT username, email, rol FROM Usuarios WHERE id_usuario = ?", (user_id,))
+            # Obtener usuario actual con su rol
+            cursor.execute(
+                """SELECT u.username, u.email, COALESCE(r.rol, 'Empleado') AS rol 
+                   FROM Usuarios u 
+                   LEFT JOIN Rol_Usuario ru ON u.id_usuario = ru.id_usuario 
+                   LEFT JOIN Rol r ON ru.id_rol = r.id_rol 
+                   WHERE u.id_usuario = ?""",
+                (user_id,)
+            )
             usuario_actual = cursor.fetchone()
             if not usuario_actual: return jsonify({'error': 'Usuario no encontrado'}), 404
 
@@ -636,11 +701,22 @@ def actualizar_usuario(decoded_user_rol, decoded_user_id, user_id):
                 update_fields.append("email = ?")
                 params.append(nuevo_email)
 
+            # Actualizar rol en tabla Rol_Usuario, no en Usuarios
             if nuevo_rol and nuevo_rol != usuario_actual[2]:
                 roles_validos = ['Administrador', 'Empleado', 'Supervisor'] 
                 if nuevo_rol not in roles_validos: return jsonify({'error': f"Rol '{nuevo_rol}' inválido."}), 400
-                update_fields.append("rol = ?")
-                params.append(nuevo_rol)
+                
+                # Mapear rol a id_rol
+                rol_mapping = {'Administrador': 1, 'Supervisor': 2, 'Empleado': 3}
+                id_rol = rol_mapping.get(nuevo_rol, 3)
+                
+                # Actualizar o insertar en Rol_Usuario
+                cursor.execute("SELECT id_rol FROM Rol_Usuario WHERE id_usuario = ?", (user_id,))
+                if cursor.fetchone():
+                    cursor.execute("UPDATE Rol_Usuario SET id_rol = ? WHERE id_usuario = ?", (id_rol, user_id))
+                else:
+                    cursor.execute("INSERT INTO Rol_Usuario (id_rol, id_usuario, usuario) VALUES (?, ?, ?)", 
+                                  (id_rol, user_id, usuario_actual[0]))
             
             if not update_fields:
                 return jsonify({'message': "No hay cambios para aplicar."}), 200
@@ -679,7 +755,14 @@ def get_usuario_por_id(decoded_user_rol, decoded_user_id, user_id):
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute("SELECT id_usuario, username, email, rol, estado FROM Usuarios WHERE id_usuario = ?", (user_id,))
+        cursor.execute(
+            """SELECT u.id_usuario, u.username, u.email, COALESCE(r.rol, 'Empleado') AS rol, u.estado 
+               FROM Usuarios u 
+               LEFT JOIN Rol_Usuario ru ON u.id_usuario = ru.id_usuario 
+               LEFT JOIN Rol r ON ru.id_rol = r.id_rol 
+               WHERE u.id_usuario = ?""",
+            (user_id,)
+        )
         
         columns = [column[0] for column in cursor.description]
         user_data_row = cursor.fetchone()
@@ -4027,6 +4110,89 @@ def obtener_detalle_venta(decoded_user_rol, decoded_user_id, id_venta):
         if conn:
             conn.close()
 
+# --- ENDPOINT DE HEALTH CHECK PARA VERIFICAR CONEXIÓN A BD ---
+@app.route('/health', methods=['GET'])
+@app.route('/db-status', methods=['GET'])
+def health_check():
+    """
+    Endpoint para verificar:
+    1. Estado del backend
+    2. Conexión a base de datos
+    3. Lista de todas las tablas en la BD
+    """
+    try:
+        conn = None
+        try:
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            
+            # Obtener información de la BD
+            cursor.execute("SELECT DB_NAME() AS database_name")
+            db_info = cursor.fetchone()
+            database_name = db_info[0] if db_info else "Unknown"
+            
+            # Obtener lista de todas las tablas
+            cursor.execute("""
+                SELECT TABLE_NAME 
+                FROM INFORMATION_SCHEMA.TABLES 
+                WHERE TABLE_TYPE = 'BASE TABLE'
+                ORDER BY TABLE_NAME
+            """)
+            tables = [row[0] for row in cursor.fetchall()]
+            
+            # Obtener información de usuarios
+            cursor.execute("SELECT COUNT(*) FROM Usuarios")
+            user_count = cursor.fetchone()[0]
+            
+            cursor.execute("SELECT COUNT(*) FROM Rol")
+            role_count = cursor.fetchone()[0]
+            
+            cursor.execute("SELECT COUNT(*) FROM Rol_Usuario")
+            user_role_count = cursor.fetchone()[0]
+            
+            return jsonify({
+                'status': 'OK',
+                'backend': 'Running',
+                'database': {
+                    'name': database_name,
+                    'connection': 'Connected',
+                    'server': 'DESKTOP-OJ81G31\\SQLEXPRESS',
+                    'driver': 'ODBC Driver 17 for SQL Server'
+                },
+                'tables': {
+                    'total': len(tables),
+                    'list': tables
+                },
+                'data': {
+                    'usuarios': user_count,
+                    'roles': role_count,
+                    'rol_usuarios': user_role_count
+                },
+                'timestamp': datetime.datetime.now().isoformat()
+            }), 200
+            
+        except Exception as db_error:
+            print(f"Health Check - Error de BD: {str(db_error)}")
+            return jsonify({
+                'status': 'ERROR',
+                'backend': 'Running',
+                'database': {
+                    'connection': 'Failed',
+                    'error': str(db_error)
+                }
+            }), 503
+        finally:
+            if conn:
+                conn.close()
+                
+    except Exception as e:
+        print(f"Health Check - Error general: {str(e)}")
+        return jsonify({
+            'status': 'ERROR',
+            'backend': 'Error',
+            'error': str(e)
+        }), 500
+
             
 # Ruta de prueba básica
 @app.route('/')
@@ -4034,5 +4200,5 @@ def hello():
     return "¡API de Carrocería Alvarado funcionando!"
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5000) # Ejecutar en puerto 5000
+    app.run(debug=True, port=5001) # Ejecutar en puerto 5001 (para no interferir con otro proyecto en 5000)
 

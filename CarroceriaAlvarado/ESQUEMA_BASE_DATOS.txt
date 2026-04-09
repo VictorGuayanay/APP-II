@@ -1,0 +1,125 @@
+╔════════════════════════════════════════════════════════════════════════════╗
+║              ESQUEMA DE BASE DE DATOS - CarroceriaAlvaradoDB                ║
+║                      (Estructura Actual - 2026-04-09)                        ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+═════════════════════════════════════════════════════════════════════════════
+📋 TABLA 1: Usuarios
+═════════════════════════════════════════════════════════════════════════════
+
+Columna                  Tipo de Dato      Longitud    Permite NULL    Defecto
+─────────────────────────────────────────────────────────────────────────────
+id_usuario               int               -           NO              -
+username                 varchar           50          NO              -
+password_hash            varbinary         64          NO              -
+estado                   bit               -           NO              1
+reset_token              varchar           100         SÍ              NULL
+reset_token_expiry       datetime          -           SÍ              NULL
+email                    varchar           100         SÍ              NULL
+intentos_fallidos        int               -           NO              0
+bloqueado                bit               -           NO              0
+
+CLAVE PRIMARIA: id_usuario
+DATOS ACTUALES (4 usuarios):
+────────────────────────────────────────────────────────────────────────────
+id_usuario  | username  | email                           | estado | bloqueado
+────────────────────────────────────────────────────────────────────────────
+20          | Admin     | victorguayanay@gmail.com        | 1      | 0
+24          | victor    | victorguayanay19@gmail.com      | 1      | 0
+25          | kevin     | rodriguez.kars10@gmail.com      | 1      | 0
+26          | Admin1    | victor@gmail.com                | 1      | 0
+────────────────────────────────────────────────────────────────────────────
+
+═════════════════════════════════════════════════════════════════════════════
+📋 TABLA 2: Rol (Catálogo de Roles)
+═════════════════════════════════════════════════════════════════════════════
+
+Columna              Tipo de Dato      Longitud    Permite NULL    Defecto
+─────────────────────────────────────────────────────────────────────────────
+id_rol               int               -           NO              -
+rol                  varchar           25          NO              -
+
+CLAVE PRIMARIA: id_rol
+DATOS ACTUALES (3 roles):
+────────────────────────────────────────────────────────────────────────────
+id_rol  | rol
+────────────────────────────────────────────────────────────────────────────
+1       | Administrador
+2       | Supervisor
+3       | Empleado
+────────────────────────────────────────────────────────────────────────────
+
+═════════════════════════════════════════════════════════════════════════════
+📋 TABLA 3: Rol_Usuario (Relación Usuario-Rol)
+═════════════════════════════════════════════════════════════════════════════
+
+Columna          Tipo de Dato      Longitud    Permite NULL    Defecto
+─────────────────────────────────────────────────────────────────────────────
+id_rol           int               -           NO              -
+id_usuario       int               -           NO              -
+usuario          varchar           25          NO              -
+
+CLAVES FORÁNEAS:
+  - id_rol → Rol(id_rol)
+  - id_usuario → Usuarios(id_usuario)
+
+DATOS ACTUALES (2 asignaciones):
+────────────────────────────────────────────────────────────────────────────
+id_rol  | id_usuario | usuario
+────────────────────────────────────────────────────────────────────────────
+1       | 20         | Admin
+1       | 25         | kevin
+────────────────────────────────────────────────────────────────────────────
+
+⚠️  NOTA: Los usuarios victor (id=24) y Admin1 (id=26) NO tienen rol asignado
+
+═════════════════════════════════════════════════════════════════════════════
+🔗 RELACIONES ENTRE TABLAS
+═════════════════════════════════════════════════════════════════════════════
+
+Usuarios ─────┐
+              ├──→ Rol_Usuario ─────┐
+Rol ──────────────────────────────→─→ Rol_Usuario
+
+Flujo:
+1. Usuario intenta login
+2. Sistema busca en Usuarios por username
+3. Si existe, busca su rol en Rol_Usuario mediante id_usuario
+4. Obtiene el nombre del rol desde tabla Rol usando id_rol
+5. Si no tiene rol asignado, se asigna 'Empleado' por defecto
+
+═════════════════════════════════════════════════════════════════════════════
+✅ QUERY SQL RECOMENDADO PARA LOGIN
+═════════════════════════════════════════════════════════════════════════════
+
+SELECT 
+    u.id_usuario, 
+    u.email, 
+    u.password_hash, 
+    COALESCE(r.rol, 'Empleado') AS rol,  -- Si no tiene rol, 'Empleado'
+    u.estado, 
+    u.intentos_fallidos, 
+    u.bloqueado 
+FROM Usuarios u 
+LEFT JOIN Rol_Usuario ru ON u.id_usuario = ru.id_usuario 
+LEFT JOIN Rol r ON ru.id_rol = r.id_rol 
+WHERE u.username = ?
+
+RESULTADO PARA "Admin":
+────────────────────────────────────────────────────────────────────────────
+id_usuario | email                   | rol             | estado | bloqueado
+────────────────────────────────────────────────────────────────────────────
+20         | victorguayanay@...      | Administrador   | 1      | 0
+────────────────────────────────────────────────────────────────────────────
+
+═════════════════════════════════════════════════════════════════════════════
+⚡ ESTADO DEL SISTEMA
+═════════════════════════════════════════════════════════════════════════════
+
+✅ Tablas:          Correctamente estructuradas
+✅ Relaciones:      FK entre Rol_Usuario y Rol/Usuarios
+✅ Datos:           4 usuarios, 3 roles, 2 asignaciones
+⚠️  Falta:          Asignar roles a victor y Admin1
+
+═════════════════════════════════════════════════════════════════════════════
+

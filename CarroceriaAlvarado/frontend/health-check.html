@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Health Check - Carrocería Alvarado</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            max-width: 800px;
+            width: 90%;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+        
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+        
+        .status-section {
+            margin-top: 30px;
+            border-top: 2px solid #f0f0f0;
+            padding-top: 20px;
+        }
+        
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 15px;
+            margin: 10px 0;
+            background: #f9f9f9;
+            border-radius: 5px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .status-item.success {
+            border-left-color: #28a745;
+        }
+        
+        .status-item.error {
+            border-left-color: #dc3545;
+        }
+        
+        .status-label {
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .status-value {
+            color: #666;
+            max-width: 400px;
+            word-break: break-all;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .badge.success {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .badge.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .tables-list {
+            margin-top: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 5px;
+            border: 1px solid #e0e0e0;
+        }
+        
+        .tables-list h3 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+        
+        .table-item {
+            padding: 8px;
+            background: white;
+            margin: 5px 0;
+            border-radius: 3px;
+            border-left: 3px solid #667eea;
+            font-size: 13px;
+            color: #555;
+        }
+        
+        .loading {
+            text-align: center;
+            color: #667eea;
+            font-style: italic;
+            padding: 20px;
+        }
+        
+        .error-message {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Health Check - Sistema</h1>
+        <p class="subtitle">Verifica el estado de la API y la conexión a Base de Datos</p>
+        
+        <div class="button-group">
+            <button class="btn-primary" onclick="checkHealth()">
+                🏥 Verificar Estado Completo
+            </button>
+            <button class="btn-secondary" onclick="checkBackend()">
+                🔌 Solo Backend
+            </button>
+            <button class="btn-secondary" onclick="checkDatabase()">
+                🗄️ Solo BD
+            </button>
+        </div>
+        
+        <div id="results"></div>
+    </div>
+
+    <script>
+        const API_URL = 'http://127.0.0.1:5001';
+        
+        function displayLoading() {
+            document.getElementById('results').innerHTML = '<div class="loading">Verificando...</div>';
+        }
+        
+        function displayError(error) {
+            document.getElementById('results').innerHTML = `
+                <div class="error-message">
+                    <strong>Error:</strong> ${error}
+                </div>
+            `;
+        }
+        
+        async function checkHealth() {
+            displayLoading();
+            try {
+                const response = await fetch(`${API_URL}/health`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                displayHealthResults(data);
+            } catch (error) {
+                displayError(`No se pudo conectar al backend: ${error.message}`);
+            }
+        }
+        
+        function displayHealthResults(data) {
+            let html = `<div class="status-section">`;
+            
+            // Backend Status
+            html += `
+                <div class="status-item ${data.status === 'OK' ? 'success' : 'error'}">
+                    <span class="status-label">🔌 Backend</span>
+                    <span>
+                        <span class="badge ${data.status === 'OK' ? 'success' : 'error'}">
+                            ${data.backend}
+                        </span>
+                    </span>
+                </div>
+            `;
+            
+            // Database Status
+            if (data.database) {
+                html += `
+                    <div class="status-item ${data.database.connection === 'Connected' ? 'success' : 'error'}">
+                        <span class="status-label">🗄️ Base de Datos</span>
+                        <span>
+                            <span class="badge ${data.database.connection === 'Connected' ? 'success' : 'error'}">
+                                ${data.database.connection}
+                            </span>
+                        </span>
+                    </div>
+                `;
+                
+                if (data.database.name) {
+                    html += `
+                        <div class="status-item">
+                            <span class="status-label">📊 Nombre BD</span>
+                            <span class="status-value">${data.database.name}</span>
+                        </div>
+                    `;
+                }
+                
+                if (data.database.server) {
+                    html += `
+                        <div class="status-item">
+                            <span class="status-label">🖥️ Servidor</span>
+                            <span class="status-value">${data.database.server}</span>
+                        </div>
+                    `;
+                }
+                
+                if (data.database.driver) {
+                    html += `
+                        <div class="status-item">
+                            <span class="status-label">🔌 Driver</span>
+                            <span class="status-value">${data.database.driver}</span>
+                        </div>
+                    `;
+                }
+                
+                if (data.database.error) {
+                    html += `
+                        <div class="status-item error">
+                            <span class="status-label">❌ Error BD</span>
+                            <span class="status-value">${data.database.error}</span>
+                        </div>
+                    `;
+                }
+            }
+            
+            // Tables Status
+            if (data.tables) {
+                html += `
+                    <div class="status-item success">
+                        <span class="status-label">📋 Total de Tablas</span>
+                        <span class="status-value"><strong>${data.tables.total}</strong></span>
+                    </div>
+                `;
+                
+                if (data.tables.list && data.tables.list.length > 0) {
+                    html += `<div class="tables-list">
+                        <h3>Tablas en la Base de Datos:</h3>`;
+                    data.tables.list.forEach(table => {
+                        html += `<div class="table-item">✓ ${table}</div>`;
+                    });
+                    html += `</div>`;
+                }
+            }
+            
+            // Data Counts
+            if (data.data) {
+                html += `
+                    <div style="margin-top: 20px; padding-top: 20px; border-top: 2px solid #f0f0f0;">
+                        <h3 style="color: #333; margin-bottom: 15px;">📊 Datos Actuales:</h3>
+                        <div class="status-item">
+                            <span class="status-label">👥 Usuarios</span>
+                            <span class="status-value"><strong>${data.data.usuarios}</strong></span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label">🎭 Roles</span>
+                            <span class="status-value"><strong>${data.data.roles}</strong></span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label">🔗 Asignaciones Rol-Usuario</span>
+                            <span class="status-value"><strong>${data.data.rol_usuarios}</strong></span>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            if (data.timestamp) {
+                html += `
+                    <div style="text-align: center; margin-top: 20px; color: #999; font-size: 12px;">
+                        Última verificación: ${new Date(data.timestamp).toLocaleString('es-ES')}
+                    </div>
+                `;
+            }
+            
+            html += `</div>`;
+            document.getElementById('results').innerHTML = html;
+        }
+        
+        async function checkBackend() {
+            displayLoading();
+            try {
+                const response = await fetch(`${API_URL}/`, {
+                    method: 'GET'
+                });
+                
+                const text = await response.text();
+                document.getElementById('results').innerHTML = `
+                    <div class="status-section">
+                        <div class="status-item success">
+                            <span class="status-label">✓ Backend Activo</span>
+                            <span class="status-value">${text}</span>
+                        </div>
+                    </div>
+                `;
+            } catch (error) {
+                displayError(`Backend no responde: ${error.message}`);
+            }
+        }
+        
+        async function checkDatabase() {
+            displayLoading();
+            try {
+                const response = await fetch(`${API_URL}/health`);
+                const data = await response.json();
+                
+                if (data.database.connection === 'Failed') {
+                    displayError(`Error de conexión a BD: ${data.database.error}`);
+                } else {
+                    document.getElementById('results').innerHTML = `
+                        <div class="status-section">
+                            <div class="status-item success">
+                                <span class="status-label">✓ Base de Datos Conectada</span>
+                                <span class="status-value">${data.database.name}</span>
+                            </div>
+                            <div class="status-item success">
+                                <span class="status-label">✓ Total Tablas</span>
+                                <span class="status-value">${data.tables.total}</span>
+                            </div>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                displayError(`No se pudo verificar la BD: ${error.message}`);
+            }
+        }
+        
+        // Verificar automáticamente al cargar
+        window.addEventListener('load', () => {
+            setTimeout(checkHealth, 500);
+        });
+    </script>
+</body>
+</html>

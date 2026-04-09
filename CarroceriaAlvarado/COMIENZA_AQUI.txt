@@ -1,0 +1,147 @@
+╔════════════════════════════════════════════════════════════════╗
+║                    ✅ SOLUCIÓN COMPLETADA                       ║
+║            Carrocería Alvarado - Listo para Desplegar           ║
+╚════════════════════════════════════════════════════════════════╝
+
+┌────────────────────────────────────────────────────────────────┐
+│ 🔧 CAMBIOS APLICADOS (5 archivos modificados)                 │
+└────────────────────────────────────────────────────────────────┘
+
+✅ 1. Base de Datos SQL
+   📄 scripts/fix_usuarios_table.sql (NUEVO)
+   → Agrega columnas faltantes a tabla Usuarios
+   → Soluciona error: "Invalid column name 'rol'"
+
+✅ 2. Backend Flask
+   📄 backend/app.py (MODIFICADO)
+   → Puerto: 5000 → 5001
+   → Línea 4037 actualizada
+
+✅ 3. Frontend Configuration  
+   📄 frontend/js/config.js (MODIFICADO)
+   → API URL: http://127.0.0.1:5000 → http://127.0.0.1:5001
+
+✅ 4. Usuario de Prueba
+   📄 scripts/crear_usuario_admin.sql (NUEVO)
+   → Crea usuario admin/123456
+   → Rol: Administrador
+
+✅ 5. Herramientas de Ejecución
+   📄 INICIAR.bat (NUEVO)
+   → Inicia backend + frontend con 1 click
+   📄 INSTRUCCIONES_EJECUCION.md (NUEVO)
+   → Guía completa de setup
+   📄 README_DESPLIEGUE.md (NUEVO)
+   → Resumen y troubleshooting
+
+✅ 6. Dependencias
+   📄 requirements.txt (ACTUALIZADO)
+   → Agregado: Flask-Cors, PyJWT
+
+┌────────────────────────────────────────────────────────────────┐
+│ 🚀 PRÓXIMOS PASOS (Solo 2 acciones requeridas)                 │
+└────────────────────────────────────────────────────────────────┘
+
+PASO 1️⃣: EJECUTAR SCRIPTS SQL EN SQL SERVER (5 mins)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Abre SQL Server Management Studio (SSMS):
+
+1. Conecta a: DESKTOP-OJ81G31\SQLEXPRESS
+2. Selecciona BD: CarroceriaAlvaradoDB
+3. ABRE Y EJECUTA:
+   ├─ scripts/fix_usuarios_table.sql    (Primero)
+   └─ scripts/crear_usuario_admin.sql   (Segundo)
+   
+Verificar en SSMS:
+   SELECT * FROM Usuarios;
+   → Deberías ver: id_usuario=1, username=admin, rol=Administrador
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+PASO 2️⃣: EJECUTAR LA APLICACIÓN (1 click)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Windows Explorer:
+   1. Ve a: C:\Users\ASUS\Proyectos\APP-II\CarroceriaAlvarado\
+   2. Doble click en: INICIAR.bat
+
+Esto abrirá automáticamente:
+   ✅ Backend       (Ventana PowerShell Terminal 1)
+   ✅ Frontend      (Ventana PowerShell Terminal 2)
+   ✅ Navegador     http://127.0.0.1:8000
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+PASO 3️⃣: PROBAR LOGIN (En navegador)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Usuario:    admin
+Contraseña: 123456
+Rol:        Administrador
+
+Esperado: 
+   ✅ Redirige a dashboard (admin.html)
+   ✅ Muestra nombre "admin"
+   ✅ Acceso a panel de administración
+
+┌────────────────────────────────────────────────────────────────┐
+│ 🎯 RECURSOS DISPONIBLES                                        │
+└────────────────────────────────────────────────────────────────┘
+
+📖 GUÍAS CREADAS:
+   1. README_DESPLIEGUE.md
+      → Resumen completo + troubleshooting
+      → Lee si algo falla
+   
+   2. INSTRUCCIONES_EJECUCION.md
+      → Guía paso a paso detallada
+      → Comandos copiar-pegar
+   
+   3. INICIAR.bat
+      → Script de ejecución automática
+      → Recomendado para todos
+
+📊 PUERTOS UTILIZADOS:
+   ├─ Backend:       5001  (Flask)
+   ├─ Frontend:      8000  (HTTP Server)
+   └─ Otro Proyecto: 5000  (No interfiere)
+
+┌────────────────────────────────────────────────────────────────┐
+│ ⚡ TROUBLESHOOTING RÁPIDO                                       │
+└────────────────────────────────────────────────────────────────┘
+
+❌ Error: "Invalid column name 'rol'"
+   ✅ Solución: Ejecuta scripts/fix_usuarios_table.sql en SSMS
+
+❌ Error: "Connection refused"
+   ✅ Solución: Verifica que backend está ejecutándose
+
+❌ Login no funciona
+   ✅ Solución: Ejecuta scripts/crear_usuario_admin.sql
+
+❌ Error: "Module pyodbc not found"
+   ✅ Solución: pip install -r requirements.txt
+
+❌ Puerto 5001 ya en uso
+   ✅ Solución: Cambia en backend/app.py puerto 4037
+
+┌────────────────────────────────────────────────────────────────┐
+│ ✨ VERIFICACIÓN FINAL                                          │
+└────────────────────────────────────────────────────────────────┘
+
+Después de levantar la aplicación, verifica:
+
+☐ Frontend: http://127.0.0.1:8000       (Carga página login)
+☐ Backend:  http://127.0.0.1:5001       (Responde)
+☐ Login:    admin / 123456              (Acceso exitoso)
+☐ BD:       SSMS select * from Usuarios (Usuario visible)
+
+═════════════════════════════════════════════════════════════════
+
+             🎉 ¡LISTO PARA DESPLEGAR AHORA!
+
+     Ejecuta los scripts SQL y luego haz doble click en:
+                      INICIAR.bat
+
+═════════════════════════════════════════════════════════════════
