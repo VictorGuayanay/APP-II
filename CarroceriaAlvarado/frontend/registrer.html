@@ -30,69 +30,63 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        .container-login100 {
-            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%) !important;
-        }
-        .wrap-login100 {
-            background: rgba(255, 255, 255, 0.05) !important;
-            backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
+        /* Shared auth screen styles are now in modern-design.css */
     </style>
-    <!--===============================================================================================-->
-   
 </head>
 <body>
     <div class="limiter">
-        <div class="container-login100" style="background-image: url('images/bg.jpg');">
-            <div class="wrap-login100">
+        <div class="auth-container">
+            <div class="auth-wrap animate__animated animate__fadeInUp">
                 <form class="login100-form validate-form" id="registerForm">
-                    <span class="login100-form-logo">
-                        <i class="zmdi zmdi-account"></i>
-                    </span>
+                    <div class="auth-logo">
+                        <i class="zmdi zmdi-account-add"></i>
+                    </div>
 
-                    <span class="login100-form-title p-b-34 p-t-27">
-                        Registro
-                    </span>
+                    <h2 class="auth-title p-b-40">
+                        REGISTRO
+                    </h2>
 
-                    <div class="wrap-input100 validate-input" data-validate="Ingrese el usuario">
+                    <div class="wrap-input100 validate-input m-b-20" data-validate="Usuario es requerido">
                         <input class="input100" type="text" id="username" name="username" placeholder="Usuario">
-                        <span class="focus-input100" data-placeholder="?"></span>
+                        <span class="focus-input100" data-placeholder="&#xf207;"></span>
                     </div>
 
-                    <div class="wrap-input100 validate-input" data-validate="Ingrese el correo">
-                        <input class="input100" type="email" id="email" name="email" placeholder="Correo">
-                        <span class="focus-input100" data-placeholder="?"></span>
+                    <div class="wrap-input100 validate-input m-b-20" data-validate="Correo es requerido">
+                        <input class="input100" type="email" id="email" name="email" placeholder="Correo Electrónico">
+                        <span class="focus-input100" data-placeholder="&#xf15a;"></span>
                     </div>
 
-                    <div class="wrap-input100 validate-input" data-validate="Ingrese la contraseña">
-                        <input class="input100" type="password" id="password" name="password" placeholder="Contraseña" maxlength="15">
-                        <span class="focus-input100" data-placeholder="?"></span>
+                    <div class="wrap-input100 validate-input m-b-20" data-validate="Contraseña es requerida">
+                        <input class="input100" type="password" id="password" name="password" placeholder="Contraseña">
+                        <span class="focus-input100" data-placeholder="&#xf191;"></span>
                         <div class="strength-indicator" id="strengthIndicator"></div>
                     </div>
 
-                    <div class="wrap-input100 validate-input" data-validate="Confirme la contraseña">
-                        <input class="input100 confirm-password" type="password" id="confirm_password" name="confirm_password" placeholder="Confirmar Contraseña" maxlength="15">
-                        <span class="focus-input100" data-placeholder="?"></span>
+                    <div class="wrap-input100 validate-input m-b-20" data-validate="Confirme su contraseña">
+                        <input class="input100" type="password" id="confirm_password" name="confirm_password" placeholder="Confirmar Contraseña">
+                        <span class="focus-input100" data-placeholder="&#xf191;"></span>
                     </div>
 
-                    <div class="wrap-input100 validate-input" data-validate="Seleccione un rol">
-                        <select class="input100" id="rol" name="rol">
-                            <option value="">Elija una opción</option>
-                            <option value="Supervisor">Administrador</option>
-                            <option value="Administrador">Supervisor</option>
+                    <div class="wrap-input100 validate-input m-b-30" data-validate="Seleccione un rol">
+                        <select class="input100" id="rol" name="rol" style="border:none;">
+                            <option value="">Seleccione un Rol</option>
+                            <option value="Administrador">Administrador</option>
+                            <option value="Supervisor">Supervisor</option>
                         </select>
-                        <!--<span class="focus-input100" data-placeholder="?"></span>-->
                     </div>
 
                     <div class="container-login100-form-btn">
-                        <button class="login100-form-btn" type="submit">Registra</button>
+                        <button class="auth-btn" type="submit">
+                            REGISTRARSE
+                        </button>
                     </div>
 
                     <div id="message" class="message"></div>
 
-                    <div class="text-center p-t-20">
-                        <a href="index.html" class="txt2">¿Ya tienes cuenta? Inicia Sesión</a>
+                    <div class="text-center p-t-30">
+                        <a href="index.html" class="txt2">
+                            ¿Ya tienes cuenta? Inicia Sesión
+                        </a>
                     </div>
                 </form>
             </div>

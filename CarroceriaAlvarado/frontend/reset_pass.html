@@ -30,43 +30,39 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        .container-login100 {
-            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%) !important;
-        }
-        .wrap-login100 {
-            background: rgba(255, 255, 255, 0.05) !important;
-            backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
+        /* Shared auth screen styles are now in modern-design.css */
     </style>
-    <!--===============================================================================================-->
 </head>
 <body>
     <div class="limiter">
-        <div class="container-login100" style="background-image: url('images/bg.jpg');">
-            <div class="wrap-login100">
+        <div class="auth-container">
+            <div class="auth-wrap animate__animated animate__fadeIn">
                 <form class="login100-form validate-form" id="resetPassForm">
-                    <span class="login100-form-logo">
-                        <i class="zmdi zmdi-account"></i>
-                    </span>
+                    <div class="auth-logo">
+                        <i class="zmdi zmdi-key"></i>
+                    </div>
 
-                    <span class="login100-form-title p-b-34 p-t-27">
-                        Restablecer Contraseña
-                    </span>
+                    <h2 class="auth-title p-b-40">
+                        RECUPERAR ACCESO
+                    </h2>
 
-                    <div class="wrap-input100 validate-input" data-validate="Ingrese un correo válido">
+                    <div class="wrap-input100 validate-input m-b-30" data-validate="Ingrese un correo válido">
                         <input class="input100" type="email" id="email" name="email" placeholder="Correo Electrónico">
-                        <span class="focus-input100" data-placeholder=""></span>
+                        <span class="focus-input100" data-placeholder="&#xf15a;"></span>
                     </div>
 
                     <div class="container-login100-form-btn">
-                        <button class="login100-form-btn" type="submit">Enviar</button>
+                        <button class="auth-btn" type="submit">
+                            ENVIAR INSTRUCCIONES
+                        </button>
                     </div>
 
                     <div id="message" class="message"></div>
 
-                    <div class="text-center p-t-20">
-                        <a href="index.html" class="txt2">Volver a Iniciar Sesión</a>
+                    <div class="text-center p-t-30">
+                        <a href="index.html" class="txt2">
+                            Volver a Iniciar Sesión
+                        </a>
                     </div>
                 </form>
             </div>
@@ -98,7 +94,7 @@
             $('#resetPassForm').on('submit', function(event) {
                 event.preventDefault(); 
                 const messageDiv = $('#message');
-                messageDiv.text('Instrucciones enviadas a su correo electrónico').css('color', 'green');
+                messageDiv.text('Instrucciones enviadas a su correo electrónico').css('color', 'orange');
                 setTimeout(function() {
                     window.location.href = 'index.html';
                 }, 3000);

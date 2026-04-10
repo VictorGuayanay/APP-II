@@ -30,100 +30,50 @@
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
         <style>
-            .container-login100 {
-                background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%) !important;
-                position: relative;
-                overflow: hidden;
-            }
-            .container-login100::before {
-                content: '';
-                position: absolute;
-                width: 200%;
-                height: 200%;
-                background: radial-gradient(circle, rgba(59, 130, 246, 0.1) 0%, transparent 70%);
-                top: -50%;
-                left: -50%;
-            }
-            .wrap-login100 {
-                background: rgba(255, 255, 255, 0.05) !important;
-                backdrop-filter: blur(16px);
-                -webkit-backdrop-filter: blur(16px);
-                border: 1px solid rgba(255, 255, 255, 0.1);
-                box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-                padding: 55px !important;
-            }
-            .login100-form-logo {
-                background-color: var(--primary) !important;
-                color: #fff !important;
-                box-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
-            }
-            .login100-form-title {
-                font-family: 'Inter', sans-serif !important;
-                font-weight: 700 !important;
-                letter-spacing: -0.025em;
-            }
-            .login100-form-btn {
-                background: var(--primary) !important;
-                color: #fff !important;
-                font-family: 'Inter', sans-serif !important;
-                font-weight: 600 !important;
-                border-radius: var(--radius-sm) !important;
-                height: 55px !important;
-                transition: var(--transition) !important;
-            }
-            .login100-form-btn:hover {
-                background: var(--primary-hover) !important;
-                transform: translateY(-2px);
-                box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.3);
-            }
-            .input100 {
-                font-family: 'Inter', sans-serif !important;
-                background: rgba(255, 255, 255, 0.05) !important;
-                border: 1px solid rgba(255, 255, 255, 0.1) !important;
-                border-radius: var(--radius-sm) !important;
-                padding-left: 20px !important;
-                height: 50px !important;
-            }
-            .focus-input100::before {
-                background: var(--primary) !important;
-            }
+            /* Shared auth screen styles are now in modern-design.css */
+            /* Only page-specific tweaks here if needed */
         </style>
         <!--===============================================================================================-->
     </head>
     <body>
         <div class="limiter">
-            <div class="container-login100" style="background-image:url('images/bg.jpg')">
-                <div class="wrap-login100">
+            <div class="auth-container">
+                <div class="auth-wrap animate__animated animate__fadeInDown">
                     <form class="login100-form validate-form" id="loginForm">
-                        <span class="login100-form-logo">
+                        <div class="auth-logo">
                             <i class="zmdi zmdi-account"></i>
-                        </span>
+                        </div>
 
-                        <span class="login100-form-title p-b-34 p-t-27">
-                            Iniciar Sesión
-                        </span>
+                        <h2 class="auth-title p-b-40">
+                            INICIAR SESIÓN
+                        </h2>
 
-                        <div class="wrap-input100 validate-input" data-validate="Ingrese el usuario">
+                        <div class="wrap-input100 validate-input m-b-23" data-validate="Usuario es requerido">
                             <input class="input100" type="text" id="username" name="username" placeholder="Usuario">
-                            <span class="focus-input100" data-placeholder=""></span>
+                            <span class="focus-input100" data-placeholder="&#xf207;"></span>
                         </div>
 
-                        <div class="wrap-input100 validate-input" data-validate="Ingrese la contraseña">
-                            <input class="input100" type="password" id="password" name="pass" placeholder="Contraseña">
-                            <span class="focus-input100" data-placeholder=""></span>
+                        <div class="wrap-input100 validate-input m-b-23" data-validate="Contraseña es requerida">
+                            <input class="input100" type="password" id="password" name="password" placeholder="Contraseña">
+                            <span class="focus-input100" data-placeholder="&#xf191;"></span>
                         </div>
 
-                        <div class="container-login100-form-btn">
-                            <button class="login100-form-btn" type="submit">Iniciar Sesión</button>
+                        <div class="container-login100-form-btn p-t-10">
+                            <button class="auth-btn" type="submit">
+                                ACCEDER
+                            </button>
                         </div>
 
                         <div id="message" class="message"></div>
 
-                        <!-- Nuevos enlaces para Registro y Olvidé mi contraseña -->
-                        <div class="text-center p-t-20">
-                            <a href="registrer.html" class="txt2" style="color:aliceblue;">Registrarse</a>
-                            <br>
-                            <a href="reset_pass.html" class="txt2" style="color:aliceblue;">Olvidé mi contraseña</a>
+                        <div class="text-center p-t-30">
+                            <a href="registrer.html" class="txt2">
+                                Registrarse
+                            </a>
+                            <span class="txt1 p-l-10 p-r-10">|</span>
+                            <a href="reset_pass.html" class="txt2">
+                                Olvidé mi contraseña
+                            </a>
                         </div>
                     </form>
                 </div>

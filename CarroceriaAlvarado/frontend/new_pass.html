@@ -32,60 +32,45 @@
 
     <!--===============================================================================================-->
     <style>
-        .strength-indicator {
-            margin-top: 5px;
-            font-size: 12px;
-            text-align: left;
-        }
-        .strength-low {
-            color: red;
-        }
-        .strength-medium {
-            color: orange;
-        }
-        .strength-good {
-            color: green;
-        }
-        .valid {
-            border: 2px solid green !important;
-        }
-        .invalid {
-            border: 2px solid red !important;
-        }
+        /* Shared auth screen styles are now in modern-design.css */
     </style>
 </head>
 <body>
     <div class="limiter">
-        <div class="container-login100" style="background-image: url('images/bg.jpg');">
-            <div class="wrap-login100">
+        <div class="auth-container">
+            <div class="auth-wrap animate__animated animate__fadeIn">
                 <form class="login100-form validate-form" id="newPassForm">
-                    <span class="login100-form-logo">
-                        <i class="zmdi zmdi-account"></i>
-                    </span>
-
-                    <span class="login100-form-title p-b-34 p-t-27">
-                        Nueva Contraseña
-                    </span>
-
-                    <div class="wrap-input100 validate-input" data-validate="Ingrese la nueva contraseña">
-                        <input class="input100" type="password" id="password" name="password" placeholder="Nueva Contraseña">
-                        <span class="focus-input100" data-placeholder=""></span>
+                    <div class="auth-logo">
+                        <i class="zmdi zmdi-lock-open"></i>
                     </div>
-                    <div id="strengthIndicator" class="strength-indicator">Fortaleza: Baja</div>
 
-                    <div class="wrap-input100 validate-input" data-validate="Repita la contraseña">
+                    <h2 class="auth-title p-b-40">
+                        NUEVA CONTRASEÑA
+                    </h2>
+
+                    <div class="wrap-input100 validate-input m-b-20" data-validate="Ingrese la nueva contraseña">
+                        <input class="input100" type="password" id="password" name="password" placeholder="Nueva Contraseña">
+                        <span class="focus-input100" data-placeholder="&#xf191;"></span>
+                    </div>
+                    <div id="strengthIndicator" class="strength-indicator m-b-20">Fortaleza: Baja</div>
+
+                    <div class="wrap-input100 validate-input m-b-30" data-validate="Repita la contraseña">
                         <input class="input100" type="password" id="confirm_password" name="confirm_password" placeholder="Repita la Contraseña">
-                        <span class="focus-input100" data-placeholder=""></span>
+                        <span class="focus-input100" data-placeholder="&#xf191;"></span>
                     </div>
 
                     <div class="container-login100-form-btn">
-                        <button class="login100-form-btn" type="submit">Cambiar Contraseña</button>
+                        <button class="auth-btn" type="submit">
+                            CAMBIAR CONTRASEÑA
+                        </button>
                     </div>
 
                     <div id="message" class="message"></div>
 
-                    <div class="text-center p-t-20">
-                        <a href="index.html" class="txt2">Volver a Iniciar Sesión</a>
+                    <div class="text-center p-t-30">
+                        <a href="index.html" class="txt2">
+                            Volver a Iniciar Sesión
+                        </a>
                     </div>
                 </form>
             </div>
@@ -153,7 +138,7 @@
                 const messageDiv = $('#message');
 
                 if (password === confirmPassword && password !== '') {
-                    messageDiv.text('Contraseña cambiada exitosamente').css('color', 'green');
+                    messageDiv.text('Contraseña cambiada exitosamente').css('color', 'orange');
                     setTimeout(function() {
                         window.location.href = 'index.html';
                     }, 3000);
