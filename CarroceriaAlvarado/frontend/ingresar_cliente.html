@@ -75,7 +75,7 @@
 
         <div class="content-area container-fluid pt-4">
             <h2 class="card-header-title">Registrar Nuevo Cliente</h2>
-            <div class="card">
+            <div class="dashboard-card shadow-sm">
                 <div class="card-body">
                     <form id="formIngresarCliente">
                         <div class="mb-3">
@@ -106,6 +106,7 @@
 </div>
 
 <script src="js/config.js"></script>
+    <script src="js/dashboard-core.js"></script>
     <script src="vendor/jquery/jquery-3.2.1.min.js"></script>
 <script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
 <script>
@@ -116,7 +117,7 @@ $(document).ready(function () {
     if (!token) { window.location.href = 'index.html'; return; }
     const loggedInUsername = localStorage.getItem('loggedInUsername');
     if(loggedInUsername) { $('#currentUserName').text(loggedInUsername); }
-    $('#logoutButton').on('click', function(e) { e.preventDefault(); localStorage.clear(); window.location.href = 'index.html'; });
+    
 
     // Lógica para registrar cliente
     $('#formIngresarCliente').on('submit', function(event) {
@@ -137,7 +138,7 @@ $(document).ready(function () {
         }
 
         $.ajax({
-            url: 'https://553682876eea.ngrok-free.app/clientes',
+            url: `${window.CONFIG.API_BASE_URL}/clientes`,
             method: 'POST',
             headers: {
                 'Authorization': 'Bearer ' + token,

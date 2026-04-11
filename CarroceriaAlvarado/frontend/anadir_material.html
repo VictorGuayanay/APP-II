@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
     <title>Agregar Nuevo Material - Carrocerias Alvarado</title>
@@ -80,7 +80,7 @@
         <div class="content-area container-fluid pt-4">
             <h2 class="card-header-title">Agregar Nuevo Material al Inventario</h2>
             
-            <div class="card">
+            <div class="dashboard-card shadow-sm">
                 <div class="card-header">
                     Detalles del Nuevo Material
                 </div>
@@ -215,42 +215,13 @@
 </div>
 
 <script src="js/config.js"></script>
+    <script src="js/dashboard-core.js"></script>
     <script src="vendor/jquery/jquery-3.2.1.min.js"></script>
 <script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
 
 <script>
 $(document).ready(function () {
-    // Funcionalidad para mostrar/ocultar el sidebar
-    function toggleSubmenu(event) {
-        event.preventDefault(); // Evita que el enlace recargue la página
-        const submenu = event.target.nextElementSibling;
-        submenu.style.display = submenu.style.display === 'block' ? 'none' : 'block';
-    }
-
-    // --- Protecci�n de P�gina y Datos de Usuario ---
-    const token = localStorage.getItem('token');
-    const userRol = localStorage.getItem('userRol');
-    const loggedInUsername = localStorage.getItem('loggedInUsername');
-
-    const rolesPermitidos = ['Administrador', 'Supervisor', 'Encargado de Inventario']; // Ajusta roles seg�n necesidad
-
-    if (!token || !userRol || !rolesPermitidos.includes(userRol)) {
-        console.log("anadir_material.html - Acceso denegado o no autenticado. Redirigiendo a login.");
-        window.location.href = 'index.html';
-        return; 
-    }
-
-    if (loggedInUsername) {
-        $('#currentUserName').text(loggedInUsername);
-    }
-
-    $('#logoutButton').on('click', function(e) {
-        e.preventDefault();
-        localStorage.removeItem('token');
-        localStorage.removeItem('userRol');
-        localStorage.removeItem('loggedInUsername');
-        window.location.href = 'index.html';
-    });
+    
 
     // --- Cargar Proveedores ---
     function cargarProveedores() {

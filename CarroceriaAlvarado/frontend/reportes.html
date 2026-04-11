@@ -103,7 +103,7 @@
                 </div>
             </div>
 
-            <div class="card" id="reporteResultados">
+            <div class="dashboard-card shadow-sm" id="reporteResultados">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     Resultados del Reporte
                     <button class="btn btn-danger btn-sm" id="imprimirPdfButton" disabled>
@@ -141,6 +141,7 @@
 </div>  
 
 <script src="js/config.js"></script>
+    <script src="js/dashboard-core.js"></script>
     <script src="vendor/jquery/jquery-3.2.1.min.js"></script>
 <script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
 
@@ -220,7 +221,7 @@ $(document).ready(function() {
     if (!token) { window.location.href = 'index.html'; return; }
     const loggedInUsername = localStorage.getItem('loggedInUsername');
     if (loggedInUsername) { $('#currentUserName').text(loggedInUsername); }
-    $('#logoutButton').on('click', function(e) { e.preventDefault(); localStorage.clear(); window.location.href = 'index.html'; });
+    
 
     // Cargar los filtros al iniciar la página
     cargarFiltros();

@@ -1,7 +1,7 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
-    <title>Ingresar Empleado - Carrocerías Alvarado</title>
+    <title>Ingresar Empleado - Carrocer�as Alvarado</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" type="text/css" href="vendor/bootstrap/css/bootstrap.min.css">
@@ -20,16 +20,16 @@
     <!-- Sidebar -->
    <nav id="sidebar">
         <div class="sidebar-header">
-            <h3>Carrocerías Alvarado</h3>
+            <h3>Carrocer�as Alvarado</h3>
         </div>
         <ul class="list-unstyled components">
-            <p class="ms-3">Administracón</p>
+            <p class="ms-3">Administrac�n</p>
             <li>
                 <a href="#dashboardSubmenu" data-bs-toggle="collapse" aria-expanded="false" class="dropdown-toggle">
                     <i class="fa fa-tachometer"></i> Dashboard
                 </a>
                 <ul class="collapse list-unstyled" id="dashboardSubmenu">
-                    <li><a href="vision_general.html">Visión General</a></li>
+                    <li><a href="vision_general.html">Visi�n General</a></li>
                 </ul>
             </li>
             <li> 
@@ -43,7 +43,7 @@
                 </a>
                 <ul class="collapse list-unstyled" id="inventarioSubmenu">
                     <li><a href="ver_inventario.html">Ver Inventario</a></li>
-                    <li><a href="anadir_material.html">Añadir Material</a></li>
+                    <li><a href="anadir_material.html">A�adir Material</a></li>
                     <li><a href="entradas_salidas_inventario.html">Entradas/Salidas</a></li>
                 </ul>
             </li>
@@ -53,11 +53,11 @@
             <li><a href="ingresar_cliente.html"><i class="fa fa-user-plus"></i> Ingreso Clientes</a></li>
             <li><a href="ingresar_proveedor.html"><i class="fa fa-truck"></i> Ingreso Proveedores</a></li>
             <li><a href="ver_proveedores.html"><i class="fa fa-list"></i> Ver Proveedores</a></li>
-            <li><a href="orden_trabajo.html"><i class="fa fa-briefcase"></i> Órdenes de Trabajo</a></li>
-            <li><a href="listar_ordenes_trabajo.html"><i class="fa fa-briefcase"></i> Listar Órdenes de Trabajo</a></li>
+            <li><a href="orden_trabajo.html"><i class="fa fa-briefcase"></i> �rdenes de Trabajo</a></li>
+            <li><a href="listar_ordenes_trabajo.html"><i class="fa fa-briefcase"></i> Listar �rdenes de Trabajo</a></li>
             <li><a href="consultar_comprobantes.html"><i class="fa fa-money"></i> Comprobante</a></li>
             <li><a href="reportes.html"><i class="fa fa-bar-chart"></i> Reportes</a></li>
-            <li><a href="#" data-bs-toggle="modal" data-bs-target="#settingsModal" ><i class="fa fa-cog"></i> Configuración</a></li>
+            <li><a href="#" data-bs-toggle="modal" data-bs-target="#settingsModal" ><i class="fa fa-cog"></i> Configuraci�n</a></li>
         </ul>
     </nav>
 
@@ -67,18 +67,18 @@
             <div class="container-fluid">
                 <button type="button" id="sidebarCollapse" class="btn btn-info" >
                     <i class="fa fa-align-left"></i>
-                    <span>Menú</span>
+                    <span>Men�</span>
                 </button>
                 <div class="user-info">
                     <span>Hola, <strong id="currentUserName">Admin</strong>!</span>
-                    <a href="#" id="logoutButton" class="ms-3">Cerrar Sesión</a>
+                    <a href="#" id="logoutButton" class="ms-3">Cerrar Sesi�n</a>
                 </div>
             </div>
         </nav>
 
         <div class="content-area container-fluid pt-4">
             <h2 class="card-header-title">Registrar Nuevo Empleado</h2>
-            <div class="card">
+            <div class="dashboard-card shadow-sm">
                 <div class="card-body">
                     <form id="formIngresarEmpleado">
                         <div class="mb-3">
@@ -86,8 +86,8 @@
                             <input type="text" class="form-control" id="empleadoNombre" required>
                         </div>
                         <div class="mb-3">
-                            <label for="empleadoCedula" class="form-label">Cédula <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="empleadoCedula" maxlength="10" pattern="[0-9]{1,10}" title="Solo números, máximo 10 dígitos" required>
+                            <label for="empleadoCedula" class="form-label">C�dula <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="empleadoCedula" maxlength="10" pattern="[0-9]{1,10}" title="Solo n�meros, m�ximo 10 d�gitos" required>
                         </div>
                         <div class="mb-3">
                             <label for="empleadoRol" class="form-label">Rol / Cargo <span class="text-danger">*</span></label>
@@ -98,17 +98,17 @@
                                 <option value="tapicero">Tapicero</option>
                                 <option value="soldador">Soldador</option>
                                 <option value="enderezador">Enderezador</option>
-                                <option value="mecanico">Mecánico</option>
+                                <option value="mecanico">Mec�nico</option>
                                 <option value="laminador">Laminador</option>
                                 <option value="ensamblador">Ensamblador</option>
                             </select>
                         </div>
                         <div class="mb-3">
-                            <label for="empleadoTelefono" class="form-label">Teléfono <span class="text-danger">*</span></label>
-                            <input type="tel" class="form-control" id="empleadoTelefono" maxlength="10" pattern="[0-9]{1,10}" title="Solo números, máximo 10 dígitos" required>
+                            <label for="empleadoTelefono" class="form-label">Tel�fono <span class="text-danger">*</span></label>
+                            <input type="tel" class="form-control" id="empleadoTelefono" maxlength="10" pattern="[0-9]{1,10}" title="Solo n�meros, m�ximo 10 d�gitos" required>
                         </div>
                         <div class="mb-3">
-                            <label for="empleadoFechaContratacion" class="form-label">Fecha de Contratación <span class="text-danger">*</span></label>
+                            <label for="empleadoFechaContratacion" class="form-label">Fecha de Contrataci�n <span class="text-danger">*</span></label>
                             <input type="date" class="form-control" id="empleadoFechaContratacion" required>
                         </div>
                         <div class="mb-3">
@@ -126,20 +126,20 @@
 </div>
 
 <!-- Scripts -->
-<script src="js/config.js"></script>
+<script src="js/config.js"></script>`r`n    <script src="js/dashboard-core.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
 $(document).ready(function () {
-    // Lógica estándar
+    // L�gica est�ndar
     $('#sidebarCollapse').on('click', function () { $('#sidebar').toggleClass('active'); });
     const token = localStorage.getItem('token');
     if (!token) { window.location.href = 'index.html'; return; }
     const loggedInUsername = localStorage.getItem('loggedInUsername');
     if(loggedInUsername) { $('#currentUserName').text(loggedInUsername); }
-    $('#logoutButton').on('click', function(e) { e.preventDefault(); localStorage.clear(); window.location.href = 'index.html'; });
+    
 
-    // Lógica para registrar empleado
+    // L�gica para registrar empleado
     $('#formIngresarEmpleado').on('submit', function(event) {
         event.preventDefault();
         const mensajeDiv = $('#mensajeEmpleado');
@@ -173,7 +173,7 @@ $(document).ready(function () {
             },
             data: JSON.stringify(empleadoData),
             success: function(response) {
-                mensajeDiv.text(response.message || 'Empleado registrado con éxito.').removeClass('alert-info').addClass('alert alert-success');
+                mensajeDiv.text(response.message || 'Empleado registrado con �xito.').removeClass('alert-info').addClass('alert alert-success');
                 $('#formIngresarEmpleado')[0].reset();
             },
             error: function(xhr) {

@@ -72,6 +72,7 @@
                             <option value="">Seleccione un Rol</option>
                             <option value="Administrador">Administrador</option>
                             <option value="Supervisor">Supervisor</option>
+                            <option value="Asistente">Asistente</option>
                         </select>
                     </div>
 
@@ -107,11 +108,32 @@
     <script src="vendor/select2/select2.min.js"></script>
     <script>
         $(document).ready(function() {
+            function cargarRoles() {
+                $.ajax({
+                    url: `${API_BASE_URL}/roles`,
+                    method: 'GET',
+                    success: function(roles) {
+                        const rolSelect = $('#rol');
+                        rolSelect.find('option:not(:first)').remove();
+                        roles.forEach(role => {
+                            rolSelect.append(`<option value="${role.rol}">${role.rol}</option>`);
+                        });
+                        rolSelect.trigger('change');
+                    },
+                    error: function(xhr) {
+                        console.error("Error al cargar roles:", xhr.responseText);
+                    }
+                });
+            }
+
+            cargarRoles();
+
             $('#rol').select2({
                 minimumResultsForSearch: Infinity,
                 placeholder: "Elija una opción",
                 allowClear: true
             });
+
 
             $('#password').on('input', function() {
                 const password = $(this).val();
@@ -180,7 +202,7 @@
                 }
 
                 $.ajax({
-                    url: 'https://553682876eea.ngrok-free.app/registro',
+                    url: `${window.CONFIG.API_BASE_URL}/registro`,
                     method: 'POST',
                     contentType: 'application/json',
                     data: JSON.stringify({ username, email, password, rol }),

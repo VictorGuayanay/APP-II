@@ -81,7 +81,7 @@
         <div class="content-area container-fluid pt-4">
             <h2 class="card-header-title">Inventario Disponible</h2>
             
-            <div class="card animate__animated animate__fadeInUp">
+            <div class="dashboard-card animate__animated animate__fadeInUp">
                 <div class="card-header">
                     Lista de Materiales
                 </div>
@@ -285,8 +285,9 @@
 </div>
 
 <script src="js/config.js"></script>
+    <script src="js/dashboard-core.js"></script>
     <script src="vendor/jquery/jquery-3.2.1.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
 <script src="js/toast.js"></script>
 <script src="js/loading.js"></script>
 
@@ -543,10 +544,7 @@ function calcularPrecioVentaEdicion() {
 
 
 $(document).ready(function () {
-    // Funcionalidad para mostrar/ocultar el sidebar
-    $('#sidebarCollapse').on('click', function () {
-        $('#sidebar').toggleClass('active');
-    });
+    
 
     // Verificaci�n de token y rol al cargar la p�gina
     const token = localStorage.getItem('token');
@@ -579,14 +577,7 @@ $(document).ready(function () {
 
     // Manejador del bot�n de Logout
     // Aseg�rate que el bot�n de logout en esta p�gina tenga id="logoutButton"
-    $('#logoutButton').on('click', function(e) { 
-        e.preventDefault();
-        console.log("ver_inventario.html - Cerrando sesión...");
-        localStorage.removeItem('token');
-        localStorage.removeItem('userRol');
-        localStorage.removeItem('loggedInUsername'); 
-        window.location.href = 'index.html';
-    });
+    
 
     // Eventos para recalcular precio de venta en modal de edici�n
     $(document).on('input change', '#editMaterialPrecioCompra, #editMaterialPorcentajeGanancia', calcularPrecioVentaEdicion);

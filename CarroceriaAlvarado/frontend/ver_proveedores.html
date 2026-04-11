@@ -75,7 +75,7 @@
         <div class="content-area container-fluid pt-4">
             <h2 class="card-header-title">Lista de Proveedores</h2>
             
-            <div class="card">
+            <div class="dashboard-card shadow-sm">
                 <div class="card-header">
                     Proveedores Registrados
                 </div>
@@ -181,6 +181,7 @@
 </div>
 
 <script src="js/config.js"></script>
+    <script src="js/dashboard-core.js"></script>
     <script src="vendor/jquery/jquery-3.2.1.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
 
@@ -272,11 +273,7 @@ $(document).ready(function () {
         $('#currentUserName').text(loggedInUsername);
     }
 
-    $('#logoutButton').on('click', function(e) { 
-        e.preventDefault();
-        localStorage.clear();
-        window.location.href = 'index.html';
-    });
+    
 
     // Cargar proveedores al iniciar
     loadProveedores();

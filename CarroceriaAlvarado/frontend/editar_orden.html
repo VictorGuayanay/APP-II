@@ -1,7 +1,7 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
-    <title>Editar Orden de Trabajo - Carrocerías Alvarado</title>
+    <title>Editar Orden de Trabajo - Carrocer�as Alvarado</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" type="text/css" href="vendor/bootstrap/css/bootstrap.min.css">
@@ -20,16 +20,16 @@
     <!-- Sidebar -->
     <nav id="sidebar">
         <div class="sidebar-header">
-            <h3>Carrocerías Alvarado</h3>
+            <h3>Carrocer�as Alvarado</h3>
         </div>
         <ul class="list-unstyled components">
-            <p class="ms-3">Administración</p>
+            <p class="ms-3">Administraci�n</p>
             <li>
                 <a href="#dashboardSubmenu" data-bs-toggle="collapse" aria-expanded="false" class="dropdown-toggle">
                     <i class="fa fa-tachometer"></i> Dashboard
                 </a>
                 <ul class="collapse list-unstyled" id="dashboardSubmenu">
-                    <li><a href="vision_general.html">Visión General</a></li>
+                    <li><a href="vision_general.html">Visi�n General</a></li>
                 </ul>
             </li>
             <li> 
@@ -43,8 +43,8 @@
                 </a>
                 <ul class="collapse list-unstyled" id="inventarioSubmenu">
                     <li><a href="ver_inventario.html">Ver Inventario</a></li>
-                    <li><a href="anadir_material.html">Añadir Material</a></li>
-                    <li><a href="gestion_categorias.html">Gestión de Categorías</a></li>
+                    <li><a href="anadir_material.html">A�adir Material</a></li>
+                    <li><a href="gestion_categorias.html">Gesti�n de Categor�as</a></li>
                     <li><a href="entradas_salidas_inventario.html">Entradas/Salidas</a></li>
                 </ul>
             </li>
@@ -58,7 +58,7 @@
             <li class="active"><a href="listar_ordenes_trabajo.html"><i class="fa fa-briefcase"></i> Listar Ordenes de Trabajo</a></li>
             <li><a href="consultar_comprobantes.html"><i class="fa fa-money"></i> Comprobante</a></li>
             <li><a href="reportes.html"><i class="fa fa-bar-chart"></i> Reportes</a></li>
-            <li><a href="#" data-bs-toggle="modal" data-bs-target="#settingsModal" ><i class="fa fa-cog"></i> Configuración</a></li>
+            <li><a href="#" data-bs-toggle="modal" data-bs-target="#settingsModal" ><i class="fa fa-cog"></i> Configuraci�n</a></li>
         </ul>
     </nav>
 
@@ -67,11 +67,11 @@
         <nav class="navbar navbar-expand-lg navbar-light top-navbar">
             <div class="container-fluid">
                 <button type="button" id="sidebarCollapse" class="btn btn-info">
-                    <i class="fa fa-align-left"></i> <span>Menú</span>
+                    <i class="fa fa-align-left"></i> <span>Men�</span>
                 </button>
                 <div class="user-info">
                     <span>Hola, <strong id="currentUserName">Usuario</strong>!</span>
-                    <a href="#" id="logoutButton" class="ms-3">Cerrar Sesión</a>
+                    <a href="#" id="logoutButton" class="ms-3">Cerrar Sesi�n</a>
                 </div>
             </div>
         </nav>
@@ -84,13 +84,13 @@
                 </a>
             </div>
             
-            <div class="card">
+            <div class="dashboard-card shadow-sm">
                 <div class="card-header">
                     Datos de la Orden
                 </div>
                 <div class="card-body">
                     <form id="formEditarOrden">
-                        <!-- Datos B�sicos -->
+                        <!-- Datos B?sicos -->
                         <div class="row">   
                             <div class="col-md-6 mb-3">
                                 <label for="selectCliente" class="form-label">Cliente <span class="text-danger">*</span></label>
@@ -101,7 +101,7 @@
                             <div class="col-md-6 mb-3">
                                 <label class="form-label">Estado Actual</label>
                                 <input type="text" id="estadoActual" class="form-control" readonly>
-                                <small class="text-muted">El estado no se puede editar desde aquí</small>
+                                <small class="text-muted">El estado no se puede editar desde aqu�</small>
                             </div>
                         </div>
                         <div class="row">
@@ -110,12 +110,12 @@
                                 <input type="date" class="form-control" id="fechaInicio" required>
                             </div>
                             <div class="col-md-6 mb-3">
-                                <label for="fechaFin" class="form-label">Fecha de Finalización <span class="text-danger">*</span></label>
+                                <label for="fechaFin" class="form-label">Fecha de Finalizaci�n <span class="text-danger">*</span></label>
                                 <input type="date" class="form-control" id="fechaFin" required>
                             </div>
                         </div>
                         <div class="mb-3">
-                            <label for="descripcionOrden" class="form-label">Descripción del Trabajo <span class="text-danger">*</span></label>
+                            <label for="descripcionOrden" class="form-label">Descripci�n del Trabajo <span class="text-danger">*</span></label>
                             <textarea class="form-control" id="descripcionOrden" rows="4" required></textarea>
                         </div>
                         
@@ -123,7 +123,7 @@
                         <hr>
                         <h5>Empleados Asignados</h5>
                         <div id="empleadosAsignadosContainer" class="mb-3">
-                            <!-- Se llenará dinámicamente -->
+                            <!-- Se llenar� din�micamente -->
                         </div>
                         
                         <!-- Materiales -->
@@ -225,26 +225,26 @@
     </div>
 </div>
 
-<!-- Modal de Configuraci�n -->
+<!-- Modal de Configuraci?n -->
 <div id="settingsModalPlaceholder"></div>
 
 <!-- Scripts -->
-<script src="js/config.js"></script>
+<script src="js/config.js"></script>`r`n    <script src="js/dashboard-core.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="js/settings_modal.js"></script>
 
 <script>
 $(document).ready(function() {
-    // L�gica est�ndar
+    // L?gica est?ndar
     $('#sidebarCollapse').on('click', function() { $('#sidebar').toggleClass('active'); });
     const token = localStorage.getItem('token');
     if (!token) { window.location.href = 'index.html'; return; }
     const loggedInUsername = localStorage.getItem('loggedInUsername');
     if (loggedInUsername) { $('#currentUserName').text(loggedInUsername); }
-    $('#logoutButton').on('click', function(e) { e.preventDefault(); localStorage.clear(); window.location.href = 'index.html'; });
+    
 
-    // Cargar modal de configuraci�n
+    // Cargar modal de configuraci?n
     $('#settingsModalPlaceholder').load('settings_modal.html');
 
     // Obtener ID de orden de la URL
@@ -252,7 +252,7 @@ $(document).ready(function() {
     const idOrden = urlParams.get('id');
     
     if (!idOrden) {
-        alert('No se especificó ID de orden');
+        alert('No se especific� ID de orden');
         window.location.href = 'listar_ordenes_trabajo.html';
         return;
     }
@@ -302,7 +302,7 @@ $(document).ready(function() {
         });
     }
     
-    // Mostrar empleados asignados con bot�n Cambiar
+    // Mostrar empleados asignados con bot?n Cambiar
     function mostrarEmpleadosAsignados() {
         const $container = $('#empleadosAsignadosContainer');
         $container.empty();
@@ -329,11 +329,11 @@ $(document).ready(function() {
             $container.append(empleadoCard);
         });
         
-        // Bot�n para agregar m�s empleados
+        // Bot?n para agregar m?s empleados
         $container.append('<button type="button" class="btn btn-sm btn-primary mt-2" id="btnAgregarMasEmpleados"><i class="fa fa-plus"></i> Agregar Otro Empleado</button>');
     }
     
-    // Obtener empleados disponibles (excluyendo los que est�n en otras �rdenes activas)
+    // Obtener empleados disponibles (excluyendo los que est?n en otras ?rdenes activas)
     function obtenerEmpleadosDisponibles(callback) {
         $.ajax({
             url: `${API_BASE_URL}/empleados/disponibles`,
@@ -353,7 +353,7 @@ $(document).ready(function() {
     // Mostrar modal para seleccionar empleado
     function mostrarModalSeleccionEmpleado(indexACambiar) {
         obtenerEmpleadosDisponibles(function(empleadosDisponibles) {
-            // Filtrar empleados que ya est�n asignados a esta orden
+            // Filtrar empleados que ya est?n asignados a esta orden
             const idsAsignados = empleadosAsignados.map(e => e.id_empleado);
             const disponibles = empleadosDisponibles.filter(e => !idsAsignados.includes(e.id_empleado));
             
@@ -380,7 +380,7 @@ $(document).ready(function() {
                                 <select class="form-select" id="selectNuevoEmpleado">
                                     ${opciones}
                                 </select>
-                                <small class="text-muted">Solo se muestran empleados que no están asignados a otras órdenes activas.</small>
+                                <small class="text-muted">Solo se muestran empleados que no est�n asignados a otras �rdenes activas.</small>
                             </div>
                             <div class="modal-footer">
                                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
@@ -398,7 +398,7 @@ $(document).ready(function() {
             const modal = new bootstrap.Modal(document.getElementById('modalSeleccionEmpleado'));
             modal.show();
             
-            // Confirmar selección
+            // Confirmar selecci�n
             $('#btnConfirmarEmpleado').on('click', function() {
                 const $select = $('#selectNuevoEmpleado');
                 const idEmpleado = parseInt($select.val());
@@ -523,14 +523,14 @@ $(document).ready(function() {
         const cantidad = parseInt($('#cantidadMaterial').val());
         
         if (!idMaterial || !cantidad || cantidad <= 0) {
-            alert('Por favor, seleccione un material y una cantidad válida');
+            alert('Por favor, seleccione un material y una cantidad v�lida');
             return;
         }
         
         // Verificar si ya existe
         const existe = materialesAgregados.find(m => m.id_material === parseInt(idMaterial));
         if (existe) {
-            alert('Este material ya fue agregado. Elimínelo primero si desea cambiar la cantidad.');
+            alert('Este material ya fue agregado. Elim�nelo primero si desea cambiar la cantidad.');
             return;
         }
         
@@ -547,7 +547,7 @@ $(document).ready(function() {
         actualizarListaMateriales();
         actualizarResumenFinanciero();
         
-        // Limpiar selección
+        // Limpiar selecci�n
         $('#cantidadMaterial').val('');
         $selectMaterial.val('');
         $('#cantidadMaterial').prop('disabled', true);
@@ -634,7 +634,7 @@ $(document).ready(function() {
             total_orden: subtotalMateriales * (1 + (parseInt($('#margenGanancia').val()) || 20) / 100) * (1 + (parseInt($('#ivaPorcentaje').val()) || 0) / 100)
         };
         
-        // Validaci�n
+        // Validaci?n
         if (ordenData.fecha_fin && ordenData.fecha_fin < ordenData.fecha_inicio) {
             mensajeDiv.html('<div class="alert alert-danger">La fecha de fin no puede ser anterior a la fecha de inicio</div>');
             return;
@@ -654,7 +654,7 @@ $(document).ready(function() {
                 console.log('Respuesta:', response);
                 mensajeDiv.html('<div class="alert alert-success"><i class="fa fa-check"></i> ' + response.message + '</div>');
                 
-                // Redirigir despu�s de 2 segundos
+                // Redirigir despu?s de 2 segundos
                 setTimeout(function() {
                     window.location.href = `detalle_orden.html?id=${idOrden}`;
                 }, 2000);
@@ -667,7 +667,7 @@ $(document).ready(function() {
         });
     });
     
-    // Bot�n ver detalle
+    // Bot?n ver detalle
     $('#btnVerDetalle').on('click', function() {
         window.location.href = `detalle_orden.html?id=${idOrden}`;
     });
@@ -677,7 +677,7 @@ $(document).ready(function() {
     cargarTodosLosEmpleados();
     cargarProveedores();
     
-    // Cargar datos de la orden (esto llamar� a mostrarEmpleadosAsignados internamente)
+    // Cargar datos de la orden (esto llamar? a mostrarEmpleadosAsignados internamente)
     $.ajax({
         url: `${API_BASE_URL}/ordenes-trabajo/${idOrden}`,
         method: 'GET',
@@ -711,7 +711,7 @@ $(document).ready(function() {
                 });
                 mostrarEmpleadosAsignados();
             } else {
-                mostrarEmpleadosAsignados(); // Mostrar bot�n "Agregar Empleado"
+                mostrarEmpleadosAsignados(); // Mostrar bot?n "Agregar Empleado"
             }
             
             // Cargar materiales asignados
@@ -732,7 +732,7 @@ $(document).ready(function() {
             // Verificar si se puede editar
             if (orden.estado === 'Finalizado' || orden.estado === 'Cancelado') {
                 $('#formEditarOrden :input').prop('disabled', true);
-                $('#mensajeEditarOrden').html('<div class="alert alert-warning"><i class="fa fa-exclamation-triangle"></i> Esta orden no se puede editar porque está en estado ' + orden.estado + '</div>');
+                $('#mensajeEditarOrden').html('<div class="alert alert-warning"><i class="fa fa-exclamation-triangle"></i> Esta orden no se puede editar porque est� en estado ' + orden.estado + '</div>');
             }
         },
         error: function(xhr) {

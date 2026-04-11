@@ -1,7 +1,7 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
-    <title>Venta Directa de Materiales - Carrocerías Alvarado</title>
+    <title>Venta Directa de Materiales - Carrocer�as Alvarado</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" type="text/css" href="vendor/bootstrap/css/bootstrap.min.css">
@@ -18,307 +18,8 @@
     <link rel="stylesheet" href="css/fixed-layout.css">
     <!-- jsPDF para generar PDFs -->
     <script src="js/config.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-</head>
-<body>
-
-<div class="admin-wrapper">
-   <nav id="sidebar">
-        <div class="sidebar-header">
-            <h3>Carrocerías Alvarado</h3>
-        </div>
-        <ul class="list-unstyled components">
-            <p class="ms-3">Administración</p>
-            <li>
-                <a href="#dashboardSubmenu" data-bs-toggle="collapse" aria-expanded="false" class="dropdown-toggle">
-                    <i class="fa fa-tachometer"></i> Dashboard
-                </a>
-                <ul class="collapse list-unstyled" id="dashboardSubmenu">
-                    <li><a href="vision_general.html">Visión General</a></li>
-                </ul>
-            </li>
-            <li> 
-                <a href="admin.html">
-                    <i class="fa fa-users"></i> Panel Principal
-                </a>
-            </li>
-            <li class="active">
-                <a href="#inventarioSubmenu" data-bs-toggle="collapse" aria-expanded="true" class="dropdown-toggle">
-                    <i class="fa fa-cubes"></i> Inventario
-                </a>
-                <ul class="collapse show list-unstyled" id="inventarioSubmenu">
-                    <li><a href="ver_inventario.html">Ver Inventario</a></li>
-                    <li><a href="anadir_material.html">Añadir Material</a></li>
-                    <li><a href="entradas_salidas_inventario.html">Venta Directa</a></li>
-                    <li><a href="registro_ventas.html">Registro de Ventas</a></li>
-                </ul>
-            </li>
-            <li><a href="ingresar_empleado.html"><i class="fa fa-address-card"></i> Ingreso Empleados</a></li>
-            <li><a href="ingresar_cliente.html"><i class="fa fa-user-plus"></i> Ingreso Clientes</a></li>
-            <li><a href="orden_trabajo.html"><i class="fa fa-briefcase"></i> Órdenes de Trabajo</a></li>
-            <li><a href="listar_ordenes_trabajo.html"><i class="fa fa-briefcase"></i> Listar Órdenes de Trabajo</a></li>
-            <li><a href="#"><i class="fa fa-bar-chart"></i> Reportes</a></li>
-            <li><a href="#" data-bs-toggle="modal" data-bs-target="#settingsModal" ><i class="fa fa-cog"></i> Configuración</a></li>
-        </ul>
-    </nav>
-
-    <div id="content">
-        <nav class="navbar navbar-expand-lg navbar-light top-navbar">
-            <div class="container-fluid">
-                <button type="button" id="sidebarCollapse" class="btn btn-info" >
-                    <i class="fa fa-align-left"></i>
-                    <span>Menú</span>
-                </button>
-                <div class="user-info">
-                    <span>Hola, <strong id="currentUserName">Usuario</strong>!</span>
-                    <a href="#" id="logoutButton" class="ms-3">Cerrar Sesión</a>
-                </div>
-            </div>
-        </nav>
-
-        <div class="content-area container-fluid pt-4">
-            <h2 class="card-header-title">Venta Directa de Materiales a Cliente Final</h2>
-
-            <!-- Sección de Cliente -->
-            <div class="card form-section">
-                <div class="card-header bg-primary text-white">
-                    <i class="fa fa-user"></i> Información del Cliente
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-8 mb-3">
-                            <label for="ventaCliente" class="form-label">Cliente <span class="text-danger">*</span></label>
-                            <select class="form-select" id="ventaCliente" required>
-                                <option value="">Cargando clientes...</option>
-                            </select>
-                        </div>
-                        <div class="col-md-4 mb-3 d-flex align-items-end">
-                            <button type="button" class="btn btn-success me-2" id="btnConsumidorFinal">
-                                <i class="fa fa-user"></i> Consumidor Final
-                            </button>
-                            <button type="button" class="btn btn-info" id="btnAbrirModalCliente">
-                                <i class="fa fa-plus"></i> Nuevo Cliente
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <!-- Información del cliente seleccionado -->
-                    <div id="infoCliente" class="alert alert-info" style="display: none;">
-                        <strong><i class="fa fa-info-circle"></i> Datos del Cliente:</strong>
-                        <div id="datosCliente"></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Formulario de Productos -->
-            <div class="card form-section">
-                <div class="card-header bg-success text-white">
-                    <i class="fa fa-shopping-cart"></i> Agregar Producto al Carrito
-                </div>
-                <div class="card-body">
-                    <form id="formAgregarProducto">
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="ventaProveedor" class="form-label">Proveedor <span class="text-danger">*</span></label>
-                                <select class="form-select" id="ventaProveedor" required>
-                                    <option value="">Cargando proveedores...</option>
-                                </select>
-                                <small class="form-text text-muted">Seleccione primero el proveedor</small>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="ventaNombreMaterial" class="form-label">Material <span class="text-danger">*</span></label>
-                                <select class="form-select" id="ventaNombreMaterial" required disabled>
-                                    <option value="">Seleccione un proveedor primero...</option>
-                                </select>
-                            </div>
-                        </div>
-                        
-                        <div class="row">
-                            <div class="col-md-3 mb-3">
-                                <label for="ventaCantidad" class="form-label">Cantidad <span class="text-danger">*</span></label>
-                                <input type="number" class="form-control" id="ventaCantidad" placeholder="Ej: 5" min="1" required>
-                            </div>
-                            <div class="col-md-3 mb-3">
-                                <label for="ventaUnidad" class="form-label">Unidad</label>
-                                <input type="text" class="form-control" id="ventaUnidad" readonly style="background-color: #e9ecef;">
-                            </div>
-                            <div class="col-md-3 mb-3">
-                                <label for="ventaStockDisponible" class="form-label">Stock Disponible</label>
-                                <input type="text" class="form-control" id="ventaStockDisponible" readonly style="background-color: #e9ecef;">
-                            </div>
-                            <div class="col-md-3 mb-3">
-                                <label for="ventaPrecioUnitario" class="form-label">Precio Unitario</label>
-                                <input type="text" class="form-control" id="ventaPrecioUnitario" readonly style="background-color: #e9ecef;">
-                            </div>
-                        </div>
-                        
-                        <div class="row">
-                            <div class="col-md-3 mb-3">
-                                <label for="ventaPorcentajeGanancia" class="form-label">% Ganancia <span class="text-danger">*</span></label>
-                                <select class="form-select" id="ventaPorcentajeGanancia" required>
-                                    <option value="">Seleccione...</option>
-                                    <option value="5">5%</option>
-                                    <option value="10">10%</option>
-                                    <option value="15">15%</option>
-                                    <option value="20" selected>20%</option>
-                                    <option value="25">25%</option>
-                                    <option value="30">30%</option>
-                                    <option value="35">35%</option>
-                                    <option value="40">40%</option>
-                                    <option value="45">45%</option>
-                                    <option value="50">50%</option>
-                                </select>
-                            </div>
-                            <div class="col-md-3 mb-3">
-                                <label for="ventaPorcentajeIVA" class="form-label">% IVA <span class="text-danger">*</span></label>
-                                <select class="form-select" id="ventaPorcentajeIVA" required>
-                                    <option value="">Seleccione...</option>
-                                    <option value="5">5%</option>
-                                    <option value="8">8%</option>
-                                    <option value="10">10%</option>
-                                    <option value="12" selected>12%</option>
-                                    <option value="15">15%</option>
-                                    <option value="20">20%</option>
-                                </select>
-                            </div>
-                        </div>
-                        
-                        <hr class="my-4">
-                        <!-- Resumen de Venta -->
-                        <h6 class="mt-3 mb-2">Resumen de Venta</h6>
-                        
-                        <div class="row">
-                            <div class="col-md-3 mb-3">
-                                <label for="ventaSubtotal" class="form-label">Subtotal</label>
-                                <input type="text" class="form-control" id="ventaSubtotal" readonly style="background-color: #e9ecef;">
-                            </div>
-                            <div class="col-md-3 mb-3">
-                                <label for="ventaGanancia" class="form-label">Ganancia</label>
-                                <input type="text" class="form-control" id="ventaGanancia" readonly style="background-color: #e9ecef;">
-                            </div>
-                            <div class="col-md-3 mb-3">
-                                <label for="ventaIVA" class="form-label">IVA</label>
-                                <input type="text" class="form-control" id="ventaIVA" readonly style="background-color: #e9ecef;">
-                            </div>
-                            <div class="col-md-3 mb-3">
-                                <label for="ventaTotal" class="form-label">TOTAL</label>
-                                <input type="text" class="form-control" id="ventaTotal" readonly style="background-color: #d4edda; font-weight: bold; font-size: 1.3em; text-align: right; color: #155724;">
-                            </div>
-                        </div>
-                        
-                        <button type="submit" class="btn btn-primary"><i class="fa fa-plus-circle"></i> Agregar al Carrito</button>
-                        <button type="button" class="btn btn-secondary" id="btnLimpiarFormulario"><i class="fa fa-eraser"></i> Limpiar</button>
-                        <div id="mensajeProducto" class="mt-3"></div>
-                    </form>
-                </div>
-            </div>
-
-            <!-- Carrito de Compra -->
-            <div class="card form-section">
-                <div class="card-header bg-warning">
-                    <i class="fa fa-shopping-cart"></i> Carrito de Compra
-                </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-hover" id="tablaCarrito">
-                            <thead class="table-dark">
-                                <tr>
-                                    <th>Material</th>
-                                    <th>Cantidad</th>
-                                    <th>Precio Unit.</th>
-                                    <th>Subtotal</th>
-                                    <th>% Gan.</th>
-                                    <th>Ganancia</th>
-                                    <th>% IVA</th>
-                                    <th>IVA</th>
-                                    <th>Total</th>
-                                    <th>Acción</th>
-                                </tr>
-                            </thead>
-                            <tbody id="carritoBody">
-                                <tr id="carritoVacio">
-                                    <td colspan="10" class="text-center text-muted">
-                                        <i class="fa fa-shopping-cart"></i> El carrito está vacío
-                                    </td>
-                                </tr>
-                            </tbody>
-                            <tfoot id="carritoTotales" style="display: none;">
-                                <tr class="table-secondary">
-                                    <th colspan="3">TOTALES</th>
-                                    <th id="totalSubtotal">$0.00</th>
-                                    <th></th>
-                                    <th id="totalGanancia">$0.00</th>
-                                    <th></th>
-                                    <th id="totalIVA">$0.00</th>
-                                    <th id="totalGeneral" class="text-success fw-bold">$0.00</th>
-                                    <th></th>
-                                </tr>
-                            </tfoot>
-                        </table>
-                    </div>
-                    
-                    <hr>
-                    
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="ventaFormaPagoFinal" class="form-label">Forma de Pago <span class="text-danger">*</span></label>
-                            <select class="form-select" id="ventaFormaPagoFinal">
-                                <option value="">Seleccione...</option>
-                                <option value="Efectivo">Efectivo</option>
-                                <option value="Tarjeta">Tarjeta</option>
-                                <option value="Transferencia">Transferencia</option>
-                                <option value="Cheque">Cheque</option>
-                            </select>
-                        </div>
-                        <div class="col-md-6 mb-3 d-flex align-items-end">
-                            <button type="button" class="btn btn-success btn-lg w-100" id="btnRegistrarVenta" disabled>
-                                <i class="fa fa-check-circle"></i> Registrar Venta Completa
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <div id="mensajeVenta" class="mt-3"></div>
-                </div>
-            </div>
-        </div> </div> </div>
-        
-        <!-- Modal Nuevo Cliente (Custom - sin Bootstrap JS) -->
-        <div id="modalClienteTemporal" style="display: none; position: fixed; z-index: 9999; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5);">
-            <div style="position: relative; margin: 5% auto; width: 90%; max-width: 500px; background-color: white; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.3);">
-                <div style="background-color: #17a2b8; color: white; padding: 15px; border-radius: 8px 8px 0 0; display: flex; justify-content: space-between; align-items: center;">
-                    <h5 style="margin: 0;"><i class="fa fa-user-plus"></i> Registrar Nuevo Cliente</h5>
-                    <button type="button" class="btn-close-custom" onclick="cerrarModalCliente()" style="background: none; border: none; color: white; font-size: 24px; cursor: pointer; padding: 0; line-height: 1;">&times;</button>
-                </div>
-                <div style="padding: 20px;">
-                    <form id="formClienteTemporal">
-                        <div style="margin-bottom: 15px;">
-                            <label for="tempRucCi" style="display: block; margin-bottom: 5px; font-weight: 500;">Cédula / RUC <span style="color: red;">*</span></label>
-                            <input type="text" class="form-control" id="tempRucCi" required style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
-                        </div>
-                        <div style="margin-bottom: 15px;">
-                            <label for="tempNombre" style="display: block; margin-bottom: 5px; font-weight: 500;">Nombre / Razón Social <span style="color: red;">*</span></label>
-                            <input type="text" class="form-control" id="tempNombre" required style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
-                        </div>
-                        <div style="margin-bottom: 15px;">
-                            <label for="tempTelefono" style="display: block; margin-bottom: 5px; font-weight: 500;">Teléfono</label>
-                            <input type="text" class="form-control" id="tempTelefono" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
-                        </div>
-                        <div style="margin-bottom: 15px;">
-                            <label for="tempEmail" style="display: block; margin-bottom: 5px; font-weight: 500;">Correo</label>
-                            <input type="email" class="form-control" id="tempEmail" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
-                        </div>
-                    </form>
-                </div>
-                <div style="padding: 15px; border-top: 1px solid #ddd; text-align: right;">
-                    <button type="button" class="btn btn-secondary" onclick="cerrarModalCliente()" style="margin-right: 10px;">Cancelar</button>
-                    <button type="button" class="btn btn-info" id="btnGuardarClienteTemporal">
-                        <i class="fa fa-save"></i> Registrar Cliente
-                    </button>
-                </div>
-            </div>
-        </div>
-        
-        <script src="vendor/jquery/jquery-3.2.1.min.js"></script>
+    <script src="js/dashboard-core.js"></script>
+    <script src="vendor/jquery/jquery-3.2.1.min.js"></script>
 <script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
 
 <script>
@@ -326,20 +27,20 @@
 let materialesDisponibles = [];
 let carritoProductos = [];
 let clienteSeleccionado = null;
-let ultimaVentaRegistrada = null; // Para guardar datos de la última venta
+let ultimaVentaRegistrada = null; // Para guardar datos de la �ltima venta
 
-// Función global para cerrar modal
+// Funci�n global para cerrar modal
 function cerrarModalCliente() {
     document.getElementById('modalClienteTemporal').style.display = 'none';
     $('#formClienteTemporal')[0].reset();
 }
 
-// Función para generar PDF del comprobante
+// Funci�n para generar PDF del comprobante
 function generarComprobantePDF(datosVenta) {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
     
-    // Configuración
+    // Configuraci�n
     const margen = 20;
     let y = 20;
     
@@ -349,16 +50,16 @@ function generarComprobantePDF(datosVenta) {
     doc.text('DOCUMENTO SIN VALOR TRIBUTARIO', 105, y, { align: 'center' });
     y += 10;
     
-    // Título
+    // T�tulo
     doc.setFontSize(16);
     doc.setTextColor(0, 0, 0);
     doc.text('COMPROBANTE DE VENTA', 105, y, { align: 'center' });
     y += 5;
     doc.setFontSize(14);
-    doc.text('Carrocerías Alvarado', 105, y, { align: 'center' });
+    doc.text('Carrocer�as Alvarado', 105, y, { align: 'center' });
     y += 15;
     
-    // Información de la venta
+    // Informaci�n de la venta
     doc.setFontSize(10);
     doc.text(`Venta #${datosVenta.id_venta}`, margen, y);
     doc.text(`Fecha: ${new Date().toLocaleString('es-EC')}`, 150, y);
@@ -366,7 +67,7 @@ function generarComprobantePDF(datosVenta) {
     doc.text(`Usuario: ${datosVenta.usuario}`, margen, y);
     y += 10;
     
-    // Información del cliente
+    // Informaci�n del cliente
     doc.setFontSize(11);
     doc.setFont(undefined, 'bold');
     doc.text('CLIENTE:', margen, y);
@@ -380,7 +81,7 @@ function generarComprobantePDF(datosVenta) {
     doc.text(`RUC/CI: ${datosVenta.cliente.ruc_ci}`, margen, y);
     if (datosVenta.cliente.telefono) {
         y += 5;
-        doc.text(`Teléfono: ${datosVenta.cliente.telefono}`, margen, y);
+        doc.text(`Tel�fono: ${datosVenta.cliente.telefono}`, margen, y);
     }
     y += 10;
     
@@ -399,14 +100,14 @@ function generarComprobantePDF(datosVenta) {
     doc.text('Total', 185, y);
     y += 5;
     
-    // Línea separadora
+    // L�nea separadora
     doc.line(margen, y, 200, y);
     y += 5;
     
     // Productos
     doc.setFont(undefined, 'normal');
     datosVenta.productos.forEach(producto => {
-        if (y > 270) { // Nueva página si es necesario
+        if (y > 270) { // Nueva p�gina si es necesario
             doc.addPage();
             y = 20;
         }
@@ -443,7 +144,7 @@ function generarComprobantePDF(datosVenta) {
     doc.setFont(undefined, 'normal');
     doc.text(`Forma de Pago: ${datosVenta.forma_pago}`, margen, y);
     
-    // Pie de página
+    // Pie de p�gina
     y = 280;
     doc.setFontSize(8);
     doc.setTextColor(128, 128, 128);
@@ -453,7 +154,7 @@ function generarComprobantePDF(datosVenta) {
     doc.save(`Comprobante_Venta_${datosVenta.id_venta}.pdf`);
 }
 
-// Función para cargar clientes
+// Funci�n para cargar clientes
 function cargarClientes() {
     console.log("cargarClientes() - Iniciando carga...");
     const token = localStorage.getItem('token');
@@ -463,7 +164,7 @@ function cargarClientes() {
 
     if (!token) {
         console.error("cargarClientes() - No hay token.");
-        $select.html('<option value="">Error de autenticación</option>');
+        $select.html('<option value="">Error de autenticaci�n</option>');
         return;
     }
 
@@ -504,7 +205,7 @@ function cargarClientes() {
     });
 }
 
-// Función para mostrar información del cliente
+// Funci�n para mostrar informaci�n del cliente
 function mostrarInfoCliente() {
     const $select = $('#ventaCliente');
     const $option = $select.find('option:selected');
@@ -514,7 +215,7 @@ function mostrarInfoCliente() {
             <strong>Tipo:</strong> ${clienteSeleccionado.tipo}<br>
             <strong>RUC/CI:</strong> ${clienteSeleccionado.ruc_ci || 'N/A'}<br>
             <strong>Nombre:</strong> ${clienteSeleccionado.nombre}<br>
-            <strong>Teléfono:</strong> ${clienteSeleccionado.telefono || 'N/A'}<br>
+            <strong>Tel�fono:</strong> ${clienteSeleccionado.telefono || 'N/A'}<br>
             <strong>Email:</strong> ${clienteSeleccionado.email || 'N/A'}
         `;
         $('#datosCliente').html(html);
@@ -524,21 +225,21 @@ function mostrarInfoCliente() {
     }
 }
 
-// Función para agregar producto al carrito
+// Funci�n para agregar producto al carrito
 function agregarAlCarrito(producto) {
     carritoProductos.push(producto);
     actualizarTablaCarrito();
     habilitarBotonVenta();
 }
 
-// Función para eliminar producto del carrito
+// Funci�n para eliminar producto del carrito
 function eliminarDelCarrito(index) {
     carritoProductos.splice(index, 1);
     actualizarTablaCarrito();
     habilitarBotonVenta();
 }
 
-// Función para actualizar tabla del carrito
+// Funci�n para actualizar tabla del carrito
 function actualizarTablaCarrito() {
     const $tbody = $('#carritoBody');
     const $totales = $('#carritoTotales');
@@ -547,7 +248,7 @@ function actualizarTablaCarrito() {
         $tbody.html(`
             <tr id="carritoVacio">
                 <td colspan="10" class="text-center text-muted">
-                    <i class="fa fa-shopping-cart"></i> El carrito está vacío
+                    <i class="fa fa-shopping-cart"></i> El carrito est� vac�o
                 </td>
             </tr>
         `);
@@ -597,14 +298,14 @@ function actualizarTablaCarrito() {
     $totales.show();
 }
 
-// Función para habilitar/deshabilitar botón de venta
+// Funci�n para habilitar/deshabilitar bot�n de venta
 function habilitarBotonVenta() {
     const tieneProductos = carritoProductos.length > 0;
     const tieneCliente = clienteSeleccionado !== null;
     $('#btnRegistrarVenta').prop('disabled', !(tieneProductos && tieneCliente));
 }
 
-// Función para cargar proveedores
+// Funci�n para cargar proveedores
 function cargarProveedores() {
     console.log("cargarProveedores() - Iniciando carga...");
     const token = localStorage.getItem('token');
@@ -614,7 +315,7 @@ function cargarProveedores() {
 
     if (!token) {
         console.error("cargarProveedores() - No hay token.");
-        $select.html('<option value="">Error de autenticación</option>');
+        $select.html('<option value="">Error de autenticaci�n</option>');
         return;
     }
 
@@ -648,7 +349,7 @@ function cargarProveedores() {
     });
 }
 
-// Función para cargar materiales filtrados por proveedor
+// Funci�n para cargar materiales filtrados por proveedor
 function cargarMaterialesPorProveedor(idProveedor) {
     console.log("cargarMaterialesPorProveedor() - ID Proveedor:", idProveedor);
     const token = localStorage.getItem('token');
@@ -704,7 +405,7 @@ function cargarMaterialesPorProveedor(idProveedor) {
     });
 }
 
-// Función para actualizar información del material seleccionado
+// Funci�n para actualizar informaci�n del material seleccionado
 function actualizarInfoMaterial() {
     const $select = $('#ventaNombreMaterial');
     const $option = $select.find('option:selected');
@@ -724,7 +425,7 @@ function actualizarInfoMaterial() {
     }
 }
 
-// Función para calcular el total de venta con ganancia e IVA
+// Funci�n para calcular el total de venta con ganancia e IVA
 function calcularTotal() {
     const $select = $('#ventaNombreMaterial');
     const $option = $select.find('option:selected');
@@ -735,7 +436,7 @@ function calcularTotal() {
     if ($option.val() && cantidad > 0) {
         const precioUnitario = parseFloat($option.data('precio')) || 0;
         
-        // Calcular subtotal (precio × cantidad)
+        // Calcular subtotal (precio � cantidad)
         const subtotal = precioUnitario * cantidad;
         
         // Calcular ganancia
@@ -760,7 +461,7 @@ function calcularTotal() {
     }
 }
 
-// Función para limpiar campos
+// Funci�n para limpiar campos
 function limpiarCampos() {
     $('#ventaStockDisponible').val('');
     $('#ventaPrecioUnitario').val('');
@@ -792,11 +493,7 @@ $(document).ready(function () {
         $('#currentUserName').text(loggedInUsername);
     }
 
-    $('#logoutButton').on('click', function(e) {
-        e.preventDefault();
-        localStorage.clear();
-        window.location.href = 'index.html';
-    });
+    
 
     // Cargar datos iniciales
     cargarClientes();
@@ -823,7 +520,7 @@ $(document).ready(function () {
         }
     });
 
-    // Botón Consumidor Final
+    // Bot�n Consumidor Final
     $('#btnConsumidorFinal').on('click', function() {
         clienteSeleccionado = {
             tipo: 'Consumidor Final',
@@ -838,7 +535,7 @@ $(document).ready(function () {
         habilitarBotonVenta();
     });
 
-    // Botón para abrir modal de nuevo cliente
+    // Bot�n para abrir modal de nuevo cliente
     $('#btnAbrirModalCliente').on('click', function() {
         document.getElementById('modalClienteTemporal').style.display = 'block';
     });
@@ -851,7 +548,7 @@ $(document).ready(function () {
         const email = $('#tempEmail').val().trim();
 
         if (!cedula || !nombre) {
-            alert('Cédula/RUC y Nombre son requeridos');
+            alert('C�dula/RUC y Nombre son requeridos');
             return;
         }
 
@@ -914,7 +611,7 @@ $(document).ready(function () {
     $('#ventaPorcentajeGanancia').on('change', calcularTotal);
     $('#ventaPorcentajeIVA').on('change', calcularTotal);
 
-    // Botón Limpiar Formulario
+    // Bot�n Limpiar Formulario
     $('#btnLimpiarFormulario').on('click', function() {
         $('#formAgregarProducto')[0].reset();
         $('#ventaNombreMaterial').prop('disabled', true).html('<option value="">Seleccione un proveedor primero...</option>');
@@ -946,7 +643,7 @@ $(document).ready(function () {
         
         const cantidad = parseInt(cantidadStr);
         if (isNaN(cantidad) || cantidad <= 0) {
-            mensajeDiv.html('<div class="alert alert-danger">La cantidad debe ser un número positivo</div>');
+            mensajeDiv.html('<div class="alert alert-danger">La cantidad debe ser un n�mero positivo</div>');
             return;
         }
 
@@ -975,7 +672,7 @@ $(document).ready(function () {
         };
 
         agregarAlCarrito(producto);
-        mensajeDiv.html('<div class="alert alert-success">✅ Producto agregado al carrito</div>');
+        mensajeDiv.html('<div class="alert alert-success">? Producto agregado al carrito</div>');
         setTimeout(() => mensajeDiv.html(''), 3000);
         
         // Limpiar formulario pero mantener proveedor
@@ -986,7 +683,7 @@ $(document).ready(function () {
         limpiarCampos();
     });
 
-    // Botón Registrar Venta Completa
+    // Bot�n Registrar Venta Completa
     $('#btnRegistrarVenta').on('click', function() {
         const mensajeDiv = $('#mensajeVenta');
         const formaPago = $('#ventaFormaPagoFinal').val();
@@ -997,7 +694,7 @@ $(document).ready(function () {
         }
 
         if (carritoProductos.length === 0) {
-            mensajeDiv.html('<div class="alert alert-warning">El carrito está vacío</div>');
+            mensajeDiv.html('<div class="alert alert-warning">El carrito est� vac�o</div>');
             return;
         }
 
@@ -1063,7 +760,7 @@ $(document).ready(function () {
                 };
                 
                 mensajeDiv.html(`<div class="alert alert-success">
-                    ✅ <strong>Venta registrada exitosamente</strong><br>
+                    ? <strong>Venta registrada exitosamente</strong><br>
                     <strong>ID Venta:</strong> ${response.id_venta}<br>
                     <strong>Total:</strong> $${totalGeneral.toFixed(2)}<br><br>
                     <button class="btn btn-primary" onclick="generarComprobantePDF(ultimaVentaRegistrada)">

@@ -62,7 +62,7 @@
 
         <div class="content-area container-fluid pt-4">
             <h2 class="card-header-title">Panel de Supervisor</h2>
-            <div class="card">
+            <div class="dashboard-card shadow-sm">
                 <div class="card-body">
                     <h4>Bienvenido al Sistema Supervisor</h4>
                     <p>Utilice el menú de la izquierda para navegar a las secciones de Inventario y Órdenes de Trabajo.</p>
@@ -73,6 +73,7 @@
 </div> 
 
 <script src="js/config.js"></script>
+    <script src="js/dashboard-core.js"></script>
     <script src="vendor/jquery/jquery-3.2.1.min.js"></script>
 <script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
 
@@ -83,11 +84,7 @@ $(document).ready(function() {
         $('#sidebar').toggleClass('active');
     });
 
-    $('#logoutButton').on('click', function(e) {
-        e.preventDefault();
-        localStorage.clear();
-        window.location.href = 'index.html';
-    });
+    
 
     // --- Lógica de Protección de Página para Otros Usuarios ---
     const token = localStorage.getItem('token');

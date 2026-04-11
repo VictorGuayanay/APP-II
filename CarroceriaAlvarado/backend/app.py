@@ -1,4 +1,4 @@
-﻿import os
+import os
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import pyodbc
@@ -9,18 +9,23 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from functools import wraps
+from dotenv import load_dotenv
+
+# Cargar variables de entorno desde el archivo .env
+load_dotenv()
+
 
 app = Flask(__name__)
-# 1. Configuración de SECRET_KEY (CRUCIAL Y ÚNICA VEZ)
-# Esta es la clave que se usará para TODAS las operaciones de JWT (encode/decode)
-app.config['SECRET_KEY'] = "123456789" # ¡CAMBIA ESTO POR UNA CLAVE MÁS SEGURA Y COMPLEJA EN PRODUCCIÓN!
-print(f"APP INIT: app.config['SECRET_KEY'] establecida como: '{app.config.get('SECRET_KEY')}'")
 
-#  Variables Globales para Configuración
+# 1. Configuración de SECRET_KEY
+app.config['SECRET_KEY'] = os.environ.get("FLASK_SECRET_KEY", "fallback_secret_key_low_security")
+print(f"APP INIT: app.config['SECRET_KEY'] establecida.")
+
+# Variables Globales para Configuración (Cargadas desde .env con fallbacks)
 APP_CONFIG = {
-    "reset_token_expiry_minutes": 15, # Duración actual en send_reset_email
-    "max_failed_login_attempts": 5,    # intentos para iniciar sesion
-    "global_low_stock_threshold": 10 # Valor para limite de stock bajo
+    "reset_token_expiry_minutes": int(os.environ.get("RESET_TOKEN_EXPIRY_MINUTES", 15)),
+    "max_failed_login_attempts": int(os.environ.get("MAX_FAILED_LOGIN_ATTEMPTS", 5)),
+    "global_low_stock_threshold": int(os.environ.get("GLOBAL_LOW_STOCK_THRESHOLD", 10))
 }
 
 
@@ -34,11 +39,12 @@ CORS(app, resources={
     }
 }) 
 
+# Configuración de base de datos dinámica
 conn_str = (
-    "DRIVER={ODBC Driver 17 for SQL Server};"
-    "SERVER=DESKTOP-OJ81G31\SQLEXPRESS;" 
-    "DATABASE=CarroceriaAlvaradoDB;"
-    "Trusted_Connection=yes;"
+    f"DRIVER={{{os.environ.get('DB_DRIVER', 'ODBC Driver 17 for SQL Server')}}};"
+    f"SERVER={os.environ.get('DB_SERVER', r'DESKTOP-OJ81G31\SQLEXPRESS')};" 
+    f"DATABASE={os.environ.get('DB_NAME', 'CarroceriaAlvaradoDB')};"
+    f"Trusted_Connection={os.environ.get('DB_TRUSTED_CONNECTION', 'yes')};"
 )
 
 SMTP_SERVER = os.environ.get('SMTP_SERVER', 'smtp.gmail.com')
@@ -103,8 +109,12 @@ def send_reset_email(email, user_id):
             server.send_message(msg)
         return True
     except Exception as e:
-        print(f"Error al enviar correo de restablecimiento: {str(e)}")
+        print(f"!!!!!!!! ERROR AL ENVIAR CORREO DE RESTABLECIMIENTO !!!!!!!!")
+        print(f"Detalles del error: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return False
+
     
 
 @app.route('/registro', methods=['POST'])
@@ -155,9 +165,16 @@ def registrar_usuario():
             cursor.execute("SELECT @@IDENTITY AS id")
             new_user_id = cursor.fetchone()[0]
             
-            # Mapear rol string a id_rol
-            rol_mapping = {'Administrador': 1, 'Supervisor': 2, 'Empleado': 3}
-            id_rol = rol_mapping.get(rol, 3)  # Por defecto Empleado
+            # Mapear rol string a id_rol desde la base de datos
+            cursor.execute("SELECT id_rol FROM Rol WHERE rol = ?", (rol,))
+            rol_db = cursor.fetchone()
+            if not rol_db:
+                # Si el rol pedido no existe, buscamos el rol por defecto (Asistente/3 o el primero disponible)
+                cursor.execute("SELECT id_rol FROM Rol WHERE rol = 'Asistente'")
+                rol_default = cursor.fetchone()
+                id_rol = rol_default[0] if rol_default else 3
+            else:
+                id_rol = rol_db[0]
             
             # Insertar en Rol_Usuario
             cursor.execute(
@@ -165,6 +182,7 @@ def registrar_usuario():
                 (id_rol, new_user_id, username)
             )
             conn.commit()
+
             return jsonify({'message': 'Usuario registrado exitosamente'}), 201
         except Exception as db_e:
             if conn: conn.rollback()
@@ -683,16 +701,21 @@ def actualizar_usuario(decoded_user_rol, decoded_user_id, user_id):
                 (user_id,)
             )
             usuario_actual = cursor.fetchone()
-            if not usuario_actual: return jsonify({'error': 'Usuario no encontrado'}), 404
+            if not usuario_actual: 
+                return jsonify({'error': 'Usuario no encontrado'}), 404
 
             update_fields = []
             params = []
+            # Bandera para saber si algo cambió (incluyendo el rol)
+            algo_cambio = False
+
 
             if nuevo_username and nuevo_username != usuario_actual[0]:
                 cursor.execute("SELECT id_usuario FROM Usuarios WHERE username = ? AND id_usuario != ?", (nuevo_username, user_id))
                 if cursor.fetchone(): return jsonify({'error': f"Username '{nuevo_username}' ya en uso."}), 409
                 update_fields.append("username = ?")
                 params.append(nuevo_username)
+                algo_cambio = True
             
             if nuevo_email and nuevo_email != usuario_actual[1]:
                 if '@' not in nuevo_email or '.' not in nuevo_email: return jsonify({'error': 'Email inválido'}), 400
@@ -700,15 +723,19 @@ def actualizar_usuario(decoded_user_rol, decoded_user_id, user_id):
                 if cursor.fetchone(): return jsonify({'error': f"Email '{nuevo_email}' ya en uso."}), 409
                 update_fields.append("email = ?")
                 params.append(nuevo_email)
+                algo_cambio = True
 
             # Actualizar rol en tabla Rol_Usuario, no en Usuarios
             if nuevo_rol and nuevo_rol != usuario_actual[2]:
-                roles_validos = ['Administrador', 'Empleado', 'Supervisor'] 
-                if nuevo_rol not in roles_validos: return jsonify({'error': f"Rol '{nuevo_rol}' inválido."}), 400
+                # Buscar el ID del rol en la base de datos de forma dinámica
+                cursor.execute("SELECT id_rol FROM Rol WHERE rol = ?", (nuevo_rol,))
+                rol_db_row = cursor.fetchone()
                 
-                # Mapear rol a id_rol
-                rol_mapping = {'Administrador': 1, 'Supervisor': 2, 'Empleado': 3}
-                id_rol = rol_mapping.get(nuevo_rol, 3)
+                if not rol_db_row:
+                    print(f"API /usuarios/{user_id} PUT: El rol '{nuevo_rol}' no existe en la BD.")
+                    return jsonify({'error': f"Rol '{nuevo_rol}' inválido o no existe."}), 400
+                
+                id_rol = rol_db_row[0]
                 
                 # Actualizar o insertar en Rol_Usuario
                 cursor.execute("SELECT id_rol FROM Rol_Usuario WHERE id_usuario = ?", (user_id,))
@@ -717,19 +744,23 @@ def actualizar_usuario(decoded_user_rol, decoded_user_id, user_id):
                 else:
                     cursor.execute("INSERT INTO Rol_Usuario (id_rol, id_usuario, usuario) VALUES (?, ?, ?)", 
                                   (id_rol, user_id, usuario_actual[0]))
+                algo_cambio = True
+
             
-            if not update_fields:
+            if not algo_cambio:
                 return jsonify({'message': "No hay cambios para aplicar."}), 200
 
-            query = f"UPDATE Usuarios SET {', '.join(update_fields)} WHERE id_usuario = ?"
-            params.append(user_id)
+            if update_fields:
+                query = f"UPDATE Usuarios SET {', '.join(update_fields)} WHERE id_usuario = ?"
+                params.append(user_id)
+                print(f"API /usuarios/{user_id} PUT (actualizar datos): Query: {query}, Params: {params}")
+                cursor.execute(query, tuple(params))
             
-            print(f"API /usuarios/{user_id} PUT (actualizar datos): Query: {query}, Params: {params}")
-            cursor.execute(query, tuple(params))
             conn.commit()
             
             print(f"API /usuarios/{user_id} PUT (actualizar datos): Usuario ID {user_id} actualizado.")
             return jsonify({'message': f'Usuario {user_id} actualizado correctamente.'}), 200
+
         
         except pyodbc.IntegrityError as ie:
             if conn: conn.rollback()
@@ -745,7 +776,45 @@ def actualizar_usuario(decoded_user_rol, decoded_user_id, user_id):
         print(f"Error general en /usuarios/{user_id} PUT (actualizar datos): {str(e)}")
         return jsonify({'error': f'Error interno del servidor: {str(e)}'}), 500
 
+@app.route('/usuarios/<int:user_id>', methods=['DELETE'])
+@roles_required('Administrador')
+def eliminar_usuario(decoded_user_rol, decoded_user_id, user_id):
+    """Elimina permanentemente a un usuario y sus relaciones"""
+    print(f"API /usuarios/{user_id} DELETE: Admin ID {decoded_user_id} eliminando usuario ID {user_id}")
+    conn = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        # Verificar si el usuario existe
+        cursor.execute("SELECT username FROM Usuarios WHERE id_usuario = ?", (user_id,))
+        usuario = cursor.fetchone()
+        if not usuario:
+            return jsonify({'error': 'Usuario no encontrado'}), 404
+        
+        # [SEGURIDAD] No permitir que un admin se elimine a sí mismo accidentalmente
+        if user_id == decoded_user_id:
+            return jsonify({'error': 'No puedes eliminar tu propia cuenta de administrador.'}), 400
+
+        # Eliminar relaciones en Rol_Usuario
+        cursor.execute("DELETE FROM Rol_Usuario WHERE id_usuario = ?", (user_id,))
+        
+        # Eliminar el usuario (Esto borrará el registro de Usuarios)
+        cursor.execute("DELETE FROM Usuarios WHERE id_usuario = ?", (user_id,))
+        
+        conn.commit()
+        print(f"API /usuarios/{user_id} DELETE: Usuario {usuario[0]} eliminado exitosamente.")
+        return jsonify({'message': f'Usuario {usuario[0]} eliminado permanentemente del sistema.'}), 200
+
+    except Exception as e:
+        if conn: conn.rollback()
+        print(f"Error en DELETE /usuarios/{user_id}: {str(e)}")
+        return jsonify({'error': f'Error al eliminar usuario: {str(e)}'}), 500
+    finally:
+        if conn: conn.close()
+
 @app.route('/usuarios/<int:user_id>', methods=['GET'])
+
 @roles_required('Administrador')
 def get_usuario_por_id(decoded_user_rol, decoded_user_id, user_id):
     # (Tu código de /usuarios/<id> GET como lo tenías)
@@ -782,7 +851,28 @@ def get_usuario_por_id(decoded_user_rol, decoded_user_id, user_id):
 
 
 
-# --- ENDPOINTS DE CONFIGURACIONES ---
+# --- ENDPOINTS DE ROLES ---
+@app.route('/roles', methods=['GET'])
+def get_roles():
+    """Obtiene todos los roles disponibles de la base de datos"""
+    conn = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT id_rol, rol FROM Rol ORDER BY rol ASC")
+        roles = []
+        for row in cursor.fetchall():
+            roles.append({
+                'id_rol': row[0],
+                'rol': row[1]
+            })
+        return jsonify(roles), 200
+    except Exception as e:
+        print(f"Error en GET /roles: {str(e)}")
+        return jsonify({'error': f'Error al obtener roles: {str(e)}'}), 500
+    finally:
+        if conn: conn.close()
+
 @app.route('/configuraciones', methods=['GET'])
 @roles_required('Administrador', 'Supervisor')
 def get_configuraciones(decoded_user_rol, decoded_user_id): # El nombre del argumento debe coincidir con lo que pasa el decorador

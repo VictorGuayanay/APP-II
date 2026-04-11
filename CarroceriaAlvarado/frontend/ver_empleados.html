@@ -1,7 +1,7 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
-    <title>Gestión de Empleados - Carroceríaa Alvarado</title>
+    <title>Gesti�n de Empleados - Carrocer�aa Alvarado</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" type="text/css" href="vendor/bootstrap/css/bootstrap.min.css">
@@ -20,16 +20,16 @@
     <!-- Sidebar -->
    <nav id="sidebar">
         <div class="sidebar-header">
-            <h3>Carrocerías Alvarado</h3>
+            <h3>Carrocer�as Alvarado</h3>
         </div>
         <ul class="list-unstyled components">
-            <p class="ms-3">Administración</p>
+            <p class="ms-3">Administraci�n</p>
             <li>
                 <a href="#dashboardSubmenu" data-bs-toggle="collapse" aria-expanded="false" class="dropdown-toggle">
                     <i class="fa fa-tachometer"></i> Dashboard
                 </a>
                 <ul class="collapse list-unstyled" id="dashboardSubmenu">
-                    <li><a href="vision_general.html">Visión General</a></li>
+                    <li><a href="vision_general.html">Visi�n General</a></li>
                 </ul>
             </li>
             <li> 
@@ -43,7 +43,7 @@
                 </a>
                 <ul class="collapse list-unstyled" id="inventarioSubmenu">
                     <li><a href="ver_inventario.html">Ver Inventario</a></li>
-                    <li><a href="anadir_material.html">Añadir Material</a></li>
+                    <li><a href="anadir_material.html">A�adir Material</a></li>
                     <li><a href="entradas_salidas_inventario.html">Entradas/Salidas</a></li>
                 </ul>
             </li>
@@ -53,11 +53,11 @@
             <li><a href="ingresar_cliente.html"><i class="fa fa-user-plus"></i> Ingreso Clientes</a></li>
             <li><a href="ingresar_proveedor.html"><i class="fa fa-truck"></i> Ingreso Proveedores</a></li>
             <li><a href="ver_proveedores.html"><i class="fa fa-list"></i> Ver Proveedores</a></li>
-            <li><a href="orden_trabajo.html"><i class="fa fa-briefcase"></i> Órdenes de Trabajo</a></li>
-            <li><a href="listar_ordenes_trabajo.html"><i class="fa fa-briefcase"></i> Listar Órdenes de Trabajo</a></li>
+            <li><a href="orden_trabajo.html"><i class="fa fa-briefcase"></i> �rdenes de Trabajo</a></li>
+            <li><a href="listar_ordenes_trabajo.html"><i class="fa fa-briefcase"></i> Listar �rdenes de Trabajo</a></li>
             <li><a href="consultar_comprobantes.html"><i class="fa fa-money"></i> Comprobante</a></li>
             <li><a href="reportes.html"><i class="fa fa-bar-chart"></i> Reportes</a></li>
-            <li><a href="#" data-bs-toggle="modal" data-bs-target="#settingsModal" ><i class="fa fa-cog"></i> Configuración</a></li>
+            <li><a href="#" data-bs-toggle="modal" data-bs-target="#settingsModal" ><i class="fa fa-cog"></i> Configuraci�n</a></li>
         </ul>
     </nav>
 
@@ -67,24 +67,24 @@
             <div class="container-fluid">
                 <button type="button" id="sidebarCollapse" class="btn btn-info" >
                     <i class="fa fa-align-left"></i>
-                    <span>Menú</span>
+                    <span>Men�</span>
                 </button>
                 <div class="user-info">
                     <span>Hola, <strong id="currentUserName">Admin</strong>!</span>
-                    <a href="#" id="logoutButton" class="ms-3">Cerrar Sesión</a>
+                    <a href="#" id="logoutButton" class="ms-3">Cerrar Sesi�n</a>
                 </div>
             </div>
         </nav>
 
         <div class="content-area container-fluid pt-4">
             <div class="d-flex justify-content-between align-items-center mb-3">
-                <h2 class="card-header-title">Gestión de Empleados</h2>
+                <h2 class="card-header-title">Gesti�n de Empleados</h2>
                 <button class="btn btn-success" onclick="window.location.href='ingresar_empleado.html'">
                     <i class="fa fa-plus"></i> Agregar Nuevo Empleado
                 </button>
             </div>
 
-            <div class="card">
+            <div class="dashboard-card shadow-sm">
                 <div class="card-body">
                     <div class="table-responsive">
                         <table class="table table-striped table-hover">
@@ -92,9 +92,9 @@
                                 <tr>
                                     <th>ID</th>
                                     <th>Nombre</th>
-                                    <th>Cédula</th>
+                                    <th>C�dula</th>
                                     <th>Rol</th>
-                                    <th>Teléfono</th>
+                                    <th>Tel�fono</th>
                                     <th>Costo/Hora</th>
                                     <th>Estado</th>
                                     <th>Acciones</th>
@@ -135,7 +135,7 @@
                             <option value="tapicero">Tapicero</option>
                             <option value="soldador">Soldador</option>
                             <option value="enderezador">Enderezador</option>
-                            <option value="mecanico">Mecánico</option>
+                            <option value="mecanico">Mec�nico</option>
                             <option value="laminador">Laminador</option>
                             <option value="ensamblador">Ensamblador</option>
                         </select>
@@ -163,18 +163,18 @@
 </div>
 
 <!-- Scripts -->
-<script src="js/config.js"></script>
+<script src="js/config.js"></script>`r`n    <script src="js/dashboard-core.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
 $(document).ready(function () {
-    // L�gica est�ndar
+    // L?gica est?ndar
     $('#sidebarCollapse').on('click', function () { $('#sidebar').toggleClass('active'); });
     const token = localStorage.getItem('token');
     if (!token) { window.location.href = 'index.html'; return; }
     const loggedInUsername = localStorage.getItem('loggedInUsername');
     if(loggedInUsername) { $('#currentUserName').text(loggedInUsername); }
-    $('#logoutButton').on('click', function(e) { e.preventDefault(); localStorage.clear(); window.location.href = 'index.html'; });
+    
 
     // Cargar empleados al iniciar
     cargarEmpleados();
@@ -306,7 +306,7 @@ function guardarCambiosEmpleado() {
 }
 
 function eliminarEmpleado(idEmpleado, nombreEmpleado) {
-    if (!confirm(`Estás seguro de eliminar al empleado "${nombreEmpleado}"?\n\nEsta acción desactivará al empleado.`)) {
+    if (!confirm(`Est�s seguro de eliminar al empleado "${nombreEmpleado}"?\n\nEsta acci�n desactivar� al empleado.`)) {
         return;
     }
     

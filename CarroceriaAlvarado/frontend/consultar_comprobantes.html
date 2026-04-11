@@ -1,8 +1,8 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Consultar Comprobantes - Carrocerías Alvarado</title>
+    <title>Consultar Comprobantes - Carrocer�as Alvarado</title>
     <link rel="stylesheet" type="text/css" href="vendor/bootstrap/css/bootstrap.min.css">
     <link rel="stylesheet" type="text/css" href="fonts/font-awesome-4.7.0/css/font-awesome.min.css">
     <link rel="stylesheet" type="text/css" href="css/main.css">
@@ -17,15 +17,15 @@
 
 <div class="admin-wrapper">
     <nav id="sidebar">
-        <div class="sidebar-header"><h3>Carrocerías Alvarado</h3></div>
+        <div class="sidebar-header"><h3>Carrocer�as Alvarado</h3></div>
         <ul class="list-unstyled components">
-            <p class="ms-3">Administración</p>
+            <p class="ms-3">Administraci�n</p>
             <li>
                 <a href="#dashboardSubmenu" data-bs-toggle="collapse" aria-expanded="false" class="dropdown-toggle">
                     <i class="fa fa-tachometer"></i> Dashboard
                 </a>
                 <ul class="collapse list-unstyled" id="dashboardSubmenu">
-                    <li><a href="vision_general.html">Visión General</a></li>
+                    <li><a href="vision_general.html">Visi�n General</a></li>
                 </ul>
             </li>
             <li> 
@@ -39,7 +39,7 @@
                 </a>
                 <ul class="collapse list-unstyled" id="inventarioSubmenu">
                     <li><a href="ver_inventario.html">Ver Inventario</a></li>
-                    <li><a href="anadir_material.html">Añadir Material</a></li>
+                    <li><a href="anadir_material.html">A�adir Material</a></li>
                     <li><a href="entradas_salidas_inventario.html">Entradas/Salidas</a></li>
                 </ul>
             </li>
@@ -48,19 +48,19 @@
             <li><a href="ingresar_cliente.html"><i class="fa fa-user-plus"></i> Ingreso Clientes</a></li>
             <li><a href="ingresar_proveedor.html"><i class="fa fa-truck"></i> Ingreso Proveedores</a></li>
             <li><a href="ver_proveedores.html"><i class="fa fa-list"></i> Ver Proveedores</a></li>
-            <li><a href="orden_trabajo.html"><i class="fa fa-briefcase"></i> Órdenes de Trabajo</a></li>
-            <li><a href="listar_ordenes_trabajo.html"><i class="fa fa-briefcase"></i> Listar Órdenes de Trabajo</a></li>
+            <li><a href="orden_trabajo.html"><i class="fa fa-briefcase"></i> �rdenes de Trabajo</a></li>
+            <li><a href="listar_ordenes_trabajo.html"><i class="fa fa-briefcase"></i> Listar �rdenes de Trabajo</a></li>
             <li class="active"><a href="consultar_comprobantes.html"><i class="fa fa-money"></i> Comprobante</a></li>
             <li><a href="reportes.html"><i class="fa fa-bar-chart"></i> Reportes</a></li>
-            <li><a href="#" data-bs-toggle="modal" data-bs-target="#settingsModal" ><i class="fa fa-cog"></i> Configuración</a></li>
+            <li><a href="#" data-bs-toggle="modal" data-bs-target="#settingsModal" ><i class="fa fa-cog"></i> Configuraci�n</a></li>
         </ul>
     </nav>
 
     <div id="content">
         <nav class="navbar navbar-expand-lg navbar-light top-navbar">
             <div class="container-fluid">
-                <button type="button" id="sidebarCollapse" class="btn btn-info"><i class="fa fa-align-left"></i> <span>Menú</span></button>
-                <div class="user-info"><span>Hola, <strong id="currentUserName">Admin</strong>!</span><a href="#" id="logoutButton" class="ms-3">Cerrar Sesión</a></div>
+                <button type="button" id="sidebarCollapse" class="btn btn-info"><i class="fa fa-align-left"></i> <span>Men�</span></button>
+                <div class="user-info"><span>Hola, <strong id="currentUserName">Admin</strong>!</span><a href="#" id="logoutButton" class="ms-3">Cerrar Sesi�n</a></div>
             </div>
         </nav>
 
@@ -68,7 +68,7 @@
             <h2 class="card-header-title">Consulta de Comprobantes de Pago</h2>
             
             <div class="card mb-4">
-                <div class="card-header">Filtros de Búsqueda</div>
+                <div class="card-header">Filtros de B�squeda</div>
                 <div class="card-body">
                     <form id="formConsultarComprobantes">
                         <div class="row align-items-end">
@@ -89,9 +89,9 @@
                 </div>
             </div>
 
-            <div class="card" id="resultadosComprobantes">
+            <div class="dashboard-card shadow-sm" id="resultadosComprobantes">
                 <div class="card-header d-flex justify-content-between align-items-center">
-                    Resultados de la Búsqueda
+                    Resultados de la B�squeda
                     <button class="btn btn-danger btn-sm" id="imprimirPdfButton" disabled>
                         <i class="fa fa-file-pdf-o"></i> Imprimir PDF
                     </button>
@@ -102,7 +102,7 @@
                             <thead>
                                 <tr>
                                     <th>ID Comp.</th><th>ID Orden</th><th>Cliente</th><th>Monto</th>
-                                    <th>Fecha Emisión</th><th>Método Pago</th><th>Estado</th><th>Registrado Por</th><th>Acciones</th>
+                                    <th>Fecha Emisi�n</th><th>M�todo Pago</th><th>Estado</th><th>Registrado Por</th><th>Acciones</th>
                                 </tr>
                             </thead>
                             <tbody id="comprobantesTableBody"></tbody>
@@ -115,6 +115,7 @@
 </div> 
 
 <script src="js/config.js"></script>
+    <script src="js/dashboard-core.js"></script>
     <script src="vendor/jquery/jquery-3.2.1.min.js"></script>
 <script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -124,15 +125,15 @@
 
 <script>
 $(document).ready(function() {
-    // Lógica estandar
+    // L�gica estandar
     $('#sidebarCollapse').on('click', function() { $('#sidebar').toggleClass('active'); });
     const token = localStorage.getItem('token');
     if (!token) { window.location.href = 'index.html'; return; }
     const loggedInUsername = localStorage.getItem('loggedInUsername');
     if (loggedInUsername) { $('#currentUserName').text(loggedInUsername); }
-    $('#logoutButton').on('click', function(e) { e.preventDefault(); localStorage.clear(); window.location.href = 'index.html'; });
+    
 
-    // Lógica para el Formulario de Consulta
+    // L�gica para el Formulario de Consulta
     $('#formConsultarComprobantes').on('submit', function(event) {
         event.preventDefault();
         const mensajeDiv = $('#mensajeConsulta');
@@ -149,7 +150,7 @@ $(document).ready(function() {
         $imprimirPdfButton.prop('disabled', true);
 
         if (!fechaDesde || !fechaHasta) {
-            mensajeDiv.text('Debe seleccionar un rango de fechas para la búsqueda.').addClass('alert alert-danger');
+            mensajeDiv.text('Debe seleccionar un rango de fechas para la b�squeda.').addClass('alert alert-danger');
             return;
         }
 
@@ -202,20 +203,20 @@ $(document).ready(function() {
         });
     });
 
-    // L�gica para Imprimir PDF
+    // L?gica para Imprimir PDF
     $('#imprimirPdfButton').on('click', function() {
         console.log("Generando PDF con encabezado y logo...");
         
         // 1. Crear el objeto de imagen y definir su ruta
-        //    Aseg�rate de que la ruta 'images/logo_empresa.png' sea correcta y que la imagen exista.
+        //    Aseg?rate de que la ruta 'images/logo_empresa.png' sea correcta y que la imagen exista.
         var logo = new Image();
-        logo.src = 'images/logo.jpg'; // �IMPORTANTE: Reemplaza con la ruta real de tu logo!
+        logo.src = 'images/logo.jpg'; // ?IMPORTANTE: Reemplaza con la ruta real de tu logo!
 
-        // 2. Toda la l�gica de creaci�n del PDF debe ir dentro del 'onload' de la imagen
-        //    para asegurar que el logo se haya cargado antes de intentar a�adirlo.
+        // 2. Toda la l?gica de creaci?n del PDF debe ir dentro del 'onload' de la imagen
+        //    para asegurar que el logo se haya cargado antes de intentar a?adirlo.
         logo.onload = function() {
             const { jsPDF } = window.jspdf;
-            // Crear un nuevo documento PDF en orientaci�n horizontal ('l' para landscape)
+            // Crear un nuevo documento PDF en orientaci?n horizontal ('l' para landscape)
             const doc = new jsPDF({
                 orientation: 'landscape',
                 unit: 'pt',
@@ -223,29 +224,29 @@ $(document).ready(function() {
             });
 
             // --- INICIO DEL ENCABEZADO ---
-            // 3. A�adir el logo al PDF
-            // Par�metros: (imagen, formato, x, y, ancho, alto)
-            doc.addImage(this, 'JPG', 60, 15, 60, 60); // Ajusta estas coordenadas y tama�o seg�n tu logo
+            // 3. A?adir el logo al PDF
+            // Par?metros: (imagen, formato, x, y, ancho, alto)
+            doc.addImage(this, 'JPG', 60, 15, 60, 60); // Ajusta estas coordenadas y tama?o seg?n tu logo
 
-            // 4. A�adir texto del encabezado
+            // 4. A?adir texto del encabezado
             doc.setFontSize(18);
             doc.setTextColor(40);
-            doc.text("Carrocerías Alvarado", 150, 35); // Alineado a la derecha del logo
+            doc.text("Carrocer�as Alvarado", 150, 35); // Alineado a la derecha del logo
             
             doc.setFontSize(10);
-            doc.text("Dirección: Av. Monseñor Leonidas Proaño (a pocos metros de la linea ferrea), Riobamba, Ecuador", 150, 50);
-            doc.text("Teléfono: 099 991 1866| Email: carroceriasalvarado@hotmail.com", 150, 62);
+            doc.text("Direcci�n: Av. Monse�or Leonidas Proa�o (a pocos metros de la linea ferrea), Riobamba, Ecuador", 150, 50);
+            doc.text("Tel�fono: 099 991 1866| Email: carroceriasalvarado@hotmail.com", 150, 62);
             
             // --- FIN DEL ENCABEZADO ---
 
-            // 5. A�adir t�tulo del reporte
+            // 5. A?adir t?tulo del reporte
 
             const fechaDesde = $('#fechaDesde').val();
             const fechaHasta = $('#fechaHasta').val();
             const titulo = `Reporte de Comprobantes de Pago (${fechaDesde} a ${fechaHasta})`;
 
             doc.setFontSize(14);
-            doc.text(titulo, 40, 100); // Posici�n debajo del encabezado
+            doc.text(titulo, 40, 100); // Posici?n debajo del encabezado
 
             doc.autoTable({
                 html: '#comprobantesTable',
@@ -255,10 +256,10 @@ $(document).ready(function() {
                     fillColor: [45, 45, 45] // Color de cabecera (oscuro)
                 },
                 didDrawPage: function (data) {
-                    // Pie de p�gina con n�mero (opcional, se dibujar� en cada p�gina)
+                    // Pie de p?gina con n?mero (opcional, se dibujar? en cada p?gina)
                     const pageCount = doc.internal.getNumberOfPages();
                     doc.setFontSize(8);
-                    doc.text('Página ' + doc.internal.pages.length, data.settings.margin.left, doc.internal.pageSize.height - 10);
+                    doc.text('P�gina ' + doc.internal.pages.length, data.settings.margin.left, doc.internal.pageSize.height - 10);
                 }
             });
 
@@ -266,7 +267,7 @@ $(document).ready(function() {
         };
     });
     
-    // Funci�n para imprimir comprobante individual
+    // Funci?n para imprimir comprobante individual
     $(document).on('click', '.btn-imprimir-comprobante', function() {
         const $row = $(this).closest('tr');
         const idComprobante = $(this).data('id-comprobante');
@@ -300,7 +301,7 @@ $(document).ready(function() {
         });
     });
     
-    // Funci�n para generar PDF del comprobante
+    // Funci?n para generar PDF del comprobante
     function generarPDFComprobante(orden, comprobante) {
         var logo = new Image();
         logo.src = 'images/logo.jpg';
@@ -321,14 +322,14 @@ $(document).ready(function() {
             
             doc.setFontSize(18);
             doc.setTextColor(40);
-            doc.text("Carrocerías Alvarado", 120, 35);
+            doc.text("Carrocer�as Alvarado", 120, 35);
             
             doc.setFontSize(9);
-            doc.text("Dirección: Av. Monseñor Leonidas Proaño", 120, 50);
-            doc.text("(a pocos metros de la línea férrea), Riobamba, Ecuador", 120, 62);
-            doc.text("Teléfono: 099 991 1866 | Email: carroceriasalvarado@hotmail.com", 120, 74);
+            doc.text("Direcci�n: Av. Monse�or Leonidas Proa�o", 120, 50);
+            doc.text("(a pocos metros de la l�nea f�rrea), Riobamba, Ecuador", 120, 62);
+            doc.text("Tel�fono: 099 991 1866 | Email: carroceriasalvarado@hotmail.com", 120, 74);
             
-            // --- T�TULO DEL COMPROBANTE ---
+            // --- T?TULO DEL COMPROBANTE ---
             let currentY = 100;
             doc.setFontSize(16);
             doc.setFont(undefined, 'bold');
@@ -341,12 +342,12 @@ $(document).ready(function() {
             doc.text("DOCUMENTO SIN VALOR TRIBUTARIO", pageWidth / 2, currentY, { align: 'center' });
             doc.setTextColor(40);
             
-            // --- INFORMACI�N DEL COMPROBANTE ---
+            // --- INFORMACI?N DEL COMPROBANTE ---
             currentY += 25;
             doc.setFontSize(11);
             doc.setFont(undefined, 'bold');
-            doc.text(`Comprobante N°: ${comprobante.id_comprobante}`, 40, currentY);
-            doc.text(`Orden N°: ${orden.id_orden}`, pageWidth - 40, currentY, { align: 'right' });
+            doc.text(`Comprobante N�: ${comprobante.id_comprobante}`, 40, currentY);
+            doc.text(`Orden N�: ${orden.id_orden}`, pageWidth - 40, currentY, { align: 'right' });
             
             currentY += 20;
             doc.setFont(undefined, 'normal');
@@ -354,25 +355,25 @@ $(document).ready(function() {
             
             currentY += 15;
             // La fecha ya viene formateada desde la tabla
-            doc.text(`Fecha de Emisión: ${comprobante.fecha_emision}`, 40, currentY);
-            doc.text(`Método de Pago: ${comprobante.metodo_pago}`, pageWidth - 40, currentY, { align: 'right' });
+            doc.text(`Fecha de Emisi�n: ${comprobante.fecha_emision}`, 40, currentY);
+            doc.text(`M�todo de Pago: ${comprobante.metodo_pago}`, pageWidth - 40, currentY, { align: 'right' });
             
             currentY += 15;
             const fechaInicio = orden.fecha_inicio ? new Date(orden.fecha_inicio).toLocaleDateString('es-EC') : '-';
             const fechaFin = orden.fecha_fin ? new Date(orden.fecha_fin).toLocaleDateString('es-EC') : '-';
             doc.text(`Periodo de Trabajo: ${fechaInicio} a ${fechaFin}`, 40, currentY);
             
-            // --- DESCRIPCIÓN DEL TRABAJO ---
+            // --- DESCRIPCI�N DEL TRABAJO ---
             currentY += 25;
             doc.setFont(undefined, 'bold');
-            doc.text("Descripción del Trabajo:", 40, currentY);
+            doc.text("Descripci�n del Trabajo:", 40, currentY);
             currentY += 15;
             doc.setFont(undefined, 'normal');
-            const descripcionLines = doc.splitTextToSize(orden.descripcion || 'Sin descripción', pageWidth - 80);
+            const descripcionLines = doc.splitTextToSize(orden.descripcion || 'Sin descripci�n', pageWidth - 80);
             doc.text(descripcionLines, 40, currentY);
             currentY += (descripcionLines.length * 12) + 15;
             
-            // --- CÁLCULO DE MANO DE OBRA ---
+            // --- C�LCULO DE MANO DE OBRA ---
             let costoTotalManoObra = 0;
             let diasLaborales = 0;
             let horasTotales = 0;
@@ -477,7 +478,7 @@ $(document).ready(function() {
                 margin: { left: 40, right: 40 }
             });
             
-            // --- PIE DE P�GINA ---
+            // --- PIE DE P?GINA ---
             currentY = pageHeight - 60;
             doc.setFontSize(8);
             doc.setTextColor(100);

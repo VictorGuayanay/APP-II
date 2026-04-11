@@ -71,7 +71,7 @@ $(document).ready(function() {
     // Verificar autenticación
     if (!window.location.pathname.includes('index.html') && 
         !window.location.pathname.includes('templates/login.html') &&
-        !window.location.pathname.includes('registrer.html') &&
+        !window.location.pathname.includes('register.html') &&
         !window.location.pathname.includes('reset_pass.html') &&
         !window.location.pathname.includes('new_pass.html')) {
         checkAuthentication();

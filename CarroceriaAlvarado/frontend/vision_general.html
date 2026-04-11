@@ -159,7 +159,8 @@
                     </div>
                 </div>
             </div>
-        </div> </div> </div> <script src="js/config.js"></script>
+    <script src="js/config.js"></script>
+    <script src="js/dashboard-core.js"></script>
     <script src="vendor/jquery/jquery-3.2.1.min.js"></script>
 <script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
 <script>
@@ -345,95 +346,11 @@ function cargarOrdenesVencimiento() {
     });
 }
 
-// Función para cargar notificaciones
-function cargarNotificaciones() {
-    console.log("cargarNotificaciones() - Iniciando carga de notificaciones...");
-    const token = localStorage.getItem('token');
-    const $notificationCount = $('#notificationCount');
-    const $notificationList = $('#notificationList');
-
-    if (!token) {
-        console.error("cargarNotificaciones() - No hay token. No se puede llamar a la API.");
-        return;
-    }
-
-    $.ajax({
-        url: `${API_BASE_URL}/notificaciones`,
-        method: 'GET',
-        headers: {
-            'Authorization': 'Bearer ' + token
-        },
-        success: function(notificaciones) {
-            console.log("cargarNotificaciones() - Notificaciones recibidas:", notificaciones);
-            $notificationList.empty();
-
-            if (notificaciones && Array.isArray(notificaciones) && notificaciones.length > 0) {
-                $notificationCount.text(notificaciones.length).show();
-
-                notificaciones.forEach(function(notif) {
-                    let iconClass = 'fa-info-circle';
-                    if (notif.tipo === 'stock_bajo') {
-                        iconClass = 'fa-warning text-warning';
-                    } else if (notif.tipo === 'orden_vencimiento') {
-                        iconClass = 'fa-calendar text-danger';
-                    }
-
-                    const notificacionHtml = `
-                        <li>
-                            <a class="dropdown-item" href="#">
-                                <i class="fa ${iconClass}"></i> ${notif.mensaje}
-                            </a>
-                        </li>
-                    `;
-                    $notificationList.append(notificacionHtml);
-                });
-
-            } else {
-                console.log("cargarNotificaciones() - No hay notificaciones nuevas.");
-                $notificationCount.hide();
-                $notificationList.append('<li><span class="dropdown-item-text">No hay notificaciones nuevas.</span></li>');
-            }
-        },
-        error: function(xhr, status, error) {
-            console.error("cargarNotificaciones() - Error al cargar notificaciones. Status:", xhr.status, "Response:", xhr.responseText);
-            $notificationCount.hide();
-            $notificationList.empty().append('<li><span class="dropdown-item-text text-danger">Error al cargar notificaciones.</span></li>');
-            if (xhr.status === 401) {
-                window.location.reload();
-            }
-        }
-    });
-}
-
 // Script principal de la página
 $(document).ready(function () {
-    // Lógica estandar: sidebar, protección, nombre de usuario, logout
-    $('#sidebarCollapse').on('click', function () {
-        $('#sidebar').toggleClass('active');
-    });
-
-    const token = localStorage.getItem('token');
-    const userRol = localStorage.getItem('userRol');
-    const loggedInUsername = localStorage.getItem('loggedInUsername');
-
-    if (!token) {
-        window.location.href = 'index.html';
-        return; 
-    }
-
-    if (loggedInUsername) {
-        $('#currentUserName').text(loggedInUsername);
-    }
-
-    $('#logoutButton').on('click', function(e) {
-        e.preventDefault();
-        localStorage.clear(); // Limpiar todo el localStorage al cerrar sesión
-        window.location.href = 'index.html';
-    });
-
-    // Cargar los datos del dashboard, notificaciones y órdenes de vencimiento
+    // Cargar los datos del dashboard y órdenes de vencimiento
+    // (Sidebar, Notificaciones, Auth y Logout ya son manejados por dashboard-core.js)
     cargarVisionGeneral();
-    cargarNotificaciones();
     cargarOrdenesVencimiento(); 
 });
 </script>
