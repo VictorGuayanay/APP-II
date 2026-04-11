@@ -22,7 +22,7 @@
         <ul class="list-unstyled components">
             <p class="ms-3">Administración</p>
             <li>
-                <a href="#dashboardSubmenu" data-bs-toggle="collapse" aria-expanded="false" class="dropdown-toggle">
+                <a href="#dashboardSubmenu" data-toggle="collapse" aria-expanded="false" class="dropdown-toggle">
                     <i class="fa fa-tachometer"></i> Dashboard
                 </a>
                 <ul class="collapse list-unstyled" id="dashboardSubmenu">
@@ -35,7 +35,7 @@
                 </a>
             </li>
             <li>
-                <a href="#inventarioSubmenu" data-bs-toggle="collapse" aria-expanded="false" class="dropdown-toggle">
+                <a href="#inventarioSubmenu" data-toggle="collapse" aria-expanded="false" class="dropdown-toggle">
                     <i class="fa fa-archive"></i> Inventario
                 </a>
                 <ul class="collapse list-unstyled" id="inventarioSubmenu">
@@ -53,7 +53,7 @@
             <li><a href="listar_ordenes_trabajo.html"><i class="fa fa-briefcase"></i> Listar Órdenes de Trabajo</a></li>
             <li><a href="consultar_comprobantes.html"><i class="fa fa-money"></i> Comprobante</a></li>
             <li><a href="reportes.html"><i class="fa fa-bar-chart"></i> Reportes</a></li>
-            <li><a href="#" data-bs-toggle="modal" data-bs-target="#settingsModal" ><i class="fa fa-cog"></i> Configuración</a></li>
+            <li><a href="#" data-toggle="modal" data-target="#settingsModal" ><i class="fa fa-cog"></i> Configuración</a></li>
         </ul>
     </nav>
 
@@ -65,39 +65,34 @@
                     <span>Menú</span>
                 </button>
 
-
-                <div class="user-info">
-                    <div class="dropdown me-3">
-                        <a href="#" class="nav-link text-secondary" id="notificationBell" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                <div class="user-info d-flex align-items-center">
+                    <div class="dropdown mr-3">
+                        <a href="#" class="nav-link text-secondary" id="notificationBell" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                             <i class="fa fa-bell" style="font-size: 1.2rem;"></i>
-                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" id="notificationCount" style="display: none;">
-                            0
-                            </span>
+                            <span class="badge badge-pill badge-danger position-absolute" id="notificationCount" style="display: none; top: -5px; right: -5px;">0</span>
                         </a>
-                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="notificationBell" id="notificationList" style="min-width: 300px; max-height: 400px; overflow-y: auto;">
-                            <li><a class="dropdown-item" href="#">Cargando notificaciones...</a></li>
-                        </ul>
+                        <div class="dropdown-menu dropdown-menu-right" aria-labelledby="notificationBell" id="notificationList" style="min-width: 300px; max-height: 400px; overflow-y: auto;">
+                            <a class="dropdown-item" href="#">Cargando notificaciones...</a>
+                        </div>
                     </div>
-                    <span>Hola, <strong id="currentUserName"></strong>Bienvenid@!</span>
-                    <a href="#" id="logoutButton" class="ms-3">Cerrar Sesión</a>
+                    <span>Hola, <strong id="currentUserName"></strong> ¡Bienvenid@!</span>
+                    <a href="#" id="logoutButton" class="ml-3 btn btn-outline-danger btn-sm">Cerrar Sesión</a>
                 </div>
-
-
             </div>
         </nav>
 
         <div class="content-area container-fluid pt-4"> 
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h2 class="card-header-title mb-0">Gestión de Usuarios</h2>
-                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createUserModal">
+                <button class="btn btn-primary" data-toggle="modal" data-target="#createUserModal">
                     <i class="fa fa-plus"></i> Crear Nuevo Usuario
                 </button>
             </div>
-            <div class="card">
-                <div class="card-body">
+            <div class="dashboard-card shadow-sm border-0">
+                <div class="card-body p-0">
                     <div class="table-responsive">
-                        <table class="table table-striped table-hover">
-                            <thead>
+                        <table class="table table-striped table-hover mb-0">
+                            <thead class="bg-light">
                                 <tr>
                                     <th>ID</th>
                                     <th>Username</th>
@@ -108,7 +103,14 @@
                                 </tr>
                             </thead>
                             <tbody id="userTableBody">
-                                </tbody>
+                                <tr>
+                                    <td colspan="6" class="text-center py-5">
+                                        <div class="spinner-border text-primary" role="status">
+                                            <span class="sr-only">Cargando...</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
                         </table>
                     </div>
                 </div>
@@ -117,121 +119,43 @@
     </div>
 </div>
 
-<div class="modal fade" id="editUserModal" tabindex="-1" aria-labelledby="editUserModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="editUserModalLabel">Editar Usuario</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <form id="editUserForm">
-                    <input type="hidden" id="editUserId">
-                    <div class="mb-3">
-                        <label for="editUsername" class="form-label">Nombre de Usuario</label>
-                        <input type="text" class="form-control" id="editUsername" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="editEmail" class="form-label">Correo Electrónico</label>
-                        <input type="email" class="form-control" id="editEmail" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="editRol" class="form-label">Rol</label>
-                        <select class="form-select" id="editRol" required>
-                            <option value="">Seleccione un rol...</option>
-                            <option value="Empleado">Empleado</option>
-                            <option value="Supervisor">Supervisor</option>
-                            <option value="Administrador">Administrador</option>
-                        </select>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-primary">Guardar Cambios</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="modal fade" id="editUserModal" tabindex="-1" aria-labelledby="editUserModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="editUserModalLabel">Editar Usuario</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <form id="editUserForm">
-                    <input type="hidden" id="editUserId">
-                    
-                    <div class="mb-3">
-                        <label for="editUsername" class="form-label">Nombre de Usuario</label>
-                        <input type="text" class="form-control" id="editUsername" required>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label for="editEmail" class="form-label">Correo Electrónico</label>
-                        <input type="email" class="form-control" id="editEmail" required>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label for="editRol" class="form-label">Rol</label>
-                        <select class="form-select" id="editRol" required>
-                            <option value="">Seleccione un rol...</option>
-                            <option value="Empleado">Empleado</option>
-                            <option value="Supervisor">Supervisor</option>
-                            <option value="Administrador">Administrador</option>
-
-                        </select>
-                    </div>
-                
-                    
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-primary">Guardar Cambios</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
-
 <!-- Modal para Crear Nuevo Usuario -->
-<div class="modal fade" id="createUserModal" tabindex="-1" aria-labelledby="createUserModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="createUserModalLabel">Crear Nuevo Usuario</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+<div class="modal fade" id="createUserModal" tabindex="-1" role="dialog" aria-labelledby="createUserModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 15px; overflow: hidden;">
+            <div class="modal-header bg-primary text-white border-0">
+                <h5 class="modal-title" id="createUserModalLabel">
+                    <i class="fa fa-user-plus mr-2"></i> Crear Nuevo Usuario
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
             </div>
-            <div class="modal-body">
+            <div class="modal-body p-4">
                 <form id="createUserForm">
-                    <div class="mb-3">
-                        <label for="createUsername" class="form-label">Nombre de Usuario</label>
-                        <input type="text" class="form-control" id="createUsername" required>
+                    <div class="form-group mb-3">
+                        <label for="createUsername" class="font-weight-bold">Nombre de Usuario</label>
+                        <input type="text" class="form-control" id="createUsername" required style="border-radius: 8px;">
                     </div>
-                    <div class="mb-3">
-                        <label for="createEmail" class="form-label">Correo Electrónico</label>
-                        <input type="email" class="form-control" id="createEmail" required>
+                    <div class="form-group mb-3">
+                        <label for="createEmail" class="font-weight-bold">Correo Electrónico</label>
+                        <input type="email" class="form-control" id="createEmail" required style="border-radius: 8px;">
                     </div>
-                    <div class="mb-3">
-                        <label for="createPassword" class="form-label">Contraseña</label>
-                        <input type="password" class="form-control" id="createPassword" required minlength="3">
-                        <div class="form-text">La contraseña debe tener al menos 3 caracteres.</div>
+                    <div class="form-group mb-3">
+                        <label for="createPassword" class="font-weight-bold">Contraseña</label>
+                        <input type="password" class="form-control" id="createPassword" required minlength="3" style="border-radius: 8px;">
+                        <small class="form-text text-muted">Mínimo 3 caracteres.</small>
                     </div>
-                    <div class="mb-3">
-                        <label for="createRol" class="form-label">Rol</label>
-                        <select class="form-select" id="createRol" required>
+                    <div class="form-group mb-3">
+                        <label for="createRol" class="font-weight-bold">Rol</label>
+                        <select class="form-control" id="createRol" required style="border-radius: 8px;">
                             <option value="">Seleccione un rol...</option>
-                            <option value="Empleado">Empleado</option>
-                            <option value="Supervisor">Supervisor</option>
-                            <option value="Administrador">Administrador</option>
+                            <!-- Se carga dinámicamente -->
                         </select>
                     </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-primary">Crear Usuario</button>
+                    <div class="modal-footer border-0 justify-content-center pt-3">
+                        <button type="button" class="btn btn-light px-4" data-dismiss="modal" style="border-radius: 10px;">Cancelar</button>
+                        <button type="submit" class="btn btn-primary px-4" style="border-radius: 10px; font-weight: 600;">Crear Usuario</button>
                     </div>
                 </form>
             </div>
@@ -239,116 +163,189 @@
     </div>
 </div>
 
-<div class="modal fade" id="settingsModal" tabindex="-1" aria-labelledby="settingsModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="settingsModalLabel">Configuraciones Generales</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+<!-- Modal de Edición de Usuario -->
+<div class="modal fade" id="editUserModal" tabindex="-1" role="dialog" aria-labelledby="editUserModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 15px; overflow: hidden;">
+            <div class="modal-header bg-info text-white border-0">
+                <h5 class="modal-title" id="editUserModalLabel">
+                    <i class="fa fa-user-circle mr-2"></i> Editar Usuario
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
             </div>
-            <div class="modal-body">
+            <div class="modal-body p-4">
+                <form id="editUserForm">
+                    <input type="hidden" id="editUserId">
+                    <div class="form-group mb-3">
+                        <label for="editUsername" class="font-weight-bold">Nombre de Usuario</label>
+                        <input type="text" class="form-control" id="editUsername" required style="border-radius: 8px;">
+                    </div>
+                    <div class="form-group mb-3">
+                        <label for="editEmail" class="font-weight-bold">Correo Electrónico</label>
+                        <input type="email" class="form-control" id="editEmail" required style="border-radius: 8px;">
+                    </div>
+                    <div class="form-group mb-3">
+                        <label for="editRol" class="font-weight-bold">Rol en el Sistema</label>
+                        <select class="form-control" id="editRol" required style="border-radius: 8px;">
+                            <option value="">Seleccione un rol...</option>
+                            <!-- Se carga dinámicamente -->
+                        </select>
+                    </div>
+                    <div class="modal-footer border-0 justify-content-center pt-3">
+                        <button type="button" class="btn btn-light px-4" data-dismiss="modal" style="border-radius: 10px;">Cancelar</button>
+                        <button type="submit" class="btn btn-info px-4 text-white" style="border-radius: 10px; font-weight: 600;">Guardar Cambios</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Configuración/Perfil -->
+<div class="modal fade" id="settingsModal" tabindex="-1" role="dialog" aria-labelledby="settingsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 15px; overflow: hidden;">
+            <div class="modal-header bg-secondary text-white border-0">
+                <h5 class="modal-title" id="settingsModalLabel">
+                    <i class="fa fa-cog mr-2"></i> Configuraciones Generales
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body p-4">
+                <div id="settingsMessage"></div>
                 <form id="settingsForm">
-                    <div class="mb-3">
-                        <label for="settingResetTokenExpiry" class="form-label">Duración del Token de Reseteo de Contraseña (minutos)</label>
-                        <input type="number" class="form-control" id="settingResetTokenExpiry" min="1" required>
-                        <div class="form-text">Tiempo que el enlace de reseteo de contraseña será válido.</div>
+                    <div class="form-group mb-3">
+                        <label for="settingResetTokenExpiry" class="font-weight-bold">Duración del Token (minutos)</label>
+                        <input type="number" class="form-control" id="settingResetTokenExpiry" min="1" required style="border-radius: 8px;">
+                        <small class="form-text text-muted">Tiempo de validez para el enlace de reseteo.</small>
                     </div>
-                    
-                    <div class="mb-3">
-                        <label for="settingMaxLoginAttempts" class="form-label">Máximos Intentos de Login Fallidos</label>
-                        <input type="number" class="form-control" id="settingMaxLoginAttempts" min="1" required>
-                        <div class="form-text">Número de intentos antes de bloquear la cuenta o tomar otra acción.</div>
+                    <div class="form-group mb-3">
+                        <label for="settingMaxLoginAttempts" class="font-weight-bold">Máximos Intentos de Login</label>
+                        <input type="number" class="form-control" id="settingMaxLoginAttempts" min="1" required style="border-radius: 8px;">
+                        <small class="form-text text-muted">Número de intentos antes de bloquear la cuenta.</small>
                     </div>
-
-                    <div class="mb-3">
-                        <label for="settingGlobalLowStockThreshold" class="form-label">Limite Global de Stock Bajo</label>
-                        <input type="number" class="form-control" id="settingGlobalLowStockThreshold" min="0" required>
-                        <div class="form-text">Cantidad mínima de stock. Materiales con stock igual o inferior a este valor se resaltarán. (Ej: 5, 10). Un valor de 0 puede usarse si no se desea resaltado o solo para stock cero.</div>
+                    <div class="form-group mb-3">
+                        <label for="settingGlobalLowStockThreshold" class="font-weight-bold">Limite Global de Stock Bajo</label>
+                        <input type="number" class="form-control" id="settingGlobalLowStockThreshold" min="0" required style="border-radius: 8px;">
+                        <small class="form-text text-muted">Materiales a resaltar bajo este stock.</small>
                     </div>
-                    
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-primary">Guardar Configuraciones</button>
+                    <div class="modal-footer border-0 justify-content-center pt-3">
+                        <button type="button" class="btn btn-light px-4" data-dismiss="modal" style="border-radius: 10px;">Cancelar</button>
+                        <button type="submit" class="btn btn-secondary px-4" style="border-radius: 10px; font-weight: 600;">Guardar Configuraciones</button>
                     </div>
                 </form>
-                <div id="settingsMessage" class="mt-3"></div> </div>
+            </div>
         </div>
     </div>
 </div>
 
+<!-- Modal de Confirmación Genérico (Premium Design) -->
+<div class="modal fade" id="confirmActionModal" tabindex="-1" role="dialog" aria-labelledby="confirmActionModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 15px; overflow: hidden;">
+            <div id="confirmHeader" class="modal-header text-white border-0">
+                <h5 class="modal-title" id="confirmActionModalLabel">Confirmar Acción</h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body text-center p-4">
+                <i id="confirmIcon" class="fa fa-exclamation-circle fa-4x mb-3"></i>
+                <h4 id="confirmMessage" class="font-weight-bold mb-2"></h4>
+                <p id="confirmSubMessage" class="text-muted mb-0"></p>
+            </div>
+            <div class="modal-footer border-0 justify-content-center pb-4">
+                <button type="button" class="btn btn-light px-4" data-dismiss="modal" style="border-radius: 10px;">Cancelar</button>
+                <button type="button" id="btnConfirmAction" class="btn px-4" style="border-radius: 10px; font-weight: 600;">Confirmar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Dependencias de Scripts (Orden Correcto) -->
+<script src="vendor/jquery/jquery-3.2.1.min.js"></script>
+<script src="vendor/bootstrap/js/popper.min.js"></script>
+<script src="vendor/bootstrap/js/bootstrap.min.js"></script>
+<script src="vendor/animsition/js/animsition.min.js"></script>
 <script src="js/config.js"></script>
-    <script src="vendor/jquery/jquery-3.2.1.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
+<script src="js/dashboard-core.js"></script>
 
 <script>
-// Funciones auxiliares definidas fuera de $(document).ready() para que estén en el ámbito global
-// y puedan ser llamadas desde dentro del bloque ready o por otros scripts si fuera necesario.
-function loadUsers() {
-    console.log("loadUsers() - Iniciando carga de usuarios..."); // [DEBUG]
+// Funciones globales para administración
+function cargarRolesDinamicos() {
+    console.log("cargarRolesDinamicos() - Iniciando...");
     const token = localStorage.getItem('token');
-    const userTableBody = $('#userTableBody'); // [DEBUG] Referencia a la tabla
+    $.ajax({
+        url: `${API_BASE_URL}/roles`,
+        method: 'GET',
+        headers: { 'Authorization': 'Bearer ' + token },
+        success: function(roles) {
+            const editRolSelect = $('#editRol');
+            const createRolSelect = $('#createRol');
+            [editRolSelect, createRolSelect].forEach(select => {
+                if (select.length) {
+                    select.find('option:not(:first)').remove();
+                    roles.forEach(role => {
+                        select.append(`<option value="${role.rol}">${role.rol}</option>`);
+                    });
+                }
+            });
+        },
+        error: function(xhr) {
+            console.error("Error al cargar roles:", xhr.responseText);
+        }
+    });
+}
 
-    // Limpiar tabla antes de cualquier cosa, para mostrar un estado de carga o error si aplica
-    userTableBody.empty().append('<tr><td colspan="6" class="text-center">Cargando usuarios...</td></tr>');
+function loadUsers() {
+    console.log("loadUsers() - Cargando usuarios...");
+    const token = localStorage.getItem('token');
+    const userTableBody = $('#userTableBody');
 
     if (!token) { 
-        console.error("loadUsers() - ERROR: No hay token en localStorage. Redirigiendo a login.");
-        userTableBody.empty().append('<tr><td colspan="6" class="text-center">Error de autenticación. Redirigiendo...</td></tr>');
         window.location.href = 'index.html'; 
         return; 
     }
-    console.log("loadUsers() - Token recuperado para la API:", token);
 
     $.ajax({ 
-        url: `${API_BASE_URL}/usuarios`,  // [VERIFICAR] ¿Es esta la URL y puerto correctos de tu API Flask?
+        url: `${API_BASE_URL}/usuarios`,
         method: 'GET',
-        headers: { 
-            'Authorization': 'Bearer ' + token  // [VERIFICAR] ¿Se está enviando el token correctamente?
-        },
+        headers: { 'Authorization': 'Bearer ' + token },
         success: function(users) {
-            console.log("loadUsers() - Success! Usuarios recibidos:", users); // [DEBUG CRUCIAL] ¿Qué forma tiene 'users'? ¿Es un array? ¿Tiene datos?
-            userTableBody.empty(); // Limpiar el mensaje "Cargando..."
+            userTableBody.empty();
 
-            if (!users || !Array.isArray(users) || users.length === 0) { // [DEBUG] Verificación más robusta
-                console.log("loadUsers() - No hay usuarios para mostrar o 'users' no es un array.");
+            if (!users || users.length === 0) {
                 userTableBody.append('<tr><td colspan="6" class="text-center">No hay usuarios registrados.</td></tr>');
                 return;
             }
 
-            users.forEach(function(user, index) { // [DEBUG]
-                console.log(`loadUsers() - Procesando usuario [${index}]:`, user); // [DEBUG] ¿Cada 'user' tiene las propiedades esperadas?
-                
-                // Verificar que las propiedades esperadas existan en el objeto 'user'
-                if (typeof user.id_usuario === 'undefined' || typeof user.username === 'undefined' || 
-                    typeof user.email === 'undefined' || typeof user.rol === 'undefined' ||
-                    typeof user.estado === 'undefined' || typeof user.bloqueado === 'undefined') {
-                    console.error("loadUsers() - Usuario con datos incompletos o formato incorrecto:", user);
-                    userTableBody.append('<tr><td colspan="6" class="text-center">Error: Datos de usuario con formato incorrecto recibido.</td></tr>');
-                    // Podrías decidir continuar con el siguiente usuario o detenerte
-                    return; // O 'continue;' si esto estuviera en un loop for clásico. En forEach, 'return' salta esta iteración.
-                }
-
-                let estadoGeneral = '';
-                if (user.bloqueado) { // user.bloqueado debería ser booleano
-                    estadoGeneral = '<span class="badge bg-danger">Bloqueado (Intentos)</span>';
-                } else if (user.estado) { // user.estado debería ser booleano
-                    estadoGeneral = '<span class="badge bg-success">Activo</span>';
+            users.forEach(function(user) {
+                let statusBadge = '';
+                if (user.bloqueado) {
+                    statusBadge = '<span class="badge badge-danger">Bloqueado</span>';
+                } else if (user.estado) {
+                    statusBadge = '<span class="badge badge-success">Activo</span>';
                 } else {
-                    estadoGeneral = '<span class="badge bg-secondary">Inactivo (Admin)</span>';
+                    statusBadge = '<span class="badge badge-secondary">Inactivo</span>';
                 }
                 
-                const editButton = `<button class="btn btn-sm btn-warning btn-edit" data-id="${user.id_usuario}"><i class="fa fa-pencil"></i> Editar</button>`;
-                let actionButtons = editButton;
-
+                let actions = `<button class="btn btn-sm btn-warning btn-edit" data-id="${user.id_usuario}"><i class="fa fa-pencil"></i></button> `;
+                
                 if (user.estado && !user.bloqueado) {
-                    actionButtons += ` <button class="btn btn-sm btn-secondary btn-deactivate-manual" data-id="${user.id_usuario}"><i class="fa fa-toggle-off"></i> Desactivar (Admin)</button>`;
+                    actions += `<button class="btn btn-sm btn-secondary btn-deactivate" data-id="${user.id_usuario}" title="Desactivar"><i class="fa fa-toggle-off"></i></button> `;
                 } else if (!user.estado && !user.bloqueado) { 
-                    actionButtons += ` <button class="btn btn-sm btn-success btn-activate-manual" data-id="${user.id_usuario}"><i class="fa fa-toggle-on"></i> Activar (Admin)</button>`;
+                    actions += `<button class="btn btn-sm btn-success btn-activate" data-id="${user.id_usuario}" title="Activar"><i class="fa fa-toggle-on"></i></button> `;
                 }
 
                 if (user.bloqueado) {
-                    actionButtons += ` <button class="btn btn-sm btn-info btn-unlock" data-id="${user.id_usuario}"><i class="fa fa-unlock"></i> Desbloquear</button>`;
+                    actions += `<button class="btn btn-sm btn-info btn-unlock" data-id="${user.id_usuario}" title="Desbloquear"><i class="fa fa-unlock"></i></button> `;
                 }
+
+                actions += `<button class="btn btn-sm btn-danger btn-delete" data-id="${user.id_usuario}" title="Eliminar"><i class="fa fa-trash"></i></button>`;
 
                 userTableBody.append(
                     `<tr>
@@ -356,598 +353,231 @@ function loadUsers() {
                         <td>${user.username}</td>
                         <td>${user.email}</td>
                         <td>${user.rol}</td>
-                        <td>${estadoGeneral}</td>
-                        <td class="text-center table-actions">
-                            ${actionButtons}
-                        </td>
+                        <td>${statusBadge}</td>
+                        <td class="text-center">${actions}</td>
                     </tr>`
                 );
             });
         },
-        error: function(xhr, status, error) { 
-            console.error("loadUsers() - AJAX Error! Status:", xhr.status, "Response:", xhr.responseText, "Error Thrown:", error);
-            userTableBody.empty().append(`<tr><td colspan="6" class="text-center">Error al cargar usuarios (Código: ${xhr.status}). Verifique la consola.</td></tr>`);
-
-            if (xhr.status === 401 || xhr.status === 403) { 
-                alert("Su sesión ha expirado o no tiene permisos. Será redirigido al login.");
-                localStorage.removeItem('token'); 
-                localStorage.removeItem('userRol'); 
-                localStorage.removeItem('loggedInUsername'); 
-                window.location.href = 'index.html'; 
-            }
+        error: function(xhr) { 
+            userTableBody.empty().append('<tr><td colspan="6" class="text-center text-danger">Error al cargar datos.</td></tr>');
+            if (xhr.status === 401) window.location.href = 'index.html';
         }
     });
 }
 
-
-function actualizarEstadoManualUsuario(userId, nuevoEstadoManual) { // nuevoEstadoManual es true para activar, false para desactivar por admin
+function actualizarEstadoUsuario(userId, nuevoEstado) {
     const token = localStorage.getItem('token');
-    // ... (resto de la lógica de esta función, pero la URL y el data cambiarán un poco)
-    // Esta función ahora llamará a /usuarios/<id>/estado y enviará { "estado": nuevoEstadoManual }
-    console.log(`actualizarEstadoManualUsuario() - Solicitud para cambiar estado MANUAL de usuario ${userId} a ${nuevoEstadoManual}`);
     $.ajax({
-        url: `${API_BASE_URL}/usuarios/${userId}/estado`, // Sigue siendo el mismo endpoint para estado
+        url: `${API_BASE_URL}/usuarios/${userId}/estado`,
         method: 'PUT',
-        headers: {
-            'Authorization': 'Bearer ' + token,
-            'Content-Type': 'application/json'
-        },
-        data: JSON.stringify({ estado: nuevoEstadoManual }), // El backend espera 'estado'
+        headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+        data: JSON.stringify({ estado: nuevoEstado }),
         success: function(response) {
-            console.log("actualizarEstadoManualUsuario() - Respuesta:", response);
-            alert(response.message || "Estado (manual) del usuario actualizado con éxito.");
+            alert(response.message || "Estado actualizado.");
             loadUsers(); 
         },
         error: function(xhr) {
-            // ... (manejo de error igual que antes) ...
-            console.error("actualizarEstadoManualUsuario() - Error. Status:", xhr.status, "Response:", xhr.responseText);
-            const errorMsg = xhr.responseJSON?.error || "Error al actualizar el estado (manual) del usuario.";
-            alert(errorMsg);
-            if (xhr.status === 401 || xhr.status === 403) {
-                localStorage.removeItem('token'); localStorage.removeItem('userRol'); localStorage.removeItem('loggedInUsername');
-                window.location.href = 'index.html';
-            }
+            alert(xhr.responseJSON?.error || "Error al actualizar estado.");
         }
     });
 }
 
-// Nueva función para desbloquear (opera sobre el campo 'bloqueado')
-function desbloquearUsuarioPorAdmin(userId) {
+function eliminarUsuario(userId) {
     const token = localStorage.getItem('token');
-    if (!token) {
-        alert("Token no encontrado. Por favor, inicie sesión de nuevo.");
-        window.location.href = 'index.html';
-        return;
-    }
-    console.log(`desbloquearUsuarioPorAdmin() - Solicitud para DESBLOQUEAR usuario ${userId}`);
     $.ajax({
-        url: `${API_BASE_URL}/usuarios/${userId}/desbloquear`, // Nuevo endpoint
-        method: 'PUT', // O POST si lo definiste así
-        headers: {
-            'Authorization': 'Bearer ' + token
-            // No se necesita Content-Type ni body si el backend no espera datos para desbloquear
-        },
+        url: `${API_BASE_URL}/usuarios/${userId}`,
+        method: 'DELETE',
+        headers: { 'Authorization': 'Bearer ' + token },
         success: function(response) {
-            console.log("desbloquearUsuarioPorAdmin() - Respuesta:", response);
-            alert(response.message || "Usuario desbloqueado con éxito.");
+            alert(response.message || "Usuario eliminado.");
+            loadUsers(); 
+        },
+        error: function(xhr) {
+            alert(xhr.responseJSON?.error || "Error al eliminar.");
+        }
+    });
+}
+
+function desbloquearUsuario(userId) {
+    const token = localStorage.getItem('token');
+    $.ajax({
+        url: `${API_BASE_URL}/usuarios/${userId}/desbloquear`,
+        method: 'PUT',
+        headers: { 'Authorization': 'Bearer ' + token },
+        success: function(response) {
+            alert(response.message || "Usuario desbloqueado.");
             loadUsers();
         },
         error: function(xhr) {
-            console.error("desbloquearUsuarioPorAdmin() - Error. Status:", xhr.status, "Response:", xhr.responseText);
-            const errorMsg = xhr.responseJSON?.error || "Error al desbloquear el usuario.";
-            alert(errorMsg);
-            if (xhr.status === 401 || xhr.status === 403) {
-                localStorage.removeItem('token'); localStorage.removeItem('userRol'); localStorage.removeItem('loggedInUsername');
-                window.location.href = 'index.html';
-            }
+            alert(xhr.responseJSON?.error || "Error al desbloquear.");
         }
     });
 }
 
-
 function cargarNotificaciones() {
-    console.log("cargarNotificaciones() - Iniciando carga de notificaciones...");
     const token = localStorage.getItem('token');
-    const $notificationCount = $('#notificationCount'); // El span para el contador
-    const $notificationList = $('#notificationList');   // La lista <ul> para los mensajes
-
-    // Verificación de token antes de la llamada
-    if (!token) {
-        console.error("cargarNotificaciones() - No hay token. No se puede llamar a la API.");
-        // No es necesario redirigir aquí, ya que la protección de página principal debería haber actuado.
-        // Simplemente no se cargarán las notificaciones.
-        return;
-    }
-
+    if (!token) return;
     $.ajax({
         url: `${API_BASE_URL}/notificaciones`,
         method: 'GET',
-        headers: {
-            'Authorization': 'Bearer ' + token
-        },
-        success: function(notificaciones) {
-            console.log("cargarNotificaciones() - Notificaciones recibidas:", notificaciones);
-            $notificationList.empty(); // Limpiar la lista actual
-
-            if (notificaciones && Array.isArray(notificaciones) && notificaciones.length > 0) {
-                // Hay notificaciones, actualizar contador y mostrarlo
-                $notificationCount.text(notificaciones.length).show();
-
-                // Poblar la lista desplegable
-                notificaciones.forEach(function(notif) {
-                    let iconClass = 'fa-info-circle'; // Icono por defecto
-                    if (notif.tipo === 'stock_bajo') {
-                        iconClass = 'fa-warning text-warning'; // Icono de advertencia para stock bajo
-                    } else if (notif.tipo === 'orden_vencimiento') {
-                        iconClass = 'fa-calendar text-danger'; // Icono de calendario para órdenes por vencer
-                    }
-
-                    const notificacionHtml = `
-                        <li>
-                            <a class="dropdown-item" href="#">
-                                <i class="fa ${iconClass}"></i> ${notif.mensaje}
-                            </a>
-                        </li>
-                    `;
-                    $notificationList.append(notificacionHtml);
+        headers: { 'Authorization': 'Bearer ' + token },
+        success: function(notif) {
+            const list = $('#notificationList');
+            const count = $('#notificationCount');
+            list.empty();
+            if (notif && notif.length > 0) {
+                count.text(notif.length).show();
+                notif.forEach(n => {
+                    list.append(`<a class="dropdown-item" href="#"><i class="fa fa-info-circle mr-2"></i>${n.mensaje}</a>`);
                 });
-
             } else {
-                // No hay notificaciones
-                console.log("cargarNotificaciones() - No hay notificaciones nuevas.");
-                $notificationCount.hide(); // Ocultar el contador
-                $notificationList.append('<li><span class="dropdown-item-text">No hay notificaciones nuevas.</span></li>');
-            }
-        },
-        error: function(xhr, status, error) {
-            console.error("cargarNotificaciones() - Error al cargar notificaciones. Status:", xhr.status, "Response:", xhr.responseText);
-            $notificationCount.hide();
-            $notificationList.empty().append('<li><span class="dropdown-item-text text-danger">Error al cargar notificaciones.</span></li>');
-            // No redirigimos aquí para no interrumpir al usuario, a menos que sea un error de autenticación
-            if (xhr.status === 401) { // Unauthorized
-                // Podría ser útil recargar la página para que la protección de página lo envíe al login
-                window.location.reload();
+                count.hide();
+                list.append('<span class="dropdown-item-text">Sin notificaciones</span>');
             }
         }
     });
 }
 
-
-
-// Código principal que se ejecuta cuando el DOM está listo
-$(document).ready(function () { 
-    // Funcionalidad para mostrar/ocultar el sidebar
-    $('#sidebarCollapse').on('click', function () {
-        $('#sidebar').toggleClass('active'); 
-    });
-
-    // Verificación de token y rol al cargar la página
-    const token = localStorage.getItem('token'); 
+$(document).ready(function () {
     const userRol = localStorage.getItem('userRol'); 
-    const loggedInUsername = localStorage.getItem('loggedInUsername'); 
-
-    console.log("admin.html $(document).ready - Token:", token); 
-    console.log("admin.html $(document).ready - Rol:", userRol); 
-    console.log("admin.html $(document).ready - Username:", loggedInUsername); 
-
-    if (!token) { 
-        console.log("admin.html - No hay token, redirigiendo a login."); 
-        window.location.href = 'index.html';
-        return; 
-    }
-
     if (userRol !== 'Administrador') { 
-        console.log("admin.html - Rol no es Administrador (" + userRol + "), redirigiendo."); 
-        alert('Acceso denegado. No tienes permisos de administrador.'); 
         window.location.href = 'index.html';  
         return; 
     }
     
-    // Si es admin, actualizar el saludo con el nombre de usuario
-    if (loggedInUsername && loggedInUsername !== "undefined" && loggedInUsername.trim() !== "") { 
-        $('#adminUsername').text(loggedInUsername); 
-    } else { 
-        console.log("admin.html - loggedInUsername no encontrado/inválido en localStorage. Se muestra 'Usuario'."); 
-        // El HTML ya tiene "Usuario" como fallback en el strong tag, así que no es estrictamente necesario un .text() aquí si es fallback. [cite: 26]
-    } 
+    cargarRolesDinamicos();
+    loadUsers(); 
+    cargarNotificaciones();
 
-    if (localStorage.getItem('token')) {
-        cargarNotificaciones();
+    let pendingAction = null;
+
+    function mostrarConfirmacion(titulo, mensaje, submensaje, colorClass, icono, accion) {
+        $('#confirmActionModalLabel').html(`<i class="fa ${icono} mr-2"></i> ${titulo}`);
+        $('#confirmHeader').removeClass('bg-warning bg-danger bg-success bg-secondary').addClass(colorClass);
+        $('#confirmIcon').attr('class', `fa ${icono} fa-4x ${colorClass.replace('bg-', 'text-')}`);
+        $('#confirmMessage').text(mensaje);
+        $('#confirmSubMessage').text(submensaje);
+        $('#btnConfirmAction').attr('class', `btn px-4 ${colorClass} text-white`);
+        pendingAction = accion;
+        $('#confirmActionModal').modal('show');
     }
 
-    console.log("admin.html - Acceso de administrador concedido. Cargando usuarios..."); 
-    loadUsers(); // Cargar la lista de usuarios al iniciar la página si el usuario es admin
-
-    // Nota: El manejo de logout se realiza mediante logout.js
-
-    // MANEJADOR PARA BOTONES DE DESACTIVAR (usando delegación de eventos) [cite: 29]
-    $(document).on('click', '.btn-deactivate', function() { 
-        const userId = $(this).data('id'); 
-        const username = $(this).closest('tr').find('td:nth-child(2)').text(); // Obtener username de la fila para el mensaje [cite: 29]
-        console.log("Botón Desactivar clickeado - Usuario ID:", userId, "Username:", username); 
-        if (confirm(`¿Está seguro de que desea DESACTIVAR al usuario "${username}" (ID: ${userId})?`)) { 
-            actualizarEstadoUsuario(userId, false); // false para desactivar [cite: 29]
-        }
+    $('#btnConfirmAction').on('click', function() {
+        if (pendingAction) pendingAction();
+        $('#confirmActionModal').modal('hide');
     });
 
-    // MANEJADOR PARA BOTONES DE ACTIVAR (usando delegación de eventos) [cite: 30]
-    $(document).on('click', '.btn-activate', function() { 
-        const userId = $(this).data('id'); 
-        const username = $(this).closest('tr').find('td:nth-child(2)').text(); 
-        console.log("Botón Activar clickeado - Usuario ID:", userId, "Username:", username); 
-        if (confirm(`¿Está seguro de que desea ACTIVAR al usuario "${username}" (ID: ${userId})?`)) { 
-            actualizarEstadoUsuario(userId, true); // true para activar [cite: 30]
-        }
+    $(document).on('click', '.btn-deactivate', function() {
+        const id = $(this).data('id');
+        mostrarConfirmacion('Desactivar', '¿Desactivar usuario?', 'No podrá iniciar sesión.', 'bg-secondary', 'fa-toggle-off', () => actualizarEstadoUsuario(id, false));
     });
 
-    // MANEJADOR PARA BOTONES DE EDITAR (usando delegación de eventos) [cite: 31]
-    $(document).on('click', '.btn-edit', function() { 
-        const userId = $(this).data('id'); 
-        console.log("Botón Editar clickeado - Usuario ID:", userId); 
-        const currentToken = localStorage.getItem('token'); // Obtener token actual [cite: 31]
-
-        if (!currentToken) {  
-            alert("Token no encontrado. Por favor, inicie sesión de nuevo."); 
-            window.location.href = 'index.html'; 
-            return;  
-        }
-
-        // Llamada AJAX para obtener los datos actuales del usuario y pre-llenar el modal
-        $.ajax({ 
-            url: `${API_BASE_URL}/usuarios/${userId}`, // Endpoint GET /usuarios/<id> [cite: 32
-            method: 'GET', 
-            headers: {  
-                'Authorization': 'Bearer ' + currentToken  
-            },
-            success: function(user) { 
-                console.log("Datos del usuario para editar recibidos:", user); 
-                // Llenar los campos del formulario en el modal
-                $('#editUserId').val(user.id_usuario); // Campo oculto para guardar el ID [cite: 33]
-                $('#editUsername').val(user.username); 
-                $('#editEmail').val(user.email); // Asumiendo que también se puede editar el email [cite: 33]
-                $('#editRol').val(user.rol);     // Asegúrate que los values del select coincidan [cite: 33]
-                
-                // Mostrar el modal de edición
-                var editUserModal = new bootstrap.Modal(document.getElementById('editUserModal')); 
-                editUserModal.show(); 
-            },
-            error: function(xhr) { 
-                console.error("Error al obtener datos del usuario para editar. Status:", xhr.status, "Response:", xhr.responseText); 
-                alert(xhr.responseJSON?.error || "Error al obtener datos del usuario para edición."); 
-                if (xhr.status === 401 || xhr.status === 403) { 
-                    localStorage.removeItem('token'); 
-                    localStorage.removeItem('userRol'); 
-                    localStorage.removeItem('loggedInUsername'); 
-                    window.location.href = 'index.html'; 
-                }
-            }
-        });
+    $(document).on('click', '.btn-activate', function() {
+        const id = $(this).data('id');
+        mostrarConfirmacion('Activar', '¿Activar usuario?', 'Recuperará el acceso.', 'bg-success', 'fa-toggle-on', () => actualizarEstadoUsuario(id, true));
     });
 
-    // MANEJADOR PARA EL SUBMIT DEL FORMULARIO DE EDICIÓN DENTRO DEL MODAL [cite: 36]
-    $('#editUserForm').on('submit', function(event) { 
-        event.preventDefault(); // Evitar el envío tradicional del formulario [cite: 36]
-        const userId = $('#editUserId').val(); // Obtener el ID del usuario del campo oculto [cite: 36]
-
-        // Recoger los datos actualizados del formulario del modal
-        const updatedUserData = { 
-            username: $('#editUsername').val().trim(), 
-            email: $('#editEmail').val().trim(), // Incluido si se permite editar email 
-            rol: $('#editRol').val() 
-        };
-
-        // Validar que los campos no estén vacíos
-        if (!updatedUserData.username || !updatedUserData.email || !updatedUserData.rol) { 
-            alert("Todos los campos (Username, Email, Rol) son requeridos para la edición."); 
-            return; 
-        }
-
-        console.log("Enviando actualización para usuario ID:", userId, "Datos:", updatedUserData);
-        const currentToken = localStorage.getItem('token');  
-        if (!currentToken) { 
-            alert("Token no encontrado. Por favor, inicie sesión de nuevo."); 
-            window.location.href = 'index.html'; 
-            return; 
-        }
-        
-        $.ajax({ 
-            url: `${API_BASE_URL}/usuarios/${userId}`, // Endpoint PUT /usuarios/<id> [cite: 38
-            method: 'PUT', 
-            headers: { 
-                'Authorization': 'Bearer ' + currentToken, 
-                'Content-Type': 'application/json' 
-            },
-            data: JSON.stringify(updatedUserData), // Enviar los datos como JSON [cite: 39]
-            success: function(response) {
-                console.log("Respuesta de actualización de usuario:", response); 
-                alert(response.message || "Usuario actualizado con éxito."); 
-                
-                var editModalInstance = bootstrap.Modal.getInstance(document.getElementById('editUserModal'));
-                if (editModalInstance) {  // Asegurarse que la instancia existe antes de llamar a hide [cite: 41]
-                   editModalInstance.hide(); // Ocultar el modal [cite: 41]
-                } 
-                
-                loadUsers(); // Recargar la lista de usuarios para reflejar los cambios [cite: 42]
-            }, 
-            error: function(xhr) { 
-                console.error("Error al actualizar usuario. Status:", xhr.status, "Response:", xhr.responseText); 
-                // Mostrar el error, podrías hacerlo dentro del modal si prefieres, en lugar de un alert
-                alert(xhr.responseJSON?.error || "Error al actualizar el usuario."); 
-                if (xhr.status === 401 || xhr.status === 403) { 
-                    localStorage.removeItem('token'); 
-                    localStorage.removeItem('userRol'); 
-                    localStorage.removeItem('loggedInUsername'); 
-                    window.location.href = 'index.html'; 
-                }
-            }
-        });
+    $(document).on('click', '.btn-delete', function() {
+        const id = $(this).data('id');
+        mostrarConfirmacion('ELIMINAR', '¿Eliminar permanentemente?', 'Esta acción no se puede deshacer.', 'bg-danger', 'fa-trash', () => eliminarUsuario(id));
     });
 
-    // --- Lógica para el Modal de Configuraciones ---
+    $(document).on('click', '.btn-unlock', function() {
+        const id = $(this).data('id');
+        mostrarConfirmacion('Desbloquear', '¿Desbloquear cuenta?', 'El usuario podrá intentar loguearse.', 'bg-info', 'fa-unlock', () => desbloquearUsuario(id));
+    });
 
-    // Cuando el modal de configuraciones se va a mostrar, cargar los valores actuales
-    $('#settingsModal').on('show.bs.modal', function () {
-        console.log("Abriendo modal de configuraciones. Cargando valores actuales...");
+    $(document).on('click', '.btn-edit', function() {
+        const id = $(this).data('id');
         const token = localStorage.getItem('token');
-        
-        // La protección de página general ya debería haber manejado la ausencia de token,
-        // pero una verificación adicional aquí es buena práctica.
-        if (!token) {
-            alert("Error de autenticación. Por favor, inicie sesión de nuevo.");
-            // Intenta obtener la instancia del modal para cerrarlo si es posible y se intenta abrir
-            var settingsModalEl = document.getElementById('settingsModal');
-            if (settingsModalEl) {
-                var settingsModalInstance = bootstrap.Modal.getInstance(settingsModalEl);
-                // bootstrap.Modal.getInstance puede devolver null si el modal no está inicializado
-                if (settingsModalInstance) { 
-                    settingsModalInstance.hide(); 
-                }
-            }
-            window.location.href = 'index.html'; // Redirigir a login
-            return;
-        }
-
-        // Limpiar mensajes previos en el modal
-        const mensajeDivModal = $('#settingsMessage'); // Asegúrate que este div exista en tu modal
-        if (mensajeDivModal.length) {
-            mensajeDivModal.text('').removeClass('alert alert-success alert-danger alert-info');
-        }
-
-
         $.ajax({
-            url: `${API_BASE_URL}/configuraciones`, // Endpoint GET para obtener configuraciones
+            url: `${API_BASE_URL}/usuarios/${id}`,
             method: 'GET',
             headers: { 'Authorization': 'Bearer ' + token },
-            success: function(config) {
-                console.log("Configuraciones actuales recibidas del backend:", config);
-                if (config) { // Verificar que config no sea null o undefined
-                    // Poblar campos existentes
-                    $('#settingResetTokenExpiry').val(config.reset_token_expiry_minutes);
-                    $('#settingMaxLoginAttempts').val(config.max_failed_login_attempts);
-                    
-                    // NUEVO: Poblar el campo de umbral global de stock bajo
-                    // Asegúrate que el ID del input en el HTML del modal sea 'settingGlobalLowStockThreshold'
-                    $('#settingGlobalLowStockThreshold').val(config.global_low_stock_threshold);
-                } else {
-                    console.error("Error: No se recibieron datos de configuración válidos del backend.");
-                    if (mensajeDivModal.length) {
-                        mensajeDivModal.text('Error al cargar configuraciones: datos no válidos desde el servidor.').addClass('alert alert-danger');
-                    }
-                }
-            },
-            error: function(xhr) {
-                console.error("Error al cargar configuraciones:", xhr.status, xhr.responseText);
-                if (mensajeDivModal.length) {
-                    mensajeDivModal.text(xhr.responseJSON?.error || 'Error al cargar configuraciones. Intente de nuevo más tarde.').addClass('alert alert-danger');
-                }
-                if (xhr.status === 401 || xhr.status === 403) { // Manejo de error de autenticación/autorización
-                    alert("Su sesión ha expirado o no tiene permisos. Será redirigido al login.");
-                    localStorage.removeItem('token');
-                    localStorage.removeItem('userRol');
-                    localStorage.removeItem('loggedInUsername');
-                    window.location.href = 'index.html';
-                }
+            success: function(user) {
+                $('#editUserId').val(user.id_usuario);
+                $('#editUsername').val(user.username);
+                $('#editEmail').val(user.email);
+                $('#editRol').val(user.rol);
+                $('#editUserModal').modal('show');
             }
         });
     });
 
-
-
-
-    // Manejador para guardar las configuraciones
-    $('#settingsForm').on('submit', function(event) {
-        event.preventDefault();
-        const token = localStorage.getItem('token');
-        
-        // Verificar token al momento de guardar también
-        if (!token) {
-            alert("Error de autenticación. Por favor, inicie sesión de nuevo antes de guardar.");
-            window.location.href = 'index.html';
-            return; 
-        }
-
-        // Recoger todos los valores, incluyendo el nuevo umbral de stock bajo
-        const newSettings = {
-            reset_token_expiry_minutes: parseInt($('#settingResetTokenExpiry').val(), 10),
-            max_failed_login_attempts: parseInt($('#settingMaxLoginAttempts').val(), 10),
-            global_low_stock_threshold: parseInt($('#settingGlobalLowStockThreshold').val(), 10) // NUEVO campo
+    $('#editUserForm').on('submit', function(e) {
+        e.preventDefault();
+        const id = $('#editUserId').val();
+        const data = {
+            username: $('#editUsername').val().trim(),
+            email: $('#editEmail').val().trim(),
+            rol: $('#editRol').val()
         };
-
-        console.log("Guardando nuevas configuraciones:", newSettings);
-        const mensajeDivModal = $('#settingsMessage'); // Referencia al div de mensajes del modal
-        if (mensajeDivModal.length) {
-            mensajeDivModal.text('Guardando configuraciones...').removeClass('alert-success alert-danger alert-info').addClass('alert alert-info show');
-        }
-
-
-        // Validación simple en el frontend para los nuevos valores
-        if (isNaN(newSettings.reset_token_expiry_minutes) || newSettings.reset_token_expiry_minutes <= 0 ||
-            isNaN(newSettings.max_failed_login_attempts) || newSettings.max_failed_login_attempts <= 0 ||
-            isNaN(newSettings.global_low_stock_threshold) || newSettings.global_low_stock_threshold < 0) { // El umbral puede ser 0
-            
-            let validationErrorMsg = "Por favor, ingrese valores numéricos válidos. ";
-            if (isNaN(newSettings.reset_token_expiry_minutes) || newSettings.reset_token_expiry_minutes <= 0) {
-                validationErrorMsg += "La duración del token debe ser un número positivo. ";
-            }
-            if (isNaN(newSettings.max_failed_login_attempts) || newSettings.max_failed_login_attempts <= 0) {
-                validationErrorMsg += "Los intentos de login deben ser un número positivo. ";
-            }
-            if (isNaN(newSettings.global_low_stock_threshold) || newSettings.global_low_stock_threshold < 0) {
-                validationErrorMsg += "El umbral de stock bajo debe ser un número no negativo (0 o mayor).";
-            }
-            
-            if (mensajeDivModal.length) {
-                mensajeDivModal.text(validationErrorMsg).removeClass('alert-info').addClass('alert alert-danger');
-            } else {
-                alert(validationErrorMsg); // Fallback si el div de mensajes no existe
-            }
-            return;
-        }
-
         $.ajax({
-            url: `${API_BASE_URL}/configuraciones`, // Endpoint PUT para actualizar configuraciones
+            url: `${API_BASE_URL}/usuarios/${id}`,
             method: 'PUT',
-            headers: {
-                'Authorization': 'Bearer ' + token,
-                'Content-Type': 'application/json'
-            },
-            data: JSON.stringify(newSettings),
-            success: function(response) {
-                console.log("Respuesta de guardar configuraciones:", response);
-                if (mensajeDivModal.length) {
-                    mensajeDivModal.text(response.message || "Configuraciones guardadas exitosamente.").removeClass('alert-info alert-danger').addClass('alert alert-success');
-                } else {
-                    alert(response.message || "Configuraciones guardadas exitosamente.");
-                }
-                // Opcional: cerrar el modal automáticamente después de un tiempo
-                // setTimeout(function() {
-                //     var settingsModalEl = document.getElementById('settingsModal');
-                //     if (settingsModalEl) {
-                //         var settingsModalInstance = bootstrap.Modal.getInstance(settingsModalEl);
-                //         if (settingsModalInstance) { settingsModalInstance.hide(); }
-                //     }
-                // }, 2000);
-            },
-            error: function(xhr) {
-                console.error("Error al guardar configuraciones:", xhr.status, xhr.responseText);
-                const errorText = xhr.responseJSON?.error || 'Error al guardar configuraciones. Intente de nuevo más tarde.';
-                if (mensajeDivModal.length) {
-                    mensajeDivModal.text(errorText).removeClass('alert-info alert-success').addClass('alert alert-danger');
-                } else {
-                    alert(errorText);
-                }
-                if (xhr.status === 401 || xhr.status === 403) { // Manejo de error de autenticación/autorización
-                    alert("Su sesión ha expirado o no tiene permisos. Será redirigido al login.");
-                    localStorage.removeItem('token');
-                    localStorage.removeItem('userRol');
-                    localStorage.removeItem('loggedInUsername');
-                    window.location.href = 'index.html';
-                }
+            headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token'), 'Content-Type': 'application/json' },
+            data: JSON.stringify(data),
+            success: function() {
+                $('#editUserModal').modal('hide');
+                loadUsers();
             }
         });
     });
 
-    $(document).on('click', '.btn-deactivate-manual', function() {
-        const userId = $(this).data('id');
-        const username = $(this).closest('tr').find('td:nth-child(2)').text();
-        if (confirm(`¿Está seguro de que desea DESACTIVAR (manualmente) al usuario "${username}" (ID: ${userId})? Esto es diferente al bloqueo por intentos.`)) {
-            actualizarEstadoManualUsuario(userId, false); // false para desactivar (estado = 0)
-        }
-    });
-
-    // MANEJADOR PARA BOTONES DE ACTIVAR (MANUAL ADMIN)
-    $(document).on('click', '.btn-activate-manual', function() {
-        const userId = $(this).data('id');
-        const username = $(this).closest('tr').find('td:nth-child(2)').text();
-        if (confirm(`¿Está seguro de que desea ACTIVAR (manualmente) al usuario "${username}" (ID: ${userId})?`)) {
-            actualizarEstadoManualUsuario(userId, true); // true para activar (estado = 1)
-        }
-    });
-
-    // NUEVO MANEJADOR PARA BOTÓN DE DESBLOQUEAR (por intentos fallidos)
-    $(document).on('click', '.btn-unlock', function() {
-        const userId = $(this).data('id');
-        const username = $(this).closest('tr').find('td:nth-child(2)').text();
-        if (confirm(`¿Está seguro de que desea DESBLOQUEAR al usuario "${username}" (ID: ${userId}) que fue bloqueado por intentos fallidos?`)) {
-            desbloquearUsuarioPorAdmin(userId);
-        }
-    });
-
-    // MANEJADOR PARA EL SUBMIT DEL FORMULARIO DE CREACIÓN DE USUARIO
-    $('#createUserForm').on('submit', function(event) {
-        event.preventDefault(); // Evitar el envío tradicional del formulario
-        
-        // Recoger los datos del formulario
-        const newUserData = {
+    $('#createUserForm').on('submit', function(e) {
+        e.preventDefault();
+        const data = {
             username: $('#createUsername').val().trim(),
             email: $('#createEmail').val().trim(),
             password: $('#createPassword').val(),
             rol: $('#createRol').val()
         };
-        
-        // Validar que los campos no estén vacíos
-        if (!newUserData.username || !newUserData.email || !newUserData.password || !newUserData.rol) {
-            alert("Todos los campos son requeridos para crear un usuario.");
-            return;
-        }
-        
-        // Validar longitud mínima de contraseña
-        if (newUserData.password.length < 3) {
-            alert("La contraseña debe tener al menos 3 caracteres.");
-            return;
-        }
-        
-        console.log("Creando nuevo usuario con datos:", { ...newUserData, password: '******' });
-        const currentToken = localStorage.getItem('token');
-        
-        if (!currentToken) {
-            alert("Token no encontrado. Por favor, inicie sesión de nuevo.");
-            window.location.href = 'index.html';
-            return;
-        }
-        
         $.ajax({
             url: `${API_BASE_URL}/registro`,
             method: 'POST',
-            headers: {
-                'Authorization': 'Bearer ' + currentToken,
-                'Content-Type': 'application/json'
-            },
-            data: JSON.stringify(newUserData),
-            success: function(response) {
-                console.log("Respuesta de creación de usuario:", response);
-                alert(response.message || "Usuario creado exitosamente.");
-                
-                // Cerrar el modal
-                var createModalInstance = bootstrap.Modal.getInstance(document.getElementById('createUserModal'));
-                if (createModalInstance) {
-                    createModalInstance.hide();
-                }
-                
-                // Limpiar el formulario
+            headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token'), 'Content-Type': 'application/json' },
+            data: JSON.stringify(data),
+            success: function() {
+                $('#createUserModal').modal('hide');
                 $('#createUserForm')[0].reset();
-                
-                // Recargar la lista de usuarios
                 loadUsers();
-            },
-            error: function(xhr) {
-                console.error("Error al crear usuario. Status:", xhr.status, "Response:", xhr.responseText);
-                alert(xhr.responseJSON?.error || "Error al crear el usuario.");
-                if (xhr.status === 401 || xhr.status === 403) {
-                    localStorage.removeItem('token');
-                    localStorage.removeItem('userRol');
-                    localStorage.removeItem('loggedInUsername');
-                    window.location.href = 'index.html';
-                }
             }
         });
     });
 
-    
+    $('#settingsModal').on('show.bs.modal', function() {
+        $.ajax({
+            url: `${API_BASE_URL}/configuraciones`,
+            method: 'GET',
+            headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token') },
+            success: function(c) {
+                $('#settingResetTokenExpiry').val(c.reset_token_expiry_minutes);
+                $('#settingMaxLoginAttempts').val(c.max_failed_login_attempts);
+                $('#settingGlobalLowStockThreshold').val(c.global_low_stock_threshold);
+            }
+        });
+    });
+
+    $('#settingsForm').on('submit', function(e) {
+        e.preventDefault();
+        const data = {
+            reset_token_expiry_minutes: parseInt($('#settingResetTokenExpiry').val()),
+            max_failed_login_attempts: parseInt($('#settingMaxLoginAttempts').val()),
+            global_low_stock_threshold: parseInt($('#settingGlobalLowStockThreshold').val())
+        };
+        $.ajax({
+            url: `${API_BASE_URL}/configuraciones`,
+            method: 'PUT',
+            headers: { 'Authorization': 'Bearer ' + localStorage.getItem('token'), 'Content-Type': 'application/json' },
+            data: JSON.stringify(data),
+            success: function(r) {
+                $('#settingsMessage').html(`<div class="alert alert-success">${r.message}</div>`);
+                setTimeout(() => { $('#settingsModal').modal('hide'); $('#settingsMessage').empty(); }, 1500);
+            }
+        });
+    });
 });
 </script>
-
-<!-- Módulo de Logout Global -->
-<script src="js/logout.js"></script>
 </body>
 </html>
