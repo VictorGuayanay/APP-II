@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <title>Lista de Ordenes de Trabajo - Carrocer�as Alvarado</title>
+    <title>Lista de Ordenes de Trabajo - Carroceróas Alvarado</title>
     <meta charset="UTF-8">
-    <link rel="stylesheet" type="text/css" href="vendor/bootstrap/css/bootstrap.min.css">
+    <meta name="description" content="Órdenes de Trabajo - Carrocerías Alvarado. Listado y seguimiento de todas las órdenes de trabajo activas y finalizadas.">
+    <link rel="stylesheet" type="text/css" href="vendor/bootstrap/css/bootstrap5.min.css">
     <link rel="stylesheet" type="text/css" href="fonts/font-awesome-4.7.0/css/font-awesome.min.css">
     <link rel="stylesheet" type="text/css" href="css/main.css">
     <link rel="stylesheet" type="text/css" href="css/modern-design.css">
@@ -19,16 +20,16 @@
     <!-- Sidebar -->
     <nav id="sidebar">
         <div class="sidebar-header">
-            <h3>Carrocer�as Alvarado</h3>
+            <h3>Carroceróas Alvarado</h3>
         </div>
         <ul class="list-unstyled components">
-            <p class="ms-3">Administraci�n</p>
+            <p class="ms-3">Administración</p>
             <li>
                 <a href="#dashboardSubmenu" data-bs-toggle="collapse" aria-expanded="false" class="dropdown-toggle">
                     <i class="fa fa-tachometer"></i> Dashboard
                 </a>
                 <ul class="collapse list-unstyled" id="dashboardSubmenu">
-                    <li><a href="vision_general.html">Visi�n General</a></li>
+                    <li><a href="vision_general.html">Visión General</a></li>
                 </ul>
             </li>
             <li> 
@@ -42,7 +43,7 @@
                 </a>
                 <ul class="collapse list-unstyled" id="inventarioSubmenu">
                     <li><a href="ver_inventario.html">Ver Inventario</a></li>
-                    <li><a href="anadir_material.html">A�adir Material</a></li>
+                    <li><a href="anadir_material.html">Aóadir Material</a></li>
                     <li><a href="entradas_salidas_inventario.html">Entradas/Salidas</a></li>
                 </ul>
             </li>
@@ -52,21 +53,21 @@
             <li><a href="ingresar_cliente.html"><i class="fa fa-user-plus"></i> Ingreso Clientes</a></li>
             <li><a href="ingresar_proveedor.html"><i class="fa fa-truck"></i> Ingreso Proveedores</a></li>
             <li><a href="ver_proveedores.html"><i class="fa fa-list"></i> Ver Proveedores</a></li>
-            <li><a href="orden_trabajo.html"><i class="fa fa-briefcase"></i> �rdenes de Trabajo</a></li>
-            <li class="active"><a href="listar_ordenes_trabajo.html"><i class="fa fa-briefcase"></i> Listar �rdenes de Trabajo</a></li>
+            <li><a href="orden_trabajo.html"><i class="fa fa-briefcase"></i> órdenes de Trabajo</a></li>
+            <li class="active"><a href="listar_ordenes_trabajo.html"><i class="fa fa-briefcase"></i> Listar órdenes de Trabajo</a></li>
             <li><a href="consultar_comprobantes.html"><i class="fa fa-money"></i> Comprobante</a></li>
             <li><a href="reportes.html"><i class="fa fa-bar-chart"></i> Reportes</a></li>
-            <li><a href="#" data-bs-toggle="modal" data-bs-target="#settingsModal" ><i class="fa fa-cog"></i> Configuraci�n</a></li>
+            <li><a href="#" data-bs-toggle="modal" data-bs-target="#settingsModal" ><i class="fa fa-cog"></i> Configuración</a></li>
         </ul>
     </nav>
 
     <!-- Page Content -->
     <div id="content">
-        <!-- Barra de Navegaci�n Superior -->
+        <!-- Barra de Navegación Superior -->
         <nav class="navbar navbar-expand-lg navbar-light top-navbar">
             <div class="container-fluid">
                 <button type="button" id="sidebarCollapse" class="btn btn-info">
-                    <i class="fa fa-align-left"></i> <span>Men�</span>
+                    <i class="fa fa-align-left"></i> <span>Menó</span>
                 </button>
                 <div class="user-info">
                     <div class="dropdown me-3">
@@ -81,7 +82,7 @@
                         </ul>
                     </div>
                     <span>Hola, <strong id="currentUserName">Usuario</strong>!</span>
-                    <a href="#" id="logoutButton" class="ms-3">Cerrar Sesi�n</a>
+                    <a href="#" id="logoutButton" class="btn-logout ms-3"><i class="fa fa-sign-out"></i> Cerrar Sesión</a>
                 </div>
             </div>
         </nav>
@@ -103,7 +104,7 @@
                                 <tr>
                                     <th>ID</th>
                                     <th>Cliente</th>
-                                    <th>Descripci�n</th>
+                                    <th>Descripción</th>
                                     <th>Empleado Asignado</th>
                                     <th>Fechas (Inicio/Fin)</th>
                                     <th>Estado</th>
@@ -120,16 +121,16 @@
     </div>
 </div>
 
-<!-- Modal para Mostrar Resultado del C�lculo de Recursos -->
+<!-- Modal para Mostrar Resultado del Cálculo de Recursos -->
 <div class="modal fade" id="recursosModal" tabindex="-1" aria-labelledby="recursosModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="recursosModalLabel">C�lculo de Recursos</h5>
+                <h5 class="modal-title" id="recursosModalLabel">Cálculo de Recursos</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <p><strong>Resultado del C�lculo para la Orden de Trabajo #<span id="recursosModalOrdenId"></span>:</strong></p>
+                <p><strong>Resultado del Cálculo para la Orden de Trabajo #<span id="recursosModalOrdenId"></span>:</strong></p>
                 <div id="recursosModalResultado">
                 </div>
             </div>
@@ -140,22 +141,59 @@
     </div>
 </div>
 
-<script src="js/config.js"></script>
-    <script src="js/dashboard-core.js"></script>
-    <script src="vendor/jquery/jquery-3.2.1.min.js"></script>
-<script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
 
+<!-- Dependencias de Scripts (Orden Correcto) -->
+
+<!-- Modal de Configuración/Perfil (Reutilizado) -->
+<div class="modal fade" id="settingsModal" tabindex="-1" role="dialog" aria-labelledby="settingsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 15px; overflow: hidden;">
+            <div class="modal-header bg-secondary text-white border-0">
+                <h5 class="modal-title" id="settingsModalLabel">
+                    <i class="fa fa-cog mr-2"></i> Configuraciones Generales
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div id="settingsMessage"></div>
+                <form id="settingsForm">
+                    <div class="form-group mb-3">
+                        <label for="settingResetTokenExpiry" class="font-weight-bold">Duración del Token (minutos)</label>
+                        <input type="number" class="form-control" id="settingResetTokenExpiry" min="1" required style="border-radius: 8px;">
+                        <small class="form-text text-muted">Tiempo de validez para el enlace de reseteo.</small>
+                    </div>
+                    <div class="form-group mb-3">
+                        <label for="settingMaxLoginAttempts" class="font-weight-bold">Máximos Intentos de Login</label>
+                        <input type="number" class="form-control" id="settingMaxLoginAttempts" min="1" required style="border-radius: 8px;">
+                        <small class="form-text text-muted">Número de intentos antes de bloquear la cuenta.</small>
+                    </div>
+                    <div class="form-group mb-3">
+                        <label for="settingGlobalLowStockThreshold" class="font-weight-bold">Limite Global de Stock Bajo</label>
+                        <input type="number" class="form-control" id="settingGlobalLowStockThreshold" min="0" required style="border-radius: 8px;">
+                        <small class="form-text text-muted">Materiales a resaltar bajo este stock.</small>
+                    </div>
+                    <div class="modal-footer border-0 justify-content-center pt-3">
+                        <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal" style="border-radius: 10px;">Cancelar</button>
+                        <button type="submit" class="btn btn-secondary px-4" style="border-radius: 10px; font-weight: 600;">Guardar Configuraciones</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="vendor/jquery/jquery-3.2.1.min.js"></script>
+<script src="vendor/bootstrap/js/bootstrap5.bundle.min.js"></script>
+<script src="js/config.js"></script>
+<script src="js/dashboard-core.js"></script>
+
+<!-- Librerías para Generación de PDF -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
-
-
-<script src="vendor/jquery/jquery-3.2.1.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
 
 <script>
 
 function loadOrdenesDeTrabajo() {
-    console.log("Cargando �rdenes de trabajo (l�gica multi-empleado)...");
+    console.log("Cargando órdenes de trabajo (lógica multi-empleado)...");
     const token = localStorage.getItem('token');
     const $tableBody = $('#ordenesTableBody');
     $tableBody.html('<tr><td colspan="7" class="text-center">Cargando...</td></tr>');
@@ -167,17 +205,17 @@ function loadOrdenesDeTrabajo() {
         success: function(ordenes) {
             $tableBody.empty();
             if (ordenes && ordenes.length > 0) {
-                // Calcular fecha l�mite para �rdenes por vencer (7 d�as)
+                // Calcular fecha lómite para órdenes por vencer (7 dóas)
                 const hoy = new Date();
                 const fechaLimite = new Date();
                 fechaLimite.setDate(hoy.getDate() + 7);
                 
                 ordenes.forEach(function(orden) {
-                    // Formatear fechas sin conversi�n de zona horaria
+                    // Formatear fechas sin conversión de zona horaria
                     const fechaInicio = orden.fecha_inicio ? orden.fecha_inicio.split('T')[0].split('-').reverse().join('/') : 'N/A';
                     const fechaFin = orden.fecha_fin ? orden.fecha_fin.split('T')[0].split('-').reverse().join('/') : 'N/A';
                     
-                    // Verificar si la orden est� por vencer
+                    // Verificar si la orden estó por vencer
                     let rowClass = '';
                     let alertIcon = '';
                     if (orden.fecha_fin && orden.estado !== 'Finalizado' && orden.estado !== 'Completado' && orden.estado !== 'Cancelado') {
@@ -185,17 +223,17 @@ function loadOrdenesDeTrabajo() {
                         const diasRestantes = Math.ceil((fechaFinDate - hoy) / (1000 * 60 * 60 * 24));
                         
                         if (diasRestantes <= 7 && diasRestantes >= 0) {
-                            rowClass = 'table-warning'; // Fondo amarillo para �rdenes por vencer
+                            rowClass = 'table-warning'; // Fondo amarillo para órdenes por vencer
                             if (diasRestantes === 0) {
-                                alertIcon = '<i class="fa fa-exclamation-triangle text-danger" title="�Vence hoy!"></i> ';
+                                alertIcon = '<i class="fa fa-exclamation-triangle text-danger" title="óVence hoy!"></i> ';
                             } else if (diasRestantes === 1) {
-                                alertIcon = '<i class="fa fa-exclamation-triangle text-warning" title="Vence ma�ana"></i> ';
+                                alertIcon = '<i class="fa fa-exclamation-triangle text-warning" title="Vence maóana"></i> ';
                             } else {
-                                alertIcon = `<i class="fa fa-clock-o text-warning" title="Vence en ${diasRestantes} d�as"></i> `;
+                                alertIcon = `<i class="fa fa-clock-o text-warning" title="Vence en ${diasRestantes} dóas"></i> `;
                             }
                         } else if (diasRestantes < 0) {
-                            rowClass = 'table-danger'; // Fondo rojo para �rdenes vencidas
-                            alertIcon = '<i class="fa fa-times-circle text-danger" title="�Orden vencida!"></i> ';
+                            rowClass = 'table-danger'; // Fondo rojo para órdenes vencidas
+                            alertIcon = '<i class="fa fa-times-circle text-danger" title="óOrden vencida!"></i> ';
                         }
                     }
                     
@@ -210,7 +248,7 @@ function loadOrdenesDeTrabajo() {
                     const botonDetalles = `<a href="detalle_orden.html?id=${orden.id_orden}" class="btn btn-primary btn-sm me-1" title="Ver Detalles"><i class="fa fa-eye"></i></a>`;
                     const botonImprimir = `<button class="btn btn-danger btn-sm btn-imprimir-orden" data-id="${orden.id_orden}" title="Imprimir PDF"><i class="fa fa-print"></i></button>`;
 
-                    // Determinar el color del badge seg�n el estado
+                    // Determinar el color del badge segón el estado
                     let badgeColor;
                     if (orden.estado === 'Finalizado') {
                         badgeColor = 'bg-success'; // Verde para finalizadas
@@ -236,21 +274,21 @@ function loadOrdenesDeTrabajo() {
                     $tableBody.append(fila);
                 });
             } else {
-                $tableBody.html('<tr><td colspan="7" class="text-center">No hay �rdenes de trabajo registradas.</td></tr>');
+                $tableBody.html('<tr><td colspan="7" class="text-center">No hay órdenes de trabajo registradas.</td></tr>');
             }
         },
         error: function(xhr) {
-            console.error("Error al cargar �rdenes de trabajo:", xhr.responseText);
-            $tableBody.html('<tr><td colspan="7" class="text-center text-danger">Error al cargar las �rdenes de trabajo.</td></tr>');
+            console.error("Error al cargar órdenes de trabajo:", xhr.responseText);
+            $tableBody.html('<tr><td colspan="7" class="text-center text-danger">Error al cargar las órdenes de trabajo.</td></tr>');
         }
     });
 }
 
-// Define esta nueva funci�n fuera de $(document).ready()
+// Define esta nueva función fuera de $(document).ready()
 function generarPDFDeOrden(orden) {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({
-        orientation: 'portrait', // Orientaci�n vertical
+        orientation: 'portrait', // Orientación vertical
         unit: 'pt',
         format: 'a4'
     });
@@ -259,53 +297,54 @@ function generarPDFDeOrden(orden) {
     logo.src = 'images/logo.jpg'; // IMPORTANTE: Usa la ruta correcta a tu logo!
     logo.onload = function() {
         // --- ENCABEZADO ---
-        doc.addImage(this, 'PNG', 60, 15, 60, 60); // Logo (x, y, ancho, alto)
-        doc.setFontSize(18);
-        doc.setTextColor(40);
-        doc.text("Carrocer�as Alvarado", 250, 45); // T�tulo de la empresa
-        doc.setFontSize(10);
-        doc.text("Direcci�n: Av. Monse�or Leonidas Proa�o (a pocos metros de la linea ferrea), Riobamba, Ecuador", 130, 60);
-        doc.text("Tel�fono: 099 991 1866| Email: carroceriasalvarado@hotmail.com", 150, 70);
+        doc.addImage(this, 'JPG', 40, 20, 50, 50); // Logo en la parte superior izquierda
         
-        // --- T�TULO DEL DOCUMENTO ---
-        doc.setFontSize(20);
+        doc.setFontSize(16);
+        doc.setTextColor(40);
         doc.setFont(undefined, 'bold');
-        doc.text(`Orden de Trabajo #${orden.id_orden}`, doc.internal.pageSize.getWidth() / 2, 95, { align: 'center' });
+        doc.text("CARROCERÍAS ALVARADO", 110, 35);
+        
+        doc.setFontSize(9);
         doc.setFont(undefined, 'normal');
+        doc.text("Telf: +593 99 991 1866", 110, 50);
+        doc.text("Email: carroceriasalvarado@hotmail.com", 110, 62);
+        doc.text("Dir: Avda. Monseñor Leonidas Proaño (a pocos metros de la línea férrea)", 110, 74);
+        doc.text("Riobamba, Ecuador", 110, 86);
         
         // --- LEYENDA TRIBUTARIA EN ENCABEZADO ---
-        doc.setFontSize(9);
+        doc.setFontSize(8);
         doc.setTextColor(200, 0, 0);
         doc.setFont(undefined, 'bold');
-        doc.text("DOCUMENTO SIN VALOR TRIBUTARIO", doc.internal.pageSize.getWidth() / 2, 107, { align: 'center' });
+        doc.text("DOCUMENTO CONTROL INTERNO - SIN VALOR TRIBUTARIO", doc.internal.pageSize.getWidth() / 2, 20, { align: 'center' });
+        
         doc.setFont(undefined, 'normal');
         doc.setTextColor(40);
         
-        doc.line(40, 115, 555, 115); // L�nea divisoria
+        doc.line(40, 115, 555, 115); // Línea divisoria
 
-        // --- INFORMACI�N GENERAL ---
-        let currentY = 130; // Posici�n Y inicial para el contenido
+        // --- INFORMACIóN GENERAL ---
+        let currentY = 130; // Posición Y inicial para el contenido
         doc.setFontSize(12);
         doc.text(`Cliente: ${orden.nombre_cliente}`, 40, currentY);
         doc.text(`Estado: ${orden.estado}`, 350, currentY);
         currentY += 20;
-        // Formatear fechas sin conversi�n de zona horaria
+        // Formatear fechas sin conversión de zona horaria
         const fechaInicio = orden.fecha_inicio ? orden.fecha_inicio.split('T')[0].split('-').reverse().join('/') : 'N/A';
         const fechaFin = orden.fecha_fin ? orden.fecha_fin.split('T')[0].split('-').reverse().join('/') : 'Pendiente';
         doc.text(`Fechas: ${fechaInicio} a ${fechaFin}`, 40, currentY);
         currentY += 20;
-        doc.text("Descripci�n del Trabajo:", 40, currentY);
+        doc.text("Descripción del Trabajo:", 40, currentY);
         currentY += 15;
-        // La funci�n splitTextToSize divide el texto largo en l�neas que quepan en el ancho
+        // La función splitTextToSize divide el texto largo en lóneas que quepan en el ancho
         const descripcionLines = doc.splitTextToSize(orden.descripcion, 515); 
         doc.text(descripcionLines, 40, currentY);
-        currentY += (descripcionLines.length * 12) + 10; // Incrementar Y basado en el n�mero de l�neas
+        currentY += (descripcionLines.length * 12) + 10; // Incrementar Y basado en el nómero de lóneas
 
 
         // --- CALCULAR MANO DE OBRA ---
         let costoTotalManoObra = 0;
         if (orden.empleados_asignados && orden.empleados_asignados.length > 0 && orden.fecha_inicio && orden.fecha_fin) {
-            // Calcular d�as laborales
+            // Calcular dóas laborales
             const fechaInicioDate = new Date(orden.fecha_inicio);
             const fechaFinDate = new Date(orden.fecha_fin);
             const diffTime = Math.abs(fechaFinDate - fechaInicioDate);
@@ -338,7 +377,7 @@ function generarPDFDeOrden(orden) {
         }
 
         // --- RESUMEN FINANCIERO ---
-        // Usar los valores almacenados en la orden y convertir a n�meros
+        // Usar los valores almacenados en la orden y convertir a nómeros
         const subtotalMateriales = parseFloat(orden.subtotal_materiales) || costoTotalMateriales;
         const margenPorcentaje = parseInt(orden.margen_ganancia) || 20;
         const ivaPorcentaje = parseInt(orden.iva_porcentaje) || 0;
@@ -393,31 +432,34 @@ function generarPDFDeOrden(orden) {
             margin: { left: 40, right: 40 }
         });
         
-        // --- PIE DE P�GINA CON LEYENDA TRIBUTARIA ---
+        // --- PIE DE PóGINA CON LEYENDA TRIBUTARIA ---
         const pageHeight = doc.internal.pageSize.getHeight();
+        const pageWidth = doc.internal.pageSize.getWidth();
         let footerY = pageHeight - 50;
         
         doc.setFontSize(9);
         doc.setTextColor(100);
-        doc.text("Este documento es un resumen informativo de la orden de trabajo.", doc.internal.pageSize.getWidth() / 2, footerY, { align: 'center' });
+        doc.text("Este documento es un resumen informativo de la orden de trabajo.", pageWidth / 2, footerY, { align: 'center' });
         
-        footerY += 15;
-        doc.setFontSize(11);
-        doc.setTextColor(200, 0, 0);
+        currentY += 20;
+        doc.setFontSize(9);
         doc.setFont(undefined, 'bold');
-        doc.text("DOCUMENTO SIN VALOR TRIBUTARIO", doc.internal.pageSize.getWidth() / 2, footerY, { align: 'center' });
+        doc.setTextColor(200, 0, 0);
+        doc.text("DOCUMENTO CONTROL INTERNO - SIN VALOR TRIBUTARIO", pageWidth / 2, footerY + 15, { align: 'center' });
+        doc.setTextColor(40);
+        doc.setFont(undefined, 'normal');
 
         // Guardar el PDF
         doc.save(`orden_de_trabajo_${orden.id_orden}.pdf`);
     };
     logo.onerror = function() {
-        alert("Error al cargar el logo. El PDF se generar� sin �l.");
-        // Podr�as tener una funci�n de fallback aqu� si lo deseas
+        alert("Error al cargar el logo. El PDF se generaró sin ól.");
+        // Podróas tener una función de fallback aquó si lo deseas
     };
 }
 
 
-// Funci�n para cargar notificaciones
+// Función para cargar notificaciones
 function cargarNotificaciones() {
     console.log("cargarNotificaciones() - Iniciando carga de notificaciones...");
     const token = localStorage.getItem('token');
@@ -478,7 +520,7 @@ function cargarNotificaciones() {
 }
 
 $(document).ready(function() {
-    // L�gica est�ndar
+    // Lógica estóndar
     $('#sidebarCollapse').on('click', function() { $('#sidebar').toggleClass('active'); });
     const token = localStorage.getItem('token');
     if (!token) { window.location.href = 'index.html'; return; }
@@ -491,18 +533,18 @@ $(document).ready(function() {
         cargarNotificaciones();
     }
 
-    // Cargar �rdenes al iniciar
+    // Cargar órdenes al iniciar
     loadOrdenesDeTrabajo();
 
-    // Manejador para el bot�n "Calcular Recursos"
+    // Manejador para el botón "Calcular Recursos"
     $(document).on('click', '.btn-calcular-recursos', function() {
         const ordenId = $(this).data('id');
         console.log("Calculando recursos para la orden ID:", ordenId);
 
         $('#recursosModalOrdenId').text(ordenId);
         $('#recursosModalResultado').html('<p class="text-center">Calculando...</p>');
-        var recursosModal = new bootstrap.Modal(document.getElementById('recursosModal'));
-        recursosModal.show();
+        var myModal = new bootstrap.Modal(document.getElementById('recursosModal'));
+        myModal.show();
 
         $.ajax({
             url: `${API_BASE_URL}/ordenes-trabajo/${ordenId}/calcular-recursos`,
@@ -510,7 +552,7 @@ $(document).ready(function() {
             headers: { 'Authorization': 'Bearer ' + token },
             success: function(response) {
                 const resultadoHtml = `
-                    <p><strong>Duraci�n Estimada:</strong> ${response.duracion_dias} d�a(s)</p>
+                    <p><strong>Duración Estimada:</strong> ${response.duracion_dias} dóa(s)</p>
                     <p><strong>Personal Recomendado:</strong> ${response.recursos_recomendados} empleado(s)</p>
                     <p class="mt-3"><em>${response.mensaje}</em></p>
                 `;
@@ -518,7 +560,7 @@ $(document).ready(function() {
             },
             error: function(xhr) {
                 console.error("Error al calcular recursos:", xhr.responseText);
-                const errorMsg = xhr.responseJSON?.error || 'No se pudo completar el c�lculo.';
+                const errorMsg = xhr.responseJSON?.error || 'No se pudo completar el cólculo.';
                 $('#recursosModalResultado').html(`<p class="text-danger">${errorMsg}</p>`);
             }
         });
@@ -528,21 +570,21 @@ $(document).ready(function() {
     $(document).on('click', '.btn-imprimir-orden', function() {
         const ordenId = $(this).data('id');
         const token = localStorage.getItem('token');
-        console.log(`Iniciando generaci�n de PDF para la orden ID: ${ordenId}`);
+        console.log(`Iniciando generación de PDF para la orden ID: ${ordenId}`);
 
         if (!token) {
-            alert("Error de autenticaci�n. Por favor, inicie sesi�n de nuevo.");
+            alert("Error de autenticación. Por favor, inicie sesión de nuevo.");
             return;
         }
 
-        // 1. Obtener todos los detalles de la orden espec�fica
+        // 1. Obtener todos los detalles de la orden especófica
         $.ajax({
             url: `${API_BASE_URL}/ordenes-trabajo/${ordenId}`,
             method: 'GET',
             headers: { 'Authorization': 'Bearer ' + token },
             success: function(orden) {
                 console.log("Datos de la orden para PDF recibidos:", orden);
-                generarPDFDeOrden(orden); // Llamar a la funci�n que crea el PDF
+                generarPDFDeOrden(orden); // Llamar a la función que crea el PDF
             },
             error: function(xhr) {
                 console.error("Error al obtener detalles de la orden para el PDF:", xhr.responseText);
@@ -557,3 +599,4 @@ $(document).ready(function() {
 
 </body>
 </html>
+

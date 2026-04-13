@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <title>Agregar Nuevo Material - Carrocerias Alvarado</title>
+    <title>Agregar Nuevo Material - Carrocerías Alvarado</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" type="text/css" href="vendor/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="vendor/bootstrap/css/bootstrap5.min.css">
     <link rel="stylesheet" type="text/css" href="fonts/font-awesome-4.7.0/css/font-awesome.min.css">
     <link rel="stylesheet" type="text/css" href="css/main.css">
     <link rel="stylesheet" type="text/css" href="css/modern-design.css">
@@ -22,7 +22,7 @@
 <div class="admin-wrapper">
     <nav id="sidebar">
         <div class="sidebar-header">
-            <h3>Carrocerias Alvarado</h3>
+            <h3>Carrocerías Alvarado</h3>
         </div>
         <ul class="list-unstyled components">
             <p class="ms-3">Administración</p>
@@ -72,7 +72,7 @@
                 </button>
                 <div class="user-info">
                     <span>Hola, <strong id="currentUserName">Usuario</strong>!</span>
-                    <a href="#" id="logoutButton" class="ms-3">Cerrar Sesión</a>
+                    <a href="#" id="logoutButton" class="btn-logout ms-3"><i class="fa fa-sign-out"></i> Cerrar Sesión</a>
                 </div>
             </div>
         </nav>
@@ -217,10 +217,11 @@
 <script src="js/config.js"></script>
     <script src="js/dashboard-core.js"></script>
     <script src="vendor/jquery/jquery-3.2.1.min.js"></script>
-<script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+<script src="vendor/bootstrap/js/bootstrap5.bundle.min.js"></script>
 
 <script>
 $(document).ready(function () {
+    const token = localStorage.getItem('token');
     
 
     // --- Cargar Proveedores ---
@@ -266,7 +267,7 @@ $(document).ready(function () {
     
     cargarUnidadesDeMedida(); // Cargar al iniciar
     
-    // --- Cargar Categor�as de Materiales ---
+    // --- Cargar Categorías de Materiales ---
     function cargarCategorias() {
         $.ajax({
             url: `${API_BASE_URL}/categorias-materiales`,
@@ -276,7 +277,7 @@ $(document).ready(function () {
                 const $select = $('#materialCategoria');
                 $select.empty().append('<option value="">Seleccione una categoría...</option>');
                 
-                // Filtrar solo categor�as activas
+                // Filtrar solo categorías activas
                 const categoriasActivas = categorias.filter(cat => cat.estado === 1);
                 
                 categoriasActivas.forEach(function(cat) {
@@ -292,7 +293,7 @@ $(document).ready(function () {
     
     cargarCategorias(); // Cargar al iniciar
     
-    // --- Preview del C�digo al seleccionar categor�a o ingresar n�mero ---
+    // --- Preview del Código al seleccionar categoría o ingresar número ---
     function actualizarPreviewCodigo() {
         const categoriaSelect = $('#materialCategoria');
         const prefijo = categoriaSelect.find('option:selected').data('prefijo') || '---';
@@ -311,12 +312,12 @@ $(document).ready(function () {
     
     $('#materialCategoria').on('change', actualizarPreviewCodigo);
     $('#materialCodigoNumero').on('input', function() {
-        // Solo permitir nmeros
+        // Solo permitir números
         this.value = this.value.replace(/[^0-9]/g, '');
         actualizarPreviewCodigo();
     });
 
-    // --- Lgica para Formulario de Aadir Material ---
+    // --- Lógica para Formulario de Añadir Material ---
     $('#formAnadirMaterial').on('submit', function(event) {
         event.preventDefault();
         const mensajeDiv = $('#mensajeAnadirMaterial');
@@ -332,13 +333,13 @@ $(document).ready(function () {
         const idUnidad = $('#materialUnidad').val();
         const cantidadInicial = $('#materialCantidadInicial').val();
 
-        // Validaciones bsicas
+        // Validaciones básicas
         if (!nombreMaterial || !idCategoria || !codigoNumero || !precioCompra || !precioVenta || !idUnidad || cantidadInicial === '') {
             mensajeDiv.text('Todos los campos marcados con * son obligatorios.').removeClass('alert-info').addClass('alert-danger');
             return;
         }
         
-        // Validar cdigo (5 dgitos)
+        // Validar código (5 dígitos)
         if (!/^\d{5}$/.test(codigoNumero)) {
             mensajeDiv.text('El código debe contener solo 5 dígitos numéricos.').removeClass('alert-info').addClass('alert-danger');
             return;
@@ -381,7 +382,7 @@ $(document).ready(function () {
             mensajeDiv.text('La cantidad inicial ingresada no es válida.').removeClass('alert-info').addClass('alert-danger');
             return;
         }
-        // Construir c�digo completo
+        // Construir código completo
         const categoriaSelect = $('#materialCategoria');
         const prefijo = categoriaSelect.find('option:selected').data('prefijo');
         const codigoCompleto = prefijo + codigoNumero;

@@ -7,7 +7,7 @@
     <!--===============================================================================================-->	
     <link rel="icon" type="image/png" href="images/icons/favicon.ico"/>
     <!--===============================================================================================-->
-    <link rel="stylesheet" type="text/css" href="vendor/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="vendor/bootstrap/css/bootstrap5.min.css">
     <!--===============================================================================================-->
     <link rel="stylesheet" type="text/css" href="fonts/font-awesome-4.7.0/css/font-awesome.min.css">
     <!--===============================================================================================-->
@@ -17,7 +17,7 @@
     <!--===============================================================================================-->	
     <link rel="stylesheet" type="text/css" href="vendor/css-hamburgers/hamburgers.min.css">
     <!--===============================================================================================-->
-    <link rel="stylesheet" type="text/css" href="vendor/animsition/css/animsition.min.js">
+    <link rel="stylesheet" type="text/css" href="vendor/animsition/css/animsition.min.css">
     <!--===============================================================================================-->
     <link rel="stylesheet" type="text/css" href="vendor/select2/select2.min.css">
     <!--===============================================================================================-->	
@@ -70,7 +70,6 @@
                     <div class="wrap-input100 validate-input m-b-30" data-validate="Seleccione un rol">
                         <select class="input100" id="rol" name="rol" style="border:none;">
                             <option value="">Seleccione un Rol</option>
-                            <option value="Administrador">Administrador</option>
                             <option value="Supervisor">Supervisor</option>
                             <option value="Asistente">Asistente</option>
                         </select>
@@ -97,13 +96,13 @@
     <div id="dropDownSelect1"></div>
     
     <!--===============================================================================================-->
-    <script src="js/config.js"></script>
     <script src="vendor/jquery/jquery-3.2.1.min.js"></script>
+    <script src="js/config.js"></script>
     <!--===============================================================================================-->
     <script src="vendor/animsition/js/animsition.min.js"></script>
     <!--===============================================================================================-->
     <script src="vendor/bootstrap/js/popper.js"></script>
-    <script src="vendor/bootstrap/js/bootstrap.min.js"></script>
+    <script src="vendor/bootstrap/js/bootstrap5.bundle.min.js"></script>
     <!--===============================================================================================-->
     <script src="vendor/select2/select2.min.js"></script>
     <script>
@@ -174,7 +173,7 @@
                 const rol = $('#rol').val();
                 const messageDiv = $('#message');
 
-                console.log('Datos enviados:', { username, email, password, rol });  // Depuración
+                console.log('Datos enviados:', { username, email, rol });  // Depuración (sin mostrar password)
 
                 if (!username || !email || !password || !confirmPassword) {
                     messageDiv.text('Por favor, completa todos los campos.').addClass('error');
@@ -202,7 +201,7 @@
                 }
 
                 $.ajax({
-                    url: `${window.CONFIG.API_BASE_URL}/registro`,
+                    url: `${API_BASE_URL}/registro`,
                     method: 'POST',
                     contentType: 'application/json',
                     data: JSON.stringify({ username, email, password, rol }),

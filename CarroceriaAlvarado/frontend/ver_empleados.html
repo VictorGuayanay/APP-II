@@ -1,10 +1,11 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <title>Gesti�n de Empleados - Carrocer�aa Alvarado</title>
+    <title>Gestión de Empleados - Carroceróaa Alvarado</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" type="text/css" href="vendor/bootstrap/css/bootstrap.min.css">
+    <meta name="description" content="Empleados - Carrocerías Alvarado. Gestión del personal del taller: roles, costo por hora y estado.">
+    <link rel="stylesheet" type="text/css" href="vendor/bootstrap/css/bootstrap5.min.css">
     <link rel="stylesheet" type="text/css" href="fonts/font-awesome-4.7.0/css/font-awesome.min.css">
     <link rel="stylesheet" type="text/css" href="css/main.css">
     <link rel="stylesheet" type="text/css" href="css/modern-design.css">
@@ -20,16 +21,16 @@
     <!-- Sidebar -->
    <nav id="sidebar">
         <div class="sidebar-header">
-            <h3>Carrocer�as Alvarado</h3>
+            <h3>Carroceróas Alvarado</h3>
         </div>
         <ul class="list-unstyled components">
-            <p class="ms-3">Administraci�n</p>
+            <p class="ms-3">Administración</p>
             <li>
                 <a href="#dashboardSubmenu" data-bs-toggle="collapse" aria-expanded="false" class="dropdown-toggle">
                     <i class="fa fa-tachometer"></i> Dashboard
                 </a>
                 <ul class="collapse list-unstyled" id="dashboardSubmenu">
-                    <li><a href="vision_general.html">Visi�n General</a></li>
+                    <li><a href="vision_general.html">Visión General</a></li>
                 </ul>
             </li>
             <li> 
@@ -43,7 +44,7 @@
                 </a>
                 <ul class="collapse list-unstyled" id="inventarioSubmenu">
                     <li><a href="ver_inventario.html">Ver Inventario</a></li>
-                    <li><a href="anadir_material.html">A�adir Material</a></li>
+                    <li><a href="anadir_material.html">Aóadir Material</a></li>
                     <li><a href="entradas_salidas_inventario.html">Entradas/Salidas</a></li>
                 </ul>
             </li>
@@ -53,11 +54,11 @@
             <li><a href="ingresar_cliente.html"><i class="fa fa-user-plus"></i> Ingreso Clientes</a></li>
             <li><a href="ingresar_proveedor.html"><i class="fa fa-truck"></i> Ingreso Proveedores</a></li>
             <li><a href="ver_proveedores.html"><i class="fa fa-list"></i> Ver Proveedores</a></li>
-            <li><a href="orden_trabajo.html"><i class="fa fa-briefcase"></i> �rdenes de Trabajo</a></li>
-            <li><a href="listar_ordenes_trabajo.html"><i class="fa fa-briefcase"></i> Listar �rdenes de Trabajo</a></li>
+            <li><a href="orden_trabajo.html"><i class="fa fa-briefcase"></i> órdenes de Trabajo</a></li>
+            <li><a href="listar_ordenes_trabajo.html"><i class="fa fa-briefcase"></i> Listar órdenes de Trabajo</a></li>
             <li><a href="consultar_comprobantes.html"><i class="fa fa-money"></i> Comprobante</a></li>
             <li><a href="reportes.html"><i class="fa fa-bar-chart"></i> Reportes</a></li>
-            <li><a href="#" data-bs-toggle="modal" data-bs-target="#settingsModal" ><i class="fa fa-cog"></i> Configuraci�n</a></li>
+            <li><a href="#" data-bs-toggle="modal" data-bs-target="#settingsModal" ><i class="fa fa-cog"></i> Configuración</a></li>
         </ul>
     </nav>
 
@@ -67,18 +68,18 @@
             <div class="container-fluid">
                 <button type="button" id="sidebarCollapse" class="btn btn-info" >
                     <i class="fa fa-align-left"></i>
-                    <span>Men�</span>
+                    <span>Menó</span>
                 </button>
                 <div class="user-info">
                     <span>Hola, <strong id="currentUserName">Admin</strong>!</span>
-                    <a href="#" id="logoutButton" class="ms-3">Cerrar Sesi�n</a>
+                    <a href="#" id="logoutButton" class="btn-logout ms-3"><i class="fa fa-sign-out"></i> Cerrar Sesión</a>
                 </div>
             </div>
         </nav>
 
         <div class="content-area container-fluid pt-4">
             <div class="d-flex justify-content-between align-items-center mb-3">
-                <h2 class="card-header-title">Gesti�n de Empleados</h2>
+                <h2 class="card-header-title">Gestión de Empleados</h2>
                 <button class="btn btn-success" onclick="window.location.href='ingresar_empleado.html'">
                     <i class="fa fa-plus"></i> Agregar Nuevo Empleado
                 </button>
@@ -92,9 +93,9 @@
                                 <tr>
                                     <th>ID</th>
                                     <th>Nombre</th>
-                                    <th>C�dula</th>
+                                    <th>Códula</th>
                                     <th>Rol</th>
-                                    <th>Tel�fono</th>
+                                    <th>Telófono</th>
                                     <th>Costo/Hora</th>
                                     <th>Estado</th>
                                     <th>Acciones</th>
@@ -135,7 +136,7 @@
                             <option value="tapicero">Tapicero</option>
                             <option value="soldador">Soldador</option>
                             <option value="enderezador">Enderezador</option>
-                            <option value="mecanico">Mec�nico</option>
+                            <option value="mecanico">Mecónico</option>
                             <option value="laminador">Laminador</option>
                             <option value="ensamblador">Ensamblador</option>
                         </select>
@@ -163,9 +164,47 @@
 </div>
 
 <!-- Scripts -->
+
+<!-- Modal de Configuración/Perfil (Reutilizado) -->
+<div class="modal fade" id="settingsModal" tabindex="-1" role="dialog" aria-labelledby="settingsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 15px; overflow: hidden;">
+            <div class="modal-header bg-secondary text-white border-0">
+                <h5 class="modal-title" id="settingsModalLabel">
+                    <i class="fa fa-cog mr-2"></i> Configuraciones Generales
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div id="settingsMessage"></div>
+                <form id="settingsForm">
+                    <div class="form-group mb-3">
+                        <label for="settingResetTokenExpiry" class="font-weight-bold">Duración del Token (minutos)</label>
+                        <input type="number" class="form-control" id="settingResetTokenExpiry" min="1" required style="border-radius: 8px;">
+                        <small class="form-text text-muted">Tiempo de validez para el enlace de reseteo.</small>
+                    </div>
+                    <div class="form-group mb-3">
+                        <label for="settingMaxLoginAttempts" class="font-weight-bold">Máximos Intentos de Login</label>
+                        <input type="number" class="form-control" id="settingMaxLoginAttempts" min="1" required style="border-radius: 8px;">
+                        <small class="form-text text-muted">Número de intentos antes de bloquear la cuenta.</small>
+                    </div>
+                    <div class="form-group mb-3">
+                        <label for="settingGlobalLowStockThreshold" class="font-weight-bold">Limite Global de Stock Bajo</label>
+                        <input type="number" class="form-control" id="settingGlobalLowStockThreshold" min="0" required style="border-radius: 8px;">
+                        <small class="form-text text-muted">Materiales a resaltar bajo este stock.</small>
+                    </div>
+                    <div class="modal-footer border-0 justify-content-center pt-3">
+                        <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal" style="border-radius: 10px;">Cancelar</button>
+                        <button type="submit" class="btn btn-secondary px-4" style="border-radius: 10px; font-weight: 600;">Guardar Configuraciones</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
 <script src="js/config.js"></script>`r`n    <script src="js/dashboard-core.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="vendor/bootstrap/js/bootstrap5.bundle.min.js"></script>
 <script>
 $(document).ready(function () {
     // L?gica est?ndar
@@ -250,8 +289,8 @@ function abrirModalEditar(idEmpleado) {
                 $('#editEstado').val(empleado.estado);
                 $('#mensajeEditarEmpleado').empty();
                 
-                // Abrir modal usando jQuery/Bootstrap
-                $('#editarEmpleadoModal').modal('show');
+                const modal = new bootstrap.Modal(document.getElementById('editarEmpleadoModal'));
+                modal.show();
             } else {
                 console.error('Empleado no encontrado');
                 alert('Empleado no encontrado');
@@ -294,7 +333,9 @@ function guardarCambiosEmpleado() {
         success: function(response) {
             mensajeDiv.html('<div class="alert alert-success">Empleado actualizado exitosamente</div>');
             setTimeout(() => {
-                $('#editarEmpleadoModal').modal('hide');
+                const modalEl = document.getElementById('editarEmpleadoModal');
+                const modal = bootstrap.Modal.getInstance(modalEl);
+                if (modal) modal.hide();
                 cargarEmpleados();
             }, 1500);
         },
@@ -306,7 +347,7 @@ function guardarCambiosEmpleado() {
 }
 
 function eliminarEmpleado(idEmpleado, nombreEmpleado) {
-    if (!confirm(`Est�s seguro de eliminar al empleado "${nombreEmpleado}"?\n\nEsta acci�n desactivar� al empleado.`)) {
+    if (!confirm(`Estós seguro de eliminar al empleado "${nombreEmpleado}"?\n\nEsta acción desactivaró al empleado.`)) {
         return;
     }
     
@@ -330,3 +371,4 @@ function eliminarEmpleado(idEmpleado, nombreEmpleado) {
 
 </body>
 </html>
+

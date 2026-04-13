@@ -1,160 +1,581 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <title>Venta Directa de Materiales - Carrocer�as Alvarado</title>
+    <title>Entradas/Salidas de Inventario - Carrocerías Alvarado</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" type="text/css" href="vendor/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="vendor/bootstrap/css/bootstrap5.min.css">
     <link rel="stylesheet" type="text/css" href="fonts/font-awesome-4.7.0/css/font-awesome.min.css">
     <link rel="stylesheet" type="text/css" href="css/main.css">
     <link rel="stylesheet" type="text/css" href="css/modern-design.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-
-    <!-- Animaciones -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
-    <link rel="stylesheet" href="css/animations.css">
     <link rel="stylesheet" href="css/fixed-layout.css">
-    <!-- jsPDF para generar PDFs -->
-    <script src="js/config.js"></script>
-    <script src="js/dashboard-core.js"></script>
-    <script src="vendor/jquery/jquery-3.2.1.min.js"></script>
-<script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+</head>
+<body>
+
+<div class="admin-wrapper">
+    <!-- Sidebar -->
+    <nav id="sidebar">
+        <div class="sidebar-header">
+            <h3>Carrocerías Alvarado</h3>
+        </div>
+        <ul class="list-unstyled components">
+            <p class="ms-3">Administración</p>
+            <li>
+                <a href="#dashboardSubmenu" data-bs-toggle="collapse" aria-expanded="false" class="dropdown-toggle">
+                    <i class="fa fa-tachometer"></i> Dashboard
+                </a>
+                <ul class="collapse list-unstyled" id="dashboardSubmenu">
+                    <li><a href="vision_general.html">Visión General</a></li>
+                </ul>
+            </li>
+            <li> 
+                <a href="admin.html">
+                    <i class="fa fa-users"></i> Panel Principal
+                </a>
+            </li>
+            <li class="active">
+                <a href="#inventarioSubmenu" data-bs-toggle="collapse" aria-expanded="true" class="dropdown-toggle">
+                    <i class="fa fa-cubes"></i> Inventario
+                </a>
+                <ul class="collapse show list-unstyled" id="inventarioSubmenu">
+                    <li><a href="ver_inventario.html">Ver Inventario</a></li>
+                    <li><a href="anadir_material.html">Añadir Material</a></li>
+                    <li><a href="gestion_categorias.html">Gestión de Categorías</a></li>
+                    <li class="active"><a href="entradas_salidas_inventario.html">Entradas/Salidas</a></li>
+                </ul>
+            </li>
+            
+            <li><a href="ingresar_empleado.html"><i class="fa fa-address-card"></i> Ingreso Empleados</a></li>
+            <li><a href="ingresar_cliente.html"><i class="fa fa-user-plus"></i> Ingreso Clientes</a></li>
+            <li><a href="ingresar_proveedor.html"><i class="fa fa-truck"></i> Ingreso Proveedores</a></li>
+            <li><a href="ver_proveedores.html"><i class="fa fa-list"></i> Ver Proveedores</a></li>
+            <li><a href="orden_trabajo.html"><i class="fa fa-briefcase"></i> Órdenes de Trabajo</a></li>
+            <li><a href="listar_ordenes_trabajo.html"><i class="fa fa-briefcase"></i> Listar Órdenes de Trabajo</a></li>
+            <li><a href="consultar_comprobantes.html"><i class="fa fa-money"></i> Comprobante</a></li>
+            <li><a href="reportes.html"><i class="fa fa-bar-chart"></i> Reportes</a></li>
+            <li><a href="#" data-bs-toggle="modal" data-bs-target="#settingsModal" ><i class="fa fa-cog"></i> Configuración</a></li>
+        </ul>
+    </nav>
+
+    <!-- Page Content -->
+    <div id="content">
+        <nav class="navbar navbar-expand-lg navbar-light top-navbar">
+            <div class="container-fluid">
+                <button type="button" id="sidebarCollapse" class="btn btn-info">
+                    <i class="fa fa-align-left"></i> <span>Menú</span>
+                </button>
+                <div class="user-info">
+                    <span>Hola, <strong id="currentUserName">Usuario</strong>!</span>
+                    <a href="#" id="logoutButton" class="btn-logout ms-3"><i class="fa fa-sign-out"></i> Cerrar Sesión</a>
+                </div>
+            </div>
+        </nav>
+
+        <div class="content-area container-fluid pt-4">
+            <h2 class="card-header-title">Venta Directa de Materiales (Salida)</h2>
+            
+            <div class="row">
+                <!-- Columna Izquierda: Datos de la Venta -->
+                <div class="col-lg-5">
+                    <div class="dashboard-card shadow-sm mb-4">
+                        <div class="card-header bg-primary text-white">
+                            <i class="fa fa-user"></i> Información del Cliente
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label for="ventaCliente" class="form-label">Seleccionar Cliente</label>
+                                <div class="input-group">
+                                    <select class="form-select" id="ventaCliente">
+                                        <option value="">Cargando clientes...</option>
+                                    </select>
+                                    <button class="btn btn-outline-secondary" type="button" id="btnAbrirModalCliente" title="Nuevo Cliente">
+                                        <i class="fa fa-plus"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="d-grid mb-3">
+                                <button class="btn btn-outline-info btn-sm" id="btnConsumidorFinal">
+                                    <i class="fa fa-user-circle"></i> Usar Consumidor Final
+                                </button>
+                            </div>
+                            <div id="infoCliente" class="alert alert-light border" style="display: none;">
+                                <div id="datosCliente"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="dashboard-card shadow-sm">
+                        <div class="card-header bg-success text-white">
+                            <i class="fa fa-cart-plus"></i> Agregar Producto
+                        </div>
+                        <div class="card-body">
+                            <form id="formAgregarProducto">
+                                <div class="mb-3">
+                                    <label for="ventaProveedor" class="form-label">Proveedor</label>
+                                    <select class="form-select" id="ventaProveedor">
+                                        <option value="">Cargando proveedores...</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="ventaNombreMaterial" class="form-label">Material <span class="text-danger">*</span></label>
+                                    <select class="form-select" id="ventaNombreMaterial" disabled>
+                                        <option value="">Seleccione un proveedor primero...</option>
+                                    </select>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label for="ventaStockDisponible" class="form-label">Stock Disp.</label>
+                                        <input type="text" class="form-control" id="ventaStockDisponible" readonly>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="ventaPrecioUnitario" class="form-label">Precio Unit.</label>
+                                        <input type="text" class="form-control" id="ventaPrecioUnitario" readonly>
+                                    </div>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-md-4">
+                                        <label for="ventaCantidad" class="form-label">Cant. <span class="text-danger">*</span></label>
+                                        <input type="number" min="1" class="form-control" id="ventaCantidad" required>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="ventaPorcentajeGanancia" class="form-label">% Ganancia</label>
+                                        <select class="form-select" id="ventaPorcentajeGanancia">
+                                            <option value="0">0%</option>
+                                            <option value="10">10%</option>
+                                            <option value="20" selected>20%</option>
+                                            <option value="30">30%</option>
+                                            <option value="40">40%</option>
+                                            <option value="50">50%</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="ventaPorcentajeIVA" class="form-label">% IVA</label>
+                                        <select class="form-select" id="ventaPorcentajeIVA">
+                                            <option value="0">0%</option>
+                                            <option value="12" selected>12%</option>
+                                            <option value="15">15%</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label for="ventaSubtotal" class="form-label">Subtotal</label>
+                                        <input type="text" class="form-control" id="ventaSubtotal" readonly>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="ventaTotal" class="form-label fw-bold">Total Item</label>
+                                        <input type="text" class="form-control fw-bold text-success" id="ventaTotal" readonly>
+                                    </div>
+                                </div>
+                                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                    <button type="button" class="btn btn-light me-md-2" id="btnLimpiarFormulario">Limpiar</button>
+                                    <button type="submit" class="btn btn-success">
+                                        <i class="fa fa-plus"></i> Agregar al Carrito
+                                    </button>
+                                </div>
+                            </form>
+                            <div id="mensajeProducto" class="mt-2"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Columna Derecha: Carrito y Totales -->
+                <div class="col-lg-7">
+                    <div class="dashboard-card shadow-sm h-100">
+                        <div class="card-header bg-dark text-white">
+                            <i class="fa fa-shopping-cart"></i> Resumen de Venta
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Material</th>
+                                            <th>Cant.</th>
+                                            <th>P.Unit</th>
+                                            <th>Subt.</th>
+                                            <th>% G.</th>
+                                            <th>Gan.</th>
+                                            <th>% IVA</th>
+                                            <th>IVA</th>
+                                            <th>Total</th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="carritoBody">
+                                        <tr id="carritoVacio">
+                                            <td colspan="10" class="text-center text-muted">
+                                                <i class="fa fa-shopping-cart fa-2x mb-2 d-block"></i> El carrito está vacío
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <div id="carritoTotales" style="display: none;">
+                                <hr>
+                                <div class="row justify-content-end">
+                                    <div class="col-md-6">
+                                        <table class="table table-sm borderless">
+                                            <tr>
+                                                <td class="text-end">Subtotal Productos:</td>
+                                                <td class="text-end" id="totalSubtotal">$0.00</td>
+                                            </tr>
+                                            <tr>
+                                                <td class="text-end">Ganancia Aplicada:</td>
+                                                <td class="text-end" id="totalGanancia">$0.00</td>
+                                            </tr>
+                                            <tr>
+                                                <td class="text-end">Monto IVA:</td>
+                                                <td class="text-end" id="totalIVA">$0.00</td>
+                                            </tr>
+                                            <tr class="fs-4 fw-bold text-success">
+                                                <td class="text-end border-top">TOTAL FINAL:</td>
+                                                <td class="text-end border-top" id="totalGeneral">$0.00</td>
+                                            </tr>
+                                        </table>
+                                        
+                                        <div class="mb-3">
+                                            <label for="ventaFormaPagoFinal" class="form-label">Forma de Pago <span class="text-danger">*</span></label>
+                                            <select class="form-select" id="ventaFormaPagoFinal">
+                                                <option value="">Seleccione...</option>
+                                                <option value="Efectivo">Efectivo</option>
+                                                <option value="Transferencia">Transferencia</option>
+                                                <option value="Tarjeta de Crédito">Tarjeta de Crédito</option>
+                                                <option value="Cheque">Cheque</option>
+                                            </select>
+                                        </div>
+                                        
+                                        <div class="d-grid">
+                                            <button class="btn btn-primary btn-lg" id="btnRegistrarVenta" disabled>
+                                                <i class="fa fa-check-circle"></i> Registrar Venta e Imprimir Comprobante
+                                            </button>
+                                        </div>
+                                        <div id="mensajeVenta" class="mt-3"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Registrar Nuevo Cliente (Bootstrap 5) -->
+<div class="modal fade" id="modalClienteTemporal" tabindex="-1" aria-labelledby="modalClienteTemporalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content shadow-lg border-0">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title" id="modalClienteTemporalLabel"><i class="fa fa-user-plus me-2"></i>Registrar Cliente para Venta</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form id="formClienteTemporal">
+                    <div class="mb-3">
+                        <label for="tempRucCi" class="form-label fw-bold">RUC / Cédula <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fa fa-id-card"></i></span>
+                            <input type="text" class="form-control" id="tempRucCi" placeholder="Ej: 1722334455" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="tempNombre" class="form-label fw-bold">Nombre Completo <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fa fa-user"></i></span>
+                            <input type="text" class="form-control" id="tempNombre" placeholder="Ej: Juan Pérez" required>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="tempTelefono" class="form-label fw-bold">Teléfono</label>
+                            <input type="text" class="form-control" id="tempTelefono" placeholder="09XXXXXXXX">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="tempEmail" class="form-label fw-bold">Email</label>
+                            <input type="email" class="form-control" id="tempEmail" placeholder="correo@ejemplo.com">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer bg-light border-0 p-3">
+                <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-info text-white px-4" id="btnGuardarClienteTemporal">
+                    <i class="fa fa-save me-1"></i> Registrar y Seleccionar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Previsualización de Comprobante (Venta Directa) -->
+<div class="modal fade" id="modalPreviewVenta" data-bs-backdrop="static" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title"><i class="fa fa-file-text-o me-2"></i>Comprobante de Venta Directa</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-0" id="printArea">
+                <!-- Estructura del Recibo -->
+                <div class="p-5">
+                    <div class="row align-items-center mb-4">
+                        <div class="col-4">
+                            <img src="images/logo.jpg" alt="Logo" class="img-fluid" style="max-height: 100px;">
+                        </div>
+                        <div class="col-8 text-end">
+                            <h3 class="fw-bold mb-0">CARROCERÍAS ALVARADO</h3>
+                            <p class="mb-0 small"><strong>Telf:</strong> +593 99 991 1866</p>
+                            <p class="mb-0 small"><strong>Email:</strong> carroceriasalvarado@hotmail.com</p>
+                            <p class="mb-0 small"><strong>Dir:</strong> Avda. Monseñor Leonidas Proaño (a pocos metros de la línea férrea), Riobamba, Ecuador</p>
+                        </div>
+                    </div>
+                    <div class="text-center mb-4">
+                        <h6 class="text-danger fw-bold border border-danger d-inline-block px-3 py-1 mb-3">
+                            ESTE DOCUMENTO ES UN REGISTRO INTERNO Y NO TIENE VALOR TRIBUTARIO
+                        </h6>
+                        <hr>
+                        <h5 class="fw-bold">COMPROBANTE DE VENTA #<span id="prevIdVenta">0000</span></h5>
+                    </div>
+
+                    <div class="row mb-4">
+                        <div class="col-6">
+                            <p class="mb-1 text-muted small text-uppercase">Datos del Cliente</p>
+                            <h6 class="fw-bold mb-0" id="prevNombreCliente">CLIENTE PRUEBA</h6>
+                            <p class="mb-0" id="prevRucCliente">RUC/CI: 1722334455</p>
+                            <p class="mb-0" id="prevTelfCliente">Telf: 0999999999</p>
+                        </div>
+                        <div class="col-6 text-end">
+                            <p class="mb-1 text-muted small text-uppercase">Detalles de Emisión</p>
+                            <p class="mb-0"><strong>Fecha:</strong> <span id="prevFecha">2026-04-12</span></p>
+                            <p class="mb-0"><strong>Usuario:</strong> <span id="prevUsuario">Admin</span></p>
+                            <p class="mb-0"><strong>Pago:</strong> <span id="prevFormaPago">Efectivo</span></p>
+                        </div>
+                    </div>
+
+                    <table class="table table-bordered table-sm mb-4">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Descripción</th>
+                                <th class="text-center" style="width: 80px;">Cant.</th>
+                                <th class="text-end" style="width: 100px;">P.Unit.</th>
+                                <th class="text-end" style="width: 100px;">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody id="prevDetalleBody">
+                            <!-- Items dinámicos -->
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="3" class="text-end fw-bold">SUBTOTAL:</td>
+                                <td class="text-end" id="prevSubtotal">$0.00</td>
+                            </tr>
+                            <tr>
+                                <td colspan="3" class="text-end fw-bold">IVA:</td>
+                                <td class="text-end" id="prevIva">$0.00</td>
+                            </tr>
+                            <tr class="table-secondary">
+                                <td colspan="3" class="text-end fw-bold fs-5">TOTAL A PAGAR:</td>
+                                <td class="text-end fw-bold fs-5" id="prevTotal">$0.00</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+
+                    <div class="mt-4 pt-4 border-top text-center text-muted small">
+                        <p>Muchas gracias por su preferencia. Carrocerías Alvarado agradece su confianza.</p>
+                        <p class="mb-0">Este documento es generado automáticamente por el sistema de inventario.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-danger" id="btnDescargarPDF">
+                    <i class="fa fa-file-pdf-o"></i> Descargar PDF
+                </button>
+                <button type="button" class="btn btn-primary" onclick="window.print()">
+                    <i class="fa fa-print"></i> Imprimir
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Estilo para ocultar todo excepto el área de impresión cuando se pulsa Ctrl+P o window.print() */
+@media print {
+    body * {
+        visibility: hidden;
+    }
+    #modalPreviewVenta, #modalPreviewVenta * {
+        visibility: visible;
+    }
+    #modalPreviewVenta {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        margin: 0;
+        padding: 0;
+    }
+    .modal-header, .modal-footer {
+        display: none !important;
+    }
+    .modal-content {
+        border: none !important;
+        box-shadow: none !important;
+    }
+    #printArea {
+        padding: 0 !important;
+    }
+}
+</style>
+
+<!-- Dependencias de Scripts -->
+<script src="vendor/jquery/jquery-3.2.1.min.js"></script>
+<script src="js/config.js"></script>
+<script src="js/dashboard-core.js"></script>
+<script src="vendor/bootstrap/js/bootstrap5.bundle.min.js"></script>
 
 <script>
 // Variables globales
 let materialesDisponibles = [];
 let carritoProductos = [];
 let clienteSeleccionado = null;
-let ultimaVentaRegistrada = null; // Para guardar datos de la �ltima venta
+let ultimaVentaRegistrada = null; // Para guardar datos de la última venta
 
-// Funci�n global para cerrar modal
+// Función global para cerrar modal
 function cerrarModalCliente() {
     document.getElementById('modalClienteTemporal').style.display = 'none';
     $('#formClienteTemporal')[0].reset();
 }
 
-// Funci�n para generar PDF del comprobante
+// Función para generar PDF del comprobante (Actualizada con Logo y Datos de Empresa)
 function generarComprobantePDF(datosVenta) {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
     
-    // Configuraci�n
-    const margen = 20;
-    let y = 20;
+    // Cargar Logo
+    const img = new Image();
+    img.src = 'images/logo.jpg';
     
-    // Encabezado - DOCUMENTO SIN VALOR TRIBUTARIO
-    doc.setFontSize(10);
-    doc.setTextColor(255, 0, 0);
-    doc.text('DOCUMENTO SIN VALOR TRIBUTARIO', 105, y, { align: 'center' });
-    y += 10;
-    
-    // T�tulo
-    doc.setFontSize(16);
-    doc.setTextColor(0, 0, 0);
-    doc.text('COMPROBANTE DE VENTA', 105, y, { align: 'center' });
-    y += 5;
-    doc.setFontSize(14);
-    doc.text('Carrocer�as Alvarado', 105, y, { align: 'center' });
-    y += 15;
-    
-    // Informaci�n de la venta
-    doc.setFontSize(10);
-    doc.text(`Venta #${datosVenta.id_venta}`, margen, y);
-    doc.text(`Fecha: ${new Date().toLocaleString('es-EC')}`, 150, y);
-    y += 7;
-    doc.text(`Usuario: ${datosVenta.usuario}`, margen, y);
-    y += 10;
-    
-    // Informaci�n del cliente
-    doc.setFontSize(11);
-    doc.setFont(undefined, 'bold');
-    doc.text('CLIENTE:', margen, y);
-    doc.setFont(undefined, 'normal');
-    y += 6;
-    doc.setFontSize(10);
-    doc.text(`Tipo: ${datosVenta.cliente.tipo}`, margen, y);
-    y += 5;
-    doc.text(`Nombre: ${datosVenta.cliente.nombre}`, margen, y);
-    y += 5;
-    doc.text(`RUC/CI: ${datosVenta.cliente.ruc_ci}`, margen, y);
-    if (datosVenta.cliente.telefono) {
-        y += 5;
-        doc.text(`Tel�fono: ${datosVenta.cliente.telefono}`, margen, y);
-    }
-    y += 10;
-    
-    // Tabla de productos
-    doc.setFont(undefined, 'bold');
-    doc.text('DETALLE DE PRODUCTOS:', margen, y);
-    y += 7;
-    
-    // Encabezados de tabla
-    doc.setFontSize(9);
-    doc.text('Material', margen, y);
-    doc.text('Cant.', 90, y);
-    doc.text('P.Unit', 115, y);
-    doc.text('Subtotal', 145, y);
-    doc.text('IVA', 170, y);
-    doc.text('Total', 185, y);
-    y += 5;
-    
-    // L�nea separadora
-    doc.line(margen, y, 200, y);
-    y += 5;
-    
-    // Productos
-    doc.setFont(undefined, 'normal');
-    datosVenta.productos.forEach(producto => {
-        if (y > 270) { // Nueva p�gina si es necesario
-            doc.addPage();
-            y = 20;
-        }
+    img.onload = function() {
+        const margen = 20;
+        let y = 15;
         
-        doc.text(producto.nombre_material.substring(0, 30), margen, y);
-        doc.text(producto.cantidad.toString(), 90, y);
-        doc.text(`$${producto.precio_unitario.toFixed(2)}`, 115, y);
-        doc.text(`$${producto.subtotal.toFixed(2)}`, 145, y);
-        doc.text(`$${producto.iva.toFixed(2)}`, 170, y);
-        doc.text(`$${producto.total.toFixed(2)}`, 185, y);
+        // --- ENCABEZADO ---
+        // Logo en la parte superior izquierda
+        doc.addImage(this, 'JPG', margen, y, 35, 35);
+        
+        // Leyenda - SIN VALOR TRIBUTARIO (Centrada arriba)
+        doc.setFontSize(8);
+        doc.setTextColor(200, 0, 0);
+        doc.setFont(undefined, 'bold');
+        doc.text('DOCUMENTO CONTROL INTERNO - SIN VALOR TRIBUTARIO', 115, y + 5, { align: 'center' });
+        
+        // Datos de la Empresa (Alineados a la derecha del logo)
+        doc.setTextColor(0, 0, 0);
+        doc.setFontSize(16);
+        doc.text('CARROCERÍAS ALVARADO', 190, y + 15, { align: 'right' });
+        
+        doc.setFontSize(9);
+        doc.setFont(undefined, 'normal');
+        doc.text('Telf: +593 99 991 1866', 190, y + 22, { align: 'right' });
+        doc.text('Correo: carroceriasalvarado@hotmail.com', 190, y + 27, { align: 'right' });
+        doc.text('Dirección: Avda. Monseñor Leonidas Proaño', 190, y + 32, { align: 'right' });
+        doc.text('(a pocos metros de la línea férrea), Riobamba, Ecuador', 190, y + 37, { align: 'right' });
+        
+        y += 45;
+        doc.line(margen, y, 190, y);
+        y += 10;
+        
+        // Información del comprobante
+        doc.setFontSize(14);
+        doc.setFont(undefined, 'bold');
+        doc.text(`COMPROBANTE DE VENTA #${datosVenta.id_venta}`, margen, y);
+        y += 10;
+        
+        doc.setFontSize(10);
+        doc.setFont(undefined, 'normal');
+        doc.text(`Fecha de Emisión: ${new Date().toLocaleString('es-EC')}`, margen, y);
+        doc.text(`Emitido por: ${datosVenta.usuario}`, 190, y, { align: 'right' });
+        y += 10;
+        
+        // Bloque Cliente
+        doc.setFillColor(245, 245, 245);
+        doc.rect(margen, y, 170, 25, 'F');
+        y += 7;
+        doc.setFont(undefined, 'bold');
+        doc.text('INFORMACIÓN DEL CLIENTE:', margen + 5, y);
+        y += 6;
+        doc.setFont(undefined, 'normal');
+        doc.text(`Nombre: ${datosVenta.cliente.nombre}`, margen + 5, y);
+        doc.text(`RUC/CI: ${datosVenta.cliente.ruc_ci}`, 120, y);
+        y += 6;
+        doc.text(`Teléfono: ${datosVenta.cliente.telefono || 'N/A'}`, margen + 5, y);
+        doc.text(`Email: ${datosVenta.cliente.email || 'N/A'}`, 120, y);
+        y += 15;
+        
+        // Tabla Detalle
+        doc.setFont(undefined, 'bold');
+        doc.text('DESCRIPCIÓN', margen, y);
+        doc.text('CANT.', 100, y);
+        doc.text('P.UNIT', 130, y);
+        doc.text('TOTAL', 170, y);
+        y += 4;
+        doc.line(margen, y, 190, y);
+        y += 7;
+        
+        doc.setFont(undefined, 'normal');
+        datosVenta.productos.forEach(p => {
+            doc.text(p.nombre_material.substring(0, 45), margen, y);
+            doc.text(p.cantidad.toString(), 105, y, { align: 'center' });
+            doc.text(`$${p.precio_unitario.toFixed(2)}`, 140, y, { align: 'right' });
+            doc.text(`$${p.total.toFixed(2)}`, 185, y, { align: 'right' });
+            y += 6;
+            if (y > 270) { doc.addPage(); y = 20; }
+        });
+        
         y += 5;
-    });
-    
-    y += 5;
-    doc.line(margen, y, 200, y);
-    y += 7;
-    
-    // Totales
-    doc.setFont(undefined, 'bold');
-    doc.setFontSize(10);
-    doc.text('SUBTOTAL:', 125, y);
-    doc.text(`$${datosVenta.totales.subtotal.toFixed(2)}`, 185, y, { align: 'right' });
-    y += 6;
-    doc.text('IVA:', 125, y);
-    doc.text(`$${datosVenta.totales.iva.toFixed(2)}`, 185, y, { align: 'right' });
-    y += 6;
-    doc.setFontSize(12);
-    doc.text('TOTAL:', 125, y);
-    doc.text(`$${datosVenta.totales.total.toFixed(2)}`, 185, y, { align: 'right' });
-    y += 10;
-    
-    // Forma de pago
-    doc.setFontSize(10);
-    doc.setFont(undefined, 'normal');
-    doc.text(`Forma de Pago: ${datosVenta.forma_pago}`, margen, y);
-    
-    // Pie de p�gina
-    y = 280;
-    doc.setFontSize(8);
-    doc.setTextColor(128, 128, 128);
-    doc.text('Gracias por su compra', 105, y, { align: 'center' });
-    
-    // Descargar PDF
-    doc.save(`Comprobante_Venta_${datosVenta.id_venta}.pdf`);
+        doc.line(120, y, 190, y);
+        y += 7;
+        
+        // Totales
+        doc.text('SUBTOTAL:', 130, y);
+        doc.text(`$${datosVenta.totales.subtotal.toFixed(2)}`, 185, y, { align: 'right' });
+        y += 6;
+        doc.text('IVA:', 130, y);
+        doc.text(`$${datosVenta.totales.iva.toFixed(2)}`, 185, y, { align: 'right' });
+        y += 8;
+        doc.setFontSize(12);
+        doc.setFont(undefined, 'bold');
+        doc.text('TOTAL A PAGAR:', 130, y);
+        doc.text(`$${datosVenta.totales.total.toFixed(2)}`, 185, y, { align: 'right' });
+        
+        y += 20;
+        doc.setFontSize(9);
+        doc.setFont(undefined, 'normal');
+        doc.text(`Forma de Pago: ${datosVenta.forma_pago}`, margen, y);
+        
+        y = 285;
+        doc.setFontSize(8);
+        doc.setTextColor(150);
+        doc.text('Carrocerías Alvarado - Sistema de Gestión de Inventario', 105, y, { align: 'center' });
+        
+        doc.save(`Recibo_CA_${datosVenta.id_venta}.pdf`);
+    };
+
+    img.onerror = function() {
+        console.error("No se pudo cargar el logo para el PDF. Generando sin logo.");
+        alert("Error al cargar el logo. El PDF se generará sin imagen.");
+        // Fallback or simplified re-execution could go here
+    };
 }
 
-// Funci�n para cargar clientes
+// Función para cargar clientes
 function cargarClientes() {
     console.log("cargarClientes() - Iniciando carga...");
     const token = localStorage.getItem('token');
@@ -164,7 +585,7 @@ function cargarClientes() {
 
     if (!token) {
         console.error("cargarClientes() - No hay token.");
-        $select.html('<option value="">Error de autenticaci�n</option>');
+        $select.html('<option value="">Error de autenticación</option>');
         return;
     }
 
@@ -205,18 +626,34 @@ function cargarClientes() {
     });
 }
 
-// Funci�n para mostrar informaci�n del cliente
+// Función para mostrar información del cliente
 function mostrarInfoCliente() {
     const $select = $('#ventaCliente');
     const $option = $select.find('option:selected');
     
-    if ($option.val() && clienteSeleccionado) {
+    // Si hay un cliente seleccionado (ya sea de la lista o Consumidor Final)
+    if (clienteSeleccionado) {
+        let labelTipo = '';
+        let badgeClass = 'bg-primary';
+        let legendHtml = '';
+
+        if (clienteSeleccionado.tipo === 'Consumidor Final') {
+            labelTipo = 'Consumidor Final';
+            badgeClass = 'bg-warning text-dark';
+            legendHtml = '<div class="mt-2 fw-bold text-center text-primary"><i class="fa fa-info-circle"></i> Comprobante con datos de Consumidor Final</div>';
+        } else {
+            labelTipo = 'Cliente Registrado';
+        }
+
         let html = `
-            <strong>Tipo:</strong> ${clienteSeleccionado.tipo}<br>
+            <div class="d-flex justify-content-between align-items-start mb-2">
+                <span class="badge ${badgeClass}">${labelTipo}</span>
+            </div>
             <strong>RUC/CI:</strong> ${clienteSeleccionado.ruc_ci || 'N/A'}<br>
             <strong>Nombre:</strong> ${clienteSeleccionado.nombre}<br>
-            <strong>Tel�fono:</strong> ${clienteSeleccionado.telefono || 'N/A'}<br>
+            <strong>Teléfono:</strong> ${clienteSeleccionado.telefono || 'N/A'}<br>
             <strong>Email:</strong> ${clienteSeleccionado.email || 'N/A'}
+            ${legendHtml}
         `;
         $('#datosCliente').html(html);
         $('#infoCliente').show();
@@ -225,21 +662,21 @@ function mostrarInfoCliente() {
     }
 }
 
-// Funci�n para agregar producto al carrito
+// Función para agregar producto al carrito
 function agregarAlCarrito(producto) {
     carritoProductos.push(producto);
     actualizarTablaCarrito();
     habilitarBotonVenta();
 }
 
-// Funci�n para eliminar producto del carrito
+// Función para eliminar producto del carrito
 function eliminarDelCarrito(index) {
     carritoProductos.splice(index, 1);
     actualizarTablaCarrito();
     habilitarBotonVenta();
 }
 
-// Funci�n para actualizar tabla del carrito
+// Función para actualizar tabla del carrito
 function actualizarTablaCarrito() {
     const $tbody = $('#carritoBody');
     const $totales = $('#carritoTotales');
@@ -248,7 +685,7 @@ function actualizarTablaCarrito() {
         $tbody.html(`
             <tr id="carritoVacio">
                 <td colspan="10" class="text-center text-muted">
-                    <i class="fa fa-shopping-cart"></i> El carrito est� vac�o
+                    <i class="fa fa-shopping-cart"></i> El carrito está vacío
                 </td>
             </tr>
         `);
@@ -298,14 +735,14 @@ function actualizarTablaCarrito() {
     $totales.show();
 }
 
-// Funci�n para habilitar/deshabilitar bot�n de venta
+// Función para habilitar/deshabilitar botón de venta
 function habilitarBotonVenta() {
     const tieneProductos = carritoProductos.length > 0;
     const tieneCliente = clienteSeleccionado !== null;
     $('#btnRegistrarVenta').prop('disabled', !(tieneProductos && tieneCliente));
 }
 
-// Funci�n para cargar proveedores
+// Función para cargar proveedores
 function cargarProveedores() {
     console.log("cargarProveedores() - Iniciando carga...");
     const token = localStorage.getItem('token');
@@ -315,7 +752,7 @@ function cargarProveedores() {
 
     if (!token) {
         console.error("cargarProveedores() - No hay token.");
-        $select.html('<option value="">Error de autenticaci�n</option>');
+        $select.html('<option value="">Error de autenticación</option>');
         return;
     }
 
@@ -349,7 +786,7 @@ function cargarProveedores() {
     });
 }
 
-// Funci�n para cargar materiales filtrados por proveedor
+// Función para cargar materiales filtrados por proveedor
 function cargarMaterialesPorProveedor(idProveedor) {
     console.log("cargarMaterialesPorProveedor() - ID Proveedor:", idProveedor);
     const token = localStorage.getItem('token');
@@ -405,7 +842,7 @@ function cargarMaterialesPorProveedor(idProveedor) {
     });
 }
 
-// Funci�n para actualizar informaci�n del material seleccionado
+// Función para actualizar información del material seleccionado
 function actualizarInfoMaterial() {
     const $select = $('#ventaNombreMaterial');
     const $option = $select.find('option:selected');
@@ -425,7 +862,7 @@ function actualizarInfoMaterial() {
     }
 }
 
-// Funci�n para calcular el total de venta con ganancia e IVA
+// Función para calcular el total de venta con ganancia e IVA
 function calcularTotal() {
     const $select = $('#ventaNombreMaterial');
     const $option = $select.find('option:selected');
@@ -436,7 +873,7 @@ function calcularTotal() {
     if ($option.val() && cantidad > 0) {
         const precioUnitario = parseFloat($option.data('precio')) || 0;
         
-        // Calcular subtotal (precio � cantidad)
+        // Calcular subtotal (precio x cantidad)
         const subtotal = precioUnitario * cantidad;
         
         // Calcular ganancia
@@ -461,7 +898,7 @@ function calcularTotal() {
     }
 }
 
-// Funci�n para limpiar campos
+// Función para limpiar campos
 function limpiarCampos() {
     $('#ventaStockDisponible').val('');
     $('#ventaPrecioUnitario').val('');
@@ -520,24 +957,28 @@ $(document).ready(function () {
         }
     });
 
-    // Bot�n Consumidor Final
+    // Botón Consumidor Final (Datos actualizados según solicitud)
     $('#btnConsumidorFinal').on('click', function() {
         clienteSeleccionado = {
             tipo: 'Consumidor Final',
             id_cliente: null,
             ruc_ci: '9999999999999',
-            nombre: 'CONSUMIDOR FINAL',
-            telefono: '',
-            email: ''
+            nombre: 'Consumidor Final',
+            telefono: '0999999999',
+            email: 'consumidorfinal@carroceriasalvarado.com'
         };
         $('#ventaCliente').val('');
         mostrarInfoCliente();
         habilitarBotonVenta();
+        
+        // Mostrar feedback visual de selección
+        showSuccessToast('Seleccionado: Consumidor Final');
     });
 
-    // Bot�n para abrir modal de nuevo cliente
+    // Botón para abrir modal de nuevo cliente (Bootstrap 5)
     $('#btnAbrirModalCliente').on('click', function() {
-        document.getElementById('modalClienteTemporal').style.display = 'block';
+        const modal = new bootstrap.Modal(document.getElementById('modalClienteTemporal'));
+        modal.show();
     });
 
     // Modal Cliente Temporal - Ahora guarda en BD
@@ -548,7 +989,7 @@ $(document).ready(function () {
         const email = $('#tempEmail').val().trim();
 
         if (!cedula || !nombre) {
-            alert('C�dula/RUC y Nombre son requeridos');
+            alert('Cédula/RUC y Nombre son requeridos');
             return;
         }
 
@@ -573,8 +1014,10 @@ $(document).ready(function () {
             success: function(response) {
                 console.log("Cliente creado:", response);
                 
-                // Cerrar modal
-                document.getElementById('modalClienteTemporal').style.display = 'none';
+                // Cerrar modal con instancia de Bootstrap
+                const modalEl = document.getElementById('modalClienteTemporal');
+                const modalInstance = bootstrap.Modal.getInstance(modalEl);
+                if (modalInstance) modalInstance.hide();
                 $('#formClienteTemporal')[0].reset();
                 
                 // Recargar lista de clientes
@@ -611,7 +1054,7 @@ $(document).ready(function () {
     $('#ventaPorcentajeGanancia').on('change', calcularTotal);
     $('#ventaPorcentajeIVA').on('change', calcularTotal);
 
-    // Bot�n Limpiar Formulario
+    // Botón Limpiar Formulario
     $('#btnLimpiarFormulario').on('click', function() {
         $('#formAgregarProducto')[0].reset();
         $('#ventaNombreMaterial').prop('disabled', true).html('<option value="">Seleccione un proveedor primero...</option>');
@@ -643,7 +1086,7 @@ $(document).ready(function () {
         
         const cantidad = parseInt(cantidadStr);
         if (isNaN(cantidad) || cantidad <= 0) {
-            mensajeDiv.html('<div class="alert alert-danger">La cantidad debe ser un n�mero positivo</div>');
+            mensajeDiv.html('<div class="alert alert-danger">La cantidad debe ser un número positivo</div>');
             return;
         }
 
@@ -672,7 +1115,7 @@ $(document).ready(function () {
         };
 
         agregarAlCarrito(producto);
-        mensajeDiv.html('<div class="alert alert-success">? Producto agregado al carrito</div>');
+        mensajeDiv.html('<div class="alert alert-success"><i class="fa fa-check-circle"></i> Producto agregado al carrito</div>');
         setTimeout(() => mensajeDiv.html(''), 3000);
         
         // Limpiar formulario pero mantener proveedor
@@ -683,7 +1126,7 @@ $(document).ready(function () {
         limpiarCampos();
     });
 
-    // Bot�n Registrar Venta Completa
+    // Botón Registrar Venta Completa
     $('#btnRegistrarVenta').on('click', function() {
         const mensajeDiv = $('#mensajeVenta');
         const formaPago = $('#ventaFormaPagoFinal').val();
@@ -694,7 +1137,7 @@ $(document).ready(function () {
         }
 
         if (carritoProductos.length === 0) {
-            mensajeDiv.html('<div class="alert alert-warning">El carrito est� vac�o</div>');
+            mensajeDiv.html('<div class="alert alert-warning">El carrito está vacío</div>');
             return;
         }
 
@@ -744,31 +1187,56 @@ $(document).ready(function () {
             success: function(response) {
                 console.log("Venta registrada:", response);
                 
-                // Guardar datos de la venta para el PDF
+                // 1. Preparar datos para la previsualización
                 ultimaVentaRegistrada = {
                     id_venta: response.id_venta,
-                    cliente: clienteSeleccionado,
+                    cliente: {...clienteSeleccionado},
                     productos: [...carritoProductos],
-                    totales: {
-                        subtotal: subtotalGeneral,
-                        ganancia: gananciaGeneral,
-                        iva: ivaGeneral,
-                        total: totalGeneral
-                    },
+                    totales: {...dataVenta.totales},
                     forma_pago: formaPago,
-                    usuario: localStorage.getItem('username') || 'Usuario'
+                    usuario: localStorage.getItem('loggedInUsername') || 'Usuario'
                 };
+
+                // 2. Poblar Modal de Previsualización
+                $('#prevIdVenta').text(ultimaVentaRegistrada.id_venta);
+                $('#prevNombreCliente').text(ultimaVentaRegistrada.cliente.nombre);
+                $('#prevRucCliente').text('RUC/CI: ' + ultimaVentaRegistrada.cliente.ruc_ci);
+                $('#prevTelfCliente').text('Telf: ' + (ultimaVentaRegistrada.cliente.telefono || 'N/A'));
+                $('#prevFecha').text(new Date().toLocaleDateString());
+                $('#prevUsuario').text(ultimaVentaRegistrada.usuario);
+                $('#prevFormaPago').text(ultimaVentaRegistrada.forma_pago);
+                
+                const $prevBody = $('#prevDetalleBody');
+                $prevBody.empty();
+                ultimaVentaRegistrada.productos.forEach(p => {
+                    $prevBody.append(`
+                        <tr>
+                            <td>${p.nombre_material}</td>
+                            <td class="text-center">${p.cantidad}</td>
+                            <td class="text-end">$${p.precio_unitario.toFixed(2)}</td>
+                            <td class="text-end">$${p.total.toFixed(2)}</td>
+                        </tr>
+                    `);
+                });
+                
+                $('#prevSubtotal').text('$' + ultimaVentaRegistrada.totales.subtotal.toFixed(2));
+                $('#prevIva').text('$' + ultimaVentaRegistrada.totales.iva.toFixed(2));
+                $('#prevTotal').text('$' + ultimaVentaRegistrada.totales.total.toFixed(2));
+
+                // 3. Vincular botón PDF del modal
+                $('#btnDescargarPDF').off('click').on('click', function() {
+                    generarComprobantePDF(ultimaVentaRegistrada);
+                });
+
+                // 4. Mostrar el Modal de Previsualización
+                const modalPreview = new bootstrap.Modal(document.getElementById('modalPreviewVenta'));
+                modalPreview.show();
                 
                 mensajeDiv.html(`<div class="alert alert-success">
-                    ? <strong>Venta registrada exitosamente</strong><br>
-                    <strong>ID Venta:</strong> ${response.id_venta}<br>
-                    <strong>Total:</strong> $${totalGeneral.toFixed(2)}<br><br>
-                    <button class="btn btn-primary" onclick="generarComprobantePDF(ultimaVentaRegistrada)">
-                        <i class="fa fa-print"></i> Imprimir Comprobante
-                    </button>
+                    <i class="fa fa-check-circle"></i> <strong>Venta registrada exitosamente</strong>
                 </div>`);
                 
-                // Limpiar todo
+                // 5. Limpiar Carrito y Formulario
                 carritoProductos = [];
                 clienteSeleccionado = null;
                 actualizarTablaCarrito();
@@ -799,5 +1267,6 @@ $(document).ready(function () {
     });
 });
 </script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </body>
 </html>

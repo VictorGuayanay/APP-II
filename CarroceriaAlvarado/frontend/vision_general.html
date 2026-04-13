@@ -1,10 +1,11 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
     <title>Visión General - Carrocerías Alvarado</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" type="text/css" href="vendor/bootstrap/css/bootstrap.min.css">
+    <meta name="description" content="Visión General - Carrocerías Alvarado. Dashboard con alertas de inventario, órdenes recientes y órdenes próximas a vencer.">
+    <link rel="stylesheet" type="text/css" href="vendor/bootstrap/css/bootstrap5.min.css">
     <link rel="stylesheet" type="text/css" href="fonts/font-awesome-4.7.0/css/font-awesome.min.css">
     <link rel="stylesheet" type="text/css" href="css/main.css">
     <link rel="stylesheet" type="text/css" href="css/modern-design.css">
@@ -75,7 +76,7 @@
                         </ul>
                     </div>
                     <span>Hola, <strong id="currentUserName">Usuario</strong>!</span>
-                    <a href="#" id="logoutButton" class="ms-3">Cerrar Sesión</a>
+                    <a href="#" id="logoutButton" class="btn-logout ms-3"><i class="fa fa-sign-out"></i> Cerrar Sesión</a>
                 </div>
             </div>
         </nav>
@@ -138,7 +139,7 @@
                                 <!-- Órdenes por Vencer (7 días o menos) -->
                                 <div class="col-md-6">
                                     <h6 class="text-warning">
-                                        <i class="fa fa-clock-o"></i> Próximas a Vencer (≤7 días)
+                                        <i class="fa fa-clock-o"></i> Próximas a Vencer (â‰¤7 días)
                                     </h6>
                                     <div id="ordenes-por-vencer-list">
                                         <p class="text-center">Cargando...</p>
@@ -159,10 +160,52 @@
                     </div>
                 </div>
             </div>
-    <script src="js/config.js"></script>
-    <script src="js/dashboard-core.js"></script>
-    <script src="vendor/jquery/jquery-3.2.1.min.js"></script>
-<script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+        </div>
+    </div>
+</div>
+
+
+<!-- Modal de Configuración/Perfil (Reutilizado) -->
+<div class="modal fade" id="settingsModal" tabindex="-1" role="dialog" aria-labelledby="settingsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 15px; overflow: hidden;">
+            <div class="modal-header bg-secondary text-white border-0">
+                <h5 class="modal-title" id="settingsModalLabel">
+                    <i class="fa fa-cog mr-2"></i> Configuraciones Generales
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div id="settingsMessage"></div>
+                <form id="settingsForm">
+                    <div class="form-group mb-3">
+                        <label for="settingResetTokenExpiry" class="font-weight-bold">Duración del Token (minutos)</label>
+                        <input type="number" class="form-control" id="settingResetTokenExpiry" min="1" required style="border-radius: 8px;">
+                        <small class="form-text text-muted">Tiempo de validez para el enlace de reseteo.</small>
+                    </div>
+                    <div class="form-group mb-3">
+                        <label for="settingMaxLoginAttempts" class="font-weight-bold">Máximos Intentos de Login</label>
+                        <input type="number" class="form-control" id="settingMaxLoginAttempts" min="1" required style="border-radius: 8px;">
+                        <small class="form-text text-muted">Número de intentos antes de bloquear la cuenta.</small>
+                    </div>
+                    <div class="form-group mb-3">
+                        <label for="settingGlobalLowStockThreshold" class="font-weight-bold">Limite Global de Stock Bajo</label>
+                        <input type="number" class="form-control" id="settingGlobalLowStockThreshold" min="0" required style="border-radius: 8px;">
+                        <small class="form-text text-muted">Materiales a resaltar bajo este stock.</small>
+                    </div>
+                    <div class="modal-footer border-0 justify-content-center pt-3">
+                        <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal" style="border-radius: 10px;">Cancelar</button>
+                        <button type="submit" class="btn btn-secondary px-4" style="border-radius: 10px; font-weight: 600;">Guardar Configuraciones</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="vendor/jquery/jquery-3.2.1.min.js"></script>
+<script src="vendor/bootstrap/js/bootstrap5.bundle.min.js"></script>
+<script src="js/config.js"></script>
+<script src="js/dashboard-core.js"></script>
 <script>
 // Función para cargar los datos del dashboard
 function cargarVisionGeneral() {
@@ -357,3 +400,4 @@ $(document).ready(function () {
 
 </body>
 </html>
+

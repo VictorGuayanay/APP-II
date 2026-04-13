@@ -1,9 +1,11 @@
 import os
 from flask import Flask, request, jsonify
 from flask_cors import CORS
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 import pyodbc
 import bcrypt
-import jwt # Asegúrate que sea PyJWT
+import jwt  # PyJWT
 import datetime
 import smtplib
 from email.mime.text import MIMEText
@@ -11,7 +13,7 @@ from email.mime.multipart import MIMEMultipart
 from functools import wraps
 from dotenv import load_dotenv
 
-# Cargar variables de entorno desde el archivo .env
+# Cargar variables de entorno
 load_dotenv()
 
 
@@ -29,15 +31,34 @@ APP_CONFIG = {
 }
 
 
+# Origenes permitidos para CORS
+_ALLOWED_ORIGINS = [
+    origin.strip()
+    for origin in os.environ.get('ALLOWED_ORIGINS',
+        'http://127.0.0.1:8000,http://127.0.0.1:5500,http://localhost:8000,http://localhost:5500').split(',')
+    if origin.strip()
+]
+
 CORS(app, resources={
     r"/*": {
-        "origins": "*",
+        "origins": _ALLOWED_ORIGINS,
         "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-        "allow_headers": "*",
-        "expose_headers": "*",
+        "allow_headers": ["Content-Type", "Authorization"],
         "supports_credentials": False
     }
-}) 
+})
+
+# --- RATE LIMITING (SEC-06) ---
+limiter = Limiter(
+    get_remote_address,
+    app=app,
+    default_limits=[],
+    storage_uri="memory://"
+)
+
+# Cache para blacklist de JWT (SEC-09)
+_TOKEN_BLACKLIST_CACHE = set()
+
 
 # Configuración de base de datos dinámica
 conn_str = (
@@ -50,7 +71,7 @@ conn_str = (
 SMTP_SERVER = os.environ.get('SMTP_SERVER', 'smtp.gmail.com')
 SMTP_PORT = int(os.environ.get('SMTP_PORT', 587))
 SMTP_USERNAME = os.environ.get('SMTP_USERNAME', 'victorguayanay@gmail.com')
-SMTP_PASSWORD = os.environ.get('SMTP_PASSWORD', 'qzgl wxpz stvw uxdp')
+SMTP_PASSWORD = os.environ.get('SMTP_PASSWORD', '')  # Requiere variable de entorno
 FRONTEND_BASE_URL = os.environ.get('FRONTEND_BASE_URL', 'http://127.0.0.1:8000')
 
 
@@ -59,11 +80,179 @@ def get_db_connection():
         conn = pyodbc.connect(conn_str)
         return conn
     except Exception as e:
-        print(f"!!!!!!!! ERROR CRÍTICO AL CONECTAR A LA BASE DE DATOS: {str(e)} !!!!!!!!")
+        print(f"ERROR CRITICO AL CONECTAR A LA BASE DE DATOS: {str(e)}")
         raise Exception(f"Error al conectar a la base de datos: {str(e)}")
 
 
-# CORS es manejado automáticamente por flask_cors (configurado arriba)
+# ================================================================
+# BE-03: PERSISTENCIA DE CONFIGURACIONES EN BD
+# ================================================================
+def cargar_config_desde_bd():
+    """Carga configuraciones desde SQL Server al iniciar la app."""
+    global APP_CONFIG
+    conn = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT clave, valor FROM Configuraciones WHERE activo = 1")
+        rows = cursor.fetchall()
+        if rows:
+            for row in rows:
+                clave, valor = row[0], row[1]
+                if clave in APP_CONFIG:
+                    try:
+                        APP_CONFIG[clave] = int(valor)
+                    except (ValueError, TypeError):
+                        APP_CONFIG[clave] = valor
+            print(f"APP INIT: Config cargada desde BD: {APP_CONFIG}")
+        else:
+            print("APP INIT: Tabla Configuraciones vacía. Usando .env")
+    except Exception as e:
+        print(f"APP INIT: No se cargo config desde BD: {str(e)}")
+    finally:
+        if conn:
+            conn.close()
+
+
+def guardar_config_en_bd(clave, valor):
+    """Persiste una configuracion en la tabla Configuraciones (MERGE)."""
+    conn = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("""
+            MERGE Configuraciones AS target
+            USING (VALUES (?, ?)) AS source (clave, valor)
+            ON target.clave = source.clave
+            WHEN MATCHED THEN
+                UPDATE SET valor = source.valor, fecha_actualizacion = GETDATE()
+            WHEN NOT MATCHED THEN
+                INSERT (clave, valor, activo, fecha_actualizacion)
+                VALUES (source.clave, source.valor, 1, GETDATE());
+        """, (clave, str(valor)))
+        conn.commit()
+        return True
+    except Exception as e:
+        print(f"Error guardando config '{clave}': {str(e)}")
+        return False
+    finally:
+        if conn:
+            conn.close()
+
+
+# ================================================================
+# SEC-09: BLACKLIST JWT EN BD
+# ================================================================
+def revocar_token(token):
+    """Agrega token a la blacklist en BD al hacer logout."""
+    conn = None
+    try:
+        secret_key = app.config.get('SECRET_KEY')
+        try:
+            decoded = jwt.decode(token, secret_key, algorithms=["HS256"])
+            exp = decoded.get('exp')
+            user_id = decoded.get('user_id')
+            expiry_dt = datetime.datetime.fromtimestamp(exp, tz=datetime.timezone.utc) if exp else None
+        except Exception:
+            expiry_dt = None
+            user_id = None
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT INTO TokensRevocados (token_hash, id_usuario, fecha_revocacion, fecha_expiracion)
+            VALUES (?, ?, GETDATE(), ?)
+        """, (str(hash(token)), user_id, expiry_dt))
+        conn.commit()
+        _TOKEN_BLACKLIST_CACHE.add(hash(token))
+        return True
+    except Exception as e:
+        print(f"Error revocando token: {str(e)}")
+        return False
+    finally:
+        if conn:
+            conn.close()
+
+
+def es_token_revocado(token):
+    """Verifica si un token está en la blacklist (caché + BD)."""
+    token_hash = hash(token)
+    if token_hash in _TOKEN_BLACKLIST_CACHE:
+        return True
+    conn = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT 1 FROM TokensRevocados WHERE token_hash = ? "
+            "AND (fecha_expiracion IS NULL OR fecha_expiracion > GETDATE())",
+            (str(token_hash),)
+        )
+        if cursor.fetchone():
+            _TOKEN_BLACKLIST_CACHE.add(token_hash)
+            return True
+        return False
+    except Exception as e:
+        print(f"Error verificando blacklist: {str(e)}")
+        return False
+    finally:
+        if conn:
+            conn.close()
+
+
+# ================================================================
+# DECORADORES DE AUTENTICACION
+# (deben estar definidos ANTES de los @app.route que los usan)
+# ================================================================
+def token_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        token = None
+        auth_header = request.headers.get('Authorization')
+        if auth_header and auth_header.startswith("Bearer "):
+            try:
+                token = auth_header.split(" ")[1]
+            except IndexError:
+                return jsonify({'error': 'Formato de token invalido ("Bearer <token>")'}), 401
+        if not token:
+            return jsonify({'error': 'Token de autorizacion requerido'}), 401
+        try:
+            secret_key_for_decode = app.config.get('SECRET_KEY')
+            data = jwt.decode(token, secret_key_for_decode, algorithms=["HS256"])
+            decoded_user_rol = data.get('rol')
+            decoded_user_id = data.get('user_id')
+            # SEC-09: Verificar blacklist
+            if es_token_revocado(token):
+                return jsonify({'error': 'Sesion expirada. Inicia sesion nuevamente.'}), 401
+        except jwt.ExpiredSignatureError:
+            return jsonify({'error': 'Token de sesion ha expirado'}), 401
+        except jwt.InvalidTokenError:
+            return jsonify({'error': 'Token de sesion invalido'}), 401
+        except Exception as e:
+            return jsonify({'error': f'Error al procesar token: {str(e)}'}), 401
+        return f(decoded_user_rol=decoded_user_rol, decoded_user_id=decoded_user_id, *args, **kwargs)
+    return decorated_function
+
+
+def admin_required(f):
+    @wraps(f)
+    @token_required
+    def decorated_admin_function(decoded_user_rol, decoded_user_id, *args, **kwargs):
+        if decoded_user_rol != 'Administrador':
+            return jsonify({'error': 'Acceso denegado. Se requieren permisos de administrador.'}), 403
+        return f(admin_user_id_from_token=decoded_user_id, *args, **kwargs)
+    return decorated_admin_function
+
+
+def roles_required(*required_roles):
+    def decorator(f):
+        @wraps(f)
+        @token_required
+        def decorated_function(decoded_user_rol, decoded_user_id, *args, **kwargs):
+            if decoded_user_rol not in required_roles:
+                return jsonify({'error': 'Acceso denegado. No tiene los permisos necesarios.'}), 403
+            return f(decoded_user_rol=decoded_user_rol, decoded_user_id=decoded_user_id, *args, **kwargs)
+        return decorated_function
+    return decorator
 
 
 
@@ -196,6 +385,7 @@ def registrar_usuario():
 
 
 @app.route('/login', methods=['POST', 'OPTIONS'])
+@limiter.limit("10 per minute")  # SEC-06: Previene fuerza bruta
 def login():
     # Handle OPTIONS preflight request
     if request.method == 'OPTIONS':
@@ -316,6 +506,7 @@ def login():
 
 
 @app.route('/reset_password', methods=['POST'])
+@limiter.limit("5 per minute")  # SEC-06: Limitar solicitudes de reseteo
 def reset_password_request():
     # (Tu código de /reset_password como lo tenías)
     # ... (código de la función /reset_password) ...

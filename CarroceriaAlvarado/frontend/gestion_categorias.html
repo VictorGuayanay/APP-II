@@ -4,7 +4,7 @@
     <title>Gestión de Categorías - Carrocerías  Alvarado</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" type="text/css" href="vendor/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="vendor/bootstrap/css/bootstrap5.min.css">
     <link rel="stylesheet" type="text/css" href="fonts/font-awesome-4.7.0/css/font-awesome.min.css">
     <link rel="stylesheet" type="text/css" href="css/main.css">
     <link rel="stylesheet" type="text/css" href="css/modern-design.css">
@@ -54,11 +54,11 @@
             <li><a href="ingresar_cliente.html"><i class="fa fa-user-plus"></i> Ingreso Clientes</a></li>
             <li><a href="ingresar_proveedor.html"><i class="fa fa-truck"></i> Ingreso Proveedores</a></li>
             <li><a href="ver_proveedores.html"><i class="fa fa-list"></i> Ver Proveedores</a></li>
-            <li><a href="orden_trabajo.html"><i class="fa fa-briefcase"></i> �rdenes de Trabajo</a></li>
-            <li><a href="listar_ordenes_trabajo.html"><i class="fa fa-briefcase"></i> Listar �rdenes de Trabajo</a></li>
+            <li><a href="orden_trabajo.html"><i class="fa fa-briefcase"></i> Órdenes de Trabajo</a></li>
+            <li><a href="listar_ordenes_trabajo.html"><i class="fa fa-briefcase"></i> Listar Órdenes de Trabajo</a></li>
             <li><a href="consultar_comprobantes.html"><i class="fa fa-money"></i> Comprobante</a></li>
             <li><a href="reportes.html"><i class="fa fa-bar-chart"></i> Reportes</a></li>
-            <li><a href="#" data-bs-toggle="modal" data-bs-target="#settingsModal" ><i class="fa fa-cog"></i> Configuraci�n</a></li>
+            <li><a href="#" data-bs-toggle="modal" data-bs-target="#settingsModal" ><i class="fa fa-cog"></i> Configuración</a></li>
         </ul>
     </nav>
 
@@ -67,26 +67,26 @@
         <nav class="navbar navbar-expand-lg navbar-light top-navbar">
             <div class="container-fluid">
                 <button type="button" id="sidebarCollapse" class="btn btn-info">
-                    <i class="fa fa-align-left"></i> <span>Men�</span>
+                    <i class="fa fa-align-left"></i> <span>Menú</span>
                 </button>
                 <div class="user-info">
                     <span>Hola, <strong id="currentUserName">Usuario</strong>!</span>
-                    <a href="#" id="logoutButton" class="ms-3">Cerrar Sesi�n</a>
+                    <a href="#" id="logoutButton" class="btn-logout ms-3"><i class="fa fa-sign-out"></i> Cerrar Sesión</a>
                 </div>
             </div>
         </nav>
 
         <div class="content-area container-fluid pt-4">
             <div class="d-flex justify-content-between align-items-center mb-3">
-                <h2 class="card-header-title">Categor�as de Materiales</h2>
+                <h2 class="card-header-title">Categorías de Materiales</h2>
                 <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#agregarCategoriaModal">
-                    <i class="fa fa-plus"></i> Agregar Categor�a
+                    <i class="fa fa-plus"></i> Agregar Categoría
                 </button>
             </div>
 
             <div class="dashboard-card shadow-sm">
                 <div class="card-header">
-                    Lista de Categor�as
+                    Lista de Categorías
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
@@ -94,17 +94,17 @@
                             <thead>
                                 <tr>
                                     <th>ID</th>
-                                    <th>C�digo Prefijo</th>
+                                    <th>Código Prefijo</th>
                                     <th>Nombre</th>
-                                    <th>Descripci�n</th>
+                                    <th>Descripción</th>
                                     <th>Estado</th>
-                                    <th>Fecha Creaci�n</th>
+                                    <th>Fecha Creación</th>
                                     <th>Acciones</th>
                                 </tr>
                             </thead>
                             <tbody id="categoriasTableBody">
                                 <tr>
-                                    <td colspan="7" class="text-center">Cargando categor�as...</td>
+                                    <td colspan="7" class="text-center">Cargando categorías...</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -115,28 +115,28 @@
     </div>
 </div>
 
-<!-- Modal Agregar Categor�a -->
+<!-- Modal Agregar Categoría -->
 <div class="modal fade" id="agregarCategoriaModal" tabindex="-1" aria-labelledby="agregarCategoriaModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="agregarCategoriaModalLabel">Agregar Nueva Categor�a</h5>
+                <h5 class="modal-title" id="agregarCategoriaModalLabel">Agregar Nueva Categoría</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <form id="formAgregarCategoria">
                     <div class="mb-3">
-                        <label for="codigoPrefijo" class="form-label">C�digo Prefijo <span class="text-danger">*</span></label>
+                        <label for="codigoPrefijo" class="form-label">Código Prefijo <span class="text-danger">*</span></label>
                         <input type="text" class="form-control text-uppercase" id="codigoPrefijo" maxlength="10" required placeholder="Ej: PIN, TAP">
-                        <small class="text-muted">2-10 letras may�sculas, sin n�meros ni espacios</small>
+                        <small class="text-muted">2-10 letras mayúsculas, sin números ni espacios</small>
                     </div>
                     <div class="mb-3">
                         <label for="nombreCategoria" class="form-label">Nombre <span class="text-danger">*</span></label>
                         <input type="text" class="form-control" id="nombreCategoria" required placeholder="Ej: Pinturas">
                     </div>
                     <div class="mb-3">
-                        <label for="descripcionCategoria" class="form-label">Descripci�n</label>
-                        <textarea class="form-control" id="descripcionCategoria" rows="3" placeholder="Descripci�n opcional"></textarea>
+                        <label for="descripcionCategoria" class="form-label">Descripción</label>
+                        <textarea class="form-control" id="descripcionCategoria" rows="3" placeholder="Descripción opcional"></textarea>
                     </div>
                 </form>
             </div>
@@ -148,28 +148,28 @@
     </div>
 </div>
 
-<!-- Modal Editar Categor�a -->
+<!-- Modal Editar Categoría -->
 <div class="modal fade" id="editarCategoriaModal" tabindex="-1" aria-labelledby="editarCategoriaModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="editarCategoriaModalLabel">Editar Categor�a</h5>
+                <h5 class="modal-title" id="editarCategoriaModalLabel">Editar Categoría</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <form id="formEditarCategoria">
                     <input type="hidden" id="editIdCategoria">
                     <div class="mb-3">
-                        <label for="editCodigoPrefijo" class="form-label">C�digo Prefijo</label>
+                        <label for="editCodigoPrefijo" class="form-label">Código Prefijo</label>
                         <input type="text" class="form-control" id="editCodigoPrefijo" readonly>
-                        <small class="text-muted">El c�digo prefijo no se puede modificar</small>
+                        <small class="text-muted">El código prefijo no se puede modificar</small>
                     </div>
                     <div class="mb-3">
                         <label for="editNombreCategoria" class="form-label">Nombre <span class="text-danger">*</span></label>
                         <input type="text" class="form-control" id="editNombreCategoria" required>
                     </div>
                     <div class="mb-3">
-                        <label for="editDescripcionCategoria" class="form-label">Descripci�n</label>
+                        <label for="editDescripcionCategoria" class="form-label">Descripción</label>
                         <textarea class="form-control" id="editDescripcionCategoria" rows="3"></textarea>
                     </div>
                     <div class="mb-3">
@@ -190,12 +190,50 @@
 </div>
 
 <!-- Scripts -->
+
+<!-- Modal de Configuración/Perfil (Reutilizado) -->
+<div class="modal fade" id="settingsModal" tabindex="-1" role="dialog" aria-labelledby="settingsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 15px; overflow: hidden;">
+            <div class="modal-header bg-secondary text-white border-0">
+                <h5 class="modal-title" id="settingsModalLabel">
+                    <i class="fa fa-cog mr-2"></i> Configuraciones Generales
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div id="settingsMessage"></div>
+                <form id="settingsForm">
+                    <div class="form-group mb-3">
+                        <label for="settingResetTokenExpiry" class="font-weight-bold">Duración del Token (minutos)</label>
+                        <input type="number" class="form-control" id="settingResetTokenExpiry" min="1" required style="border-radius: 8px;">
+                        <small class="form-text text-muted">Tiempo de validez para el enlace de reseteo.</small>
+                    </div>
+                    <div class="form-group mb-3">
+                        <label for="settingMaxLoginAttempts" class="font-weight-bold">Máximos Intentos de Login</label>
+                        <input type="number" class="form-control" id="settingMaxLoginAttempts" min="1" required style="border-radius: 8px;">
+                        <small class="form-text text-muted">Número de intentos antes de bloquear la cuenta.</small>
+                    </div>
+                    <div class="form-group mb-3">
+                        <label for="settingGlobalLowStockThreshold" class="font-weight-bold">Limite Global de Stock Bajo</label>
+                        <input type="number" class="form-control" id="settingGlobalLowStockThreshold" min="0" required style="border-radius: 8px;">
+                        <small class="form-text text-muted">Materiales a resaltar bajo este stock.</small>
+                    </div>
+                    <div class="modal-footer border-0 justify-content-center pt-3">
+                        <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal" style="border-radius: 10px;">Cancelar</button>
+                        <button type="submit" class="btn btn-secondary px-4" style="border-radius: 10px; font-weight: 600;">Guardar Configuraciones</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
 <script src="js/config.js"></script>`r`n    <script src="js/dashboard-core.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="vendor/bootstrap/js/bootstrap5.bundle.min.js"></script>
 <script>
 $(document).ready(function() {
-    // L�gica est�ndar
+    // Lógica estándar
     $('#sidebarCollapse').on('click', function() { $('#sidebar').toggleClass('active'); });
     const token = localStorage.getItem('token');
     if (!token) { window.location.href = 'index.html'; return; }
@@ -203,10 +241,10 @@ $(document).ready(function() {
     if (loggedInUsername) { $('#currentUserName').text(loggedInUsername); }
     
 
-    // Cargar categor�as al iniciar
+    // Cargar categorías al iniciar
     cargarCategorias();
 
-    // Auto-may�sculas en c�digo prefijo
+    // Auto-mayúsculas en código prefijo
     $('#codigoPrefijo').on('input', function() {
         this.value = this.value.toUpperCase().replace(/[^A-Z]/g, '');
     });
@@ -224,7 +262,7 @@ function cargarCategorias() {
             tbody.empty();
             
             if (categorias.length === 0) {
-                tbody.append('<tr><td colspan="7" class="text-center">No hay categor�as registradas</td></tr>');
+                tbody.append('<tr><td colspan="7" class="text-center">No hay categorías registradas</td></tr>');
                 return;
             }
             
@@ -257,8 +295,8 @@ function cargarCategorias() {
             });
         },
         error: function(xhr) {
-            console.error('Error al cargar categor�as:', xhr);
-            tbody.html('<tr><td colspan="7" class="text-center text-danger">Error al cargar categor�as</td></tr>');
+            console.error('Error al cargar categorías:', xhr);
+            tbody.html('<tr><td colspan="7" class="text-center text-danger">Error al cargar categorías</td></tr>');
         }
     });
 }
@@ -271,17 +309,17 @@ function guardarCategoria() {
     
     // Validaciones
     if (!codigo || !nombre) {
-        alert('El c�digo prefijo y el nombre son requeridos');
+        alert('El código prefijo y el nombre son requeridos');
         return;
     }
     
     if (codigo.length < 2 || codigo.length > 10) {
-        alert('El c�digo prefijo debe tener entre 2 y 10 caracteres');
+        alert('El código prefijo debe tener entre 2 y 10 caracteres');
         return;
     }
     
     if (!/^[A-Z]+$/.test(codigo)) {
-        alert('El c�digo prefijo solo puede contener letras may�sculas');
+        alert('El código prefijo solo puede contener letras mayúsculas');
         return;
     }
     
@@ -301,12 +339,14 @@ function guardarCategoria() {
         data: JSON.stringify(categoriaData),
         success: function(response) {
             alert(response.message);
-            $('#agregarCategoriaModal').modal('hide');
+            const modalEl = document.getElementById('agregarCategoriaModal');
+            const modal = bootstrap.Modal.getInstance(modalEl);
+            if (modal) modal.hide();
             $('#formAgregarCategoria')[0].reset();
             cargarCategorias();
         },
         error: function(xhr) {
-            const error = xhr.responseJSON?.error || 'Error al crear categor�a';
+            const error = xhr.responseJSON?.error || 'Error al crear categoría';
             alert(error);
         }
     });
@@ -328,7 +368,8 @@ function abrirModalEditar(idCategoria) {
                 $('#editDescripcionCategoria').val(categoria.descripcion || '');
                 $('#editEstado').val(categoria.estado);
                 
-                $('#editarCategoriaModal').modal('show');
+                const modal = new bootstrap.Modal(document.getElementById('editarCategoriaModal'));
+                modal.show();
             }
         }
     });
@@ -362,18 +403,20 @@ function guardarCambiosCategoria() {
         data: JSON.stringify(categoriaData),
         success: function(response) {
             alert(response.message);
-            $('#editarCategoriaModal').modal('hide');
+            const modalEl = document.getElementById('editarCategoriaModal');
+            const modal = bootstrap.Modal.getInstance(modalEl);
+            if (modal) modal.hide();
             cargarCategorias();
         },
         error: function(xhr) {
-            const error = xhr.responseJSON?.error || 'Error al actualizar categor�a';
+            const error = xhr.responseJSON?.error || 'Error al actualizar categoría';
             alert(error);
         }
     });
 }
 
 function eliminarCategoria(idCategoria, nombreCategoria) {
-    if (!confirm(`�Est� seguro de eliminar la categor�a "${nombreCategoria}"?\n\nNota: Solo se puede eliminar si no tiene materiales asociados.`)) {
+    if (!confirm(`¿Está seguro de eliminar la categoría "${nombreCategoria}"?\n\nNota: Solo se puede eliminar si no tiene materiales asociados.`)) {
         return;
     }
     
@@ -388,7 +431,7 @@ function eliminarCategoria(idCategoria, nombreCategoria) {
             cargarCategorias();
         },
         error: function(xhr) {
-            const error = xhr.responseJSON?.error || 'Error al eliminar categor�a';
+            const error = xhr.responseJSON?.error || 'Error al eliminar categoría';
             alert(error);
         }
     });

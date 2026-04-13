@@ -3,7 +3,8 @@
 <head>
     <title>Reportes - Carrocerias Alvarado</title>
     <meta charset="UTF-8">
-    <link rel="stylesheet" type="text/css" href="vendor/bootstrap/css/bootstrap.min.css">
+    <meta name="description" content="Reportes - Carrocerías Alvarado. Informes de inventario, uso de materiales y operaciones del taller.">
+    <link rel="stylesheet" type="text/css" href="vendor/bootstrap/css/bootstrap5.min.css">
     <link rel="stylesheet" type="text/css" href="fonts/font-awesome-4.7.0/css/font-awesome.min.css">
     <link rel="stylesheet" type="text/css" href="css/main.css">
     <link rel="stylesheet" type="text/css" href="css/modern-design.css">
@@ -58,7 +59,7 @@
         <nav class="navbar navbar-expand-lg navbar-light top-navbar">
             <div class="container-fluid">
                 <button type="button" id="sidebarCollapse" class="btn btn-info"><i class="fa fa-align-left"></i> <span>Menú</span></button>
-                <div class="user-info"><span>Hola, <strong id="currentUserName">Admin</strong>!</span><a href="#" id="logoutButton" class="ms-3">Cerrar Sesión</a></div>
+                <div class="user-info"><span>Hola, <strong id="currentUserName">Admin</strong>!</span><a href="#" id="logoutButton" class="btn-logout ms-3"><i class="fa fa-sign-out"></i> Cerrar Sesión</a></div>
             </div>
         </nav>
 
@@ -143,7 +144,7 @@
 <script src="js/config.js"></script>
     <script src="js/dashboard-core.js"></script>
     <script src="vendor/jquery/jquery-3.2.1.min.js"></script>
-<script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+<script src="vendor/bootstrap/js/bootstrap5.bundle.min.js"></script>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
@@ -329,28 +330,36 @@ $(document).ready(function() {
             });
 
             // --- INICIO DEL ENCABEZADO ---
-            // 3. Añadir el logo al PDF
-            // Parámetros: (imagen, formato, x, y, ancho, alto)
-            doc.addImage(this, 'JPG', 60, 15, 60, 60); // Ajusta estas coordenadas y tamaño según tu logo
+            // 3. Añadir el logo al PDF (Parte superior izquierda)
+            doc.addImage(this, 'JPG', 20, 15, 40, 40); 
 
-            // 4. Añadir texto del encabezado
-            doc.setFontSize(18);
+            // Leyenda Legal - Destacada (Centrada arriba)
+            doc.setFontSize(8);
+            doc.setTextColor(200, 0, 0);
+            doc.setFont(undefined, 'bold');
+            doc.text("DOCUMENTO DE CONTROL INTERNO - SIN VALOR TRIBUTARIO", doc.internal.pageSize.getWidth() / 2, 20, { align: 'center' });
+            
+            // Datos de la Empresa (Alineados a la derecha)
             doc.setTextColor(40);
-            doc.text("Carrocerías Alvarado", 150, 35); // Alineado a la derecha del logo
+            doc.setFontSize(18);
+            doc.text("CARROCERÍAS ALVARADO", 190, 35, { align: 'right' }); 
             
-            doc.setFontSize(10);
-            doc.text("Dirección: Av. Monseñor Leonidas Proaño (a pocos metros de la linea ferrea), Riobamba, Ecuador", 150, 50);
-            doc.text("Teléfono: 099 991 1866| Email: carroceriasalvarado@hotmail.com", 150, 62);
-            
+            doc.setFontSize(9);
+            doc.setFont(undefined, 'normal');
+            doc.text("Telf: +593 99 991 1866", 190, 42, { align: 'right' });
+            doc.text("Email: carroceriasalvarado@hotmail.com", 190, 47, { align: 'right' });
+            doc.text("Dir: Avda. Monseñor Leonidas Proaño, Riobamba, Ecuador", 190, 52, { align: 'right' });
             // --- FIN DEL ENCABEZADO ---
 
             // 5. Añadir título del reporte
             const fechaDesde = $('#fechaDesde').val();
             const fechaHasta = $('#fechaHasta').val();
-            const titulo = `Reporte de Uso de Materiales (${fechaDesde} a ${fechaHasta})`;
+            const titulo = `Reporte de Uso de Materiales - Período: ${fechaDesde} al ${fechaHasta}`;
             
             doc.setFontSize(14);
-            doc.text(titulo, 40, 100); // Posición debajo del encabezado
+            doc.setFont(undefined, 'bold');
+            doc.text(titulo, 40, 100); 
+            doc.setFont(undefined, 'normal');
 
             // 6. Usar autoTable para generar la tabla desde el HTML
             doc.autoTable({
@@ -384,3 +393,4 @@ $(document).ready(function() {
 
 </body>
 </html>
+

@@ -2,3 +2,18 @@ __pycache__/
 *.pyc
 venv/
 *.log
+
+# Archivos de entorno con credenciales (NUNCA subir al repositorio)
+.env
+.env.local
+.env.production
+.env.staging
+
+# Base de datos local
+*.db
+*.sqlite
+
+# Archivos de editor
+.vscode/
+.idea/
+*.swp

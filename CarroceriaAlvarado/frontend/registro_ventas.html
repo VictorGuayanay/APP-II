@@ -4,7 +4,8 @@
     <title>Registro de Ventas - Carrocerías Alvarado</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" type="text/css" href="vendor/bootstrap/css/bootstrap.min.css">
+    <meta name="description" content="Registro de Ventas Directas - Carrocerías Alvarado. Venta directa de materiales a clientes.">
+    <link rel="stylesheet" type="text/css" href="vendor/bootstrap/css/bootstrap5.min.css">
     <link rel="stylesheet" type="text/css" href="fonts/font-awesome-4.7.0/css/font-awesome.min.css">
     <link rel="stylesheet" type="text/css" href="css/main.css">
     <link rel="stylesheet" type="text/css" href="css/modern-design.css">
@@ -17,7 +18,7 @@
     <script src="js/config.js"></script>
     <script src="js/dashboard-core.js"></script>
     <script src="vendor/jquery/jquery-3.2.1.min.js"></script>
-<script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+<script src="vendor/bootstrap/js/bootstrap5.bundle.min.js"></script>
 
 <script>
 let todasLasVentas = [];
@@ -28,126 +29,139 @@ function cerrarModalDetalle() {
     document.getElementById('modalDetalleVenta').style.display = 'none';
 }
 
-// Función para generar PDF del comprobante (reutilizada)
+// Función para generar PDF del comprobante (Actualizada con Logo y Datos de Empresa)
 function generarComprobantePDF(datosVenta, isReprint = false) {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
     
-    const margen = 20;
-    let y = 20;
+    // Cargar Logo
+    const img = new Image();
+    img.src = 'images/logo.jpg';
     
-    // Encabezado
-    doc.setFontSize(10);
-    doc.setTextColor(255, 0, 0);
-    doc.text('DOCUMENTO SIN VALOR TRIBUTARIO', 105, y, { align: 'center' });
-    y += 10;
-    
-    // RE-IMPRESIÓN si es reimpresión
-    if (isReprint) {
-        doc.setFontSize(12);
-        doc.setTextColor(255, 0, 0);
+    img.onload = function() {
+        const margen = 20;
+        let y = 15;
+        
+        // --- ENCABEZADO ---
+        // Logo en la parte superior izquierda
+        doc.addImage(this, 'JPG', margen, y, 35, 35);
+        
+        // Leyenda - SIN VALOR TRIBUTARIO (Centrada arriba)
+        doc.setFontSize(8);
+        doc.setTextColor(200, 0, 0);
         doc.setFont(undefined, 'bold');
-        doc.text('*** RE-IMPRESIÓN ***', 105, y, { align: 'center' });
-        y += 8;
-        doc.setFont(undefined, 'normal');
-    }
-    
-    doc.setFontSize(16);
-    doc.setTextColor(0, 0, 0);
-    doc.text('COMPROBANTE DE VENTA', 105, y, { align: 'center' });
-    y += 5;
-    doc.setFontSize(14);
-    doc.text('Carrocerías Alvarado', 105, y, { align: 'center' });
-    y += 15;
-    
-    doc.setFontSize(10);
-    doc.text(`Venta #${datosVenta.id_venta}`, margen, y);
-    
-    // Manejar fecha - puede venir como string o Date
-    const fecha = typeof datosVenta.fecha_venta === 'string' 
-        ? datosVenta.fecha_venta 
-        : new Date(datosVenta.fecha_venta).toLocaleString('es-EC');
-    doc.text(`Fecha: ${fecha}`, 150, y);
-    y += 7;
-    doc.text(`Usuario: ${datosVenta.nombre_usuario || datosVenta.usuario}`, margen, y);
-    y += 10;
-    
-    // Cliente
-    doc.setFontSize(11);
-    doc.setFont(undefined, 'bold');
-    doc.text('CLIENTE:', margen, y);
-    doc.setFont(undefined, 'normal');
-    y += 6;
-    doc.setFontSize(10);
-    doc.text(`Tipo: ${datosVenta.tipo_cliente}`, margen, y);
-    y += 5;
-    doc.text(`Nombre: ${datosVenta.cliente_nombre}`, margen, y);
-    y += 5;
-    doc.text(`RUC/CI: ${datosVenta.cliente_ruc_ci || 'N/A'}`, margen, y);
-    y += 10;
-    
-    // Productos
-    doc.setFont(undefined, 'bold');
-    doc.text('DETALLE DE PRODUCTOS:', margen, y);
-    y += 7;
-    
-    doc.setFontSize(9);
-    doc.text('Material', margen, y);
-    doc.text('Cant.', 90, y);
-    doc.text('P.Unit', 115, y);
-    doc.text('Subtotal', 145, y);
-    doc.text('IVA', 170, y);
-    doc.text('Total', 185, y);
-    y += 5;
-    
-    doc.line(margen, y, 200, y);
-    y += 5;
-    
-    doc.setFont(undefined, 'normal');
-    datosVenta.productos.forEach(producto => {
-        if (y > 270) {
-            doc.addPage();
-            y = 20;
+        doc.text('DOCUMENTO CONTROL INTERNO - SIN VALOR TRIBUTARIO', 115, y + 5, { align: 'center' });
+        
+        // RE-IMPRESIÓN (Si aplica, debajo de la leyenda)
+        if (isReprint) {
+            doc.setFontSize(10);
+            doc.text('*** RE-IMPRESIÓN ***', 115, y + 12, { align: 'center' });
         }
         
-        doc.text(producto.nombre_material.substring(0, 30), margen, y);
-        doc.text(producto.cantidad.toString(), 90, y);
-        doc.text(`$${Number(producto.precio_unitario || 0).toFixed(2)}`, 115, y);
-        doc.text(`$${Number(producto.subtotal || 0).toFixed(2)}`, 145, y);
-        doc.text(`$${Number(producto.valor_iva || producto.iva || 0).toFixed(2)}`, 170, y);
-        doc.text(`$${Number(producto.total || 0).toFixed(2)}`, 185, y);
+        // Datos de la Empresa (Alineados a la derecha del logo)
+        doc.setTextColor(0, 0, 0);
+        doc.setFontSize(16);
+        doc.text('CARROCERÍAS ALVARADO', 190, y + 15, { align: 'right' });
+        
+        doc.setFontSize(9);
+        doc.setFont(undefined, 'normal');
+        doc.text('Telf: +593 99 991 1866', 190, y + 22, { align: 'right' });
+        doc.text('Correo: carroceriasalvarado@hotmail.com', 190, y + 27, { align: 'right' });
+        doc.text('Dirección: Avda. Monseñor Leonidas Proaño', 190, y + 32, { align: 'right' });
+        doc.text('(a pocos metros de la línea férrea), Riobamba, Ecuador', 190, y + 37, { align: 'right' });
+        
+        y += 45;
+        doc.line(margen, y, 190, y);
+        y += 10;
+        
+        // Información del comprobante
+        doc.setFontSize(14);
+        doc.setFont(undefined, 'bold');
+        doc.text(`COMPROBANTE DE VENTA #${datosVenta.id_venta}`, margen, y);
+        y += 10;
+        
+        // Manejar fecha
+        const fechaStr = typeof datosVenta.fecha_venta === 'string' 
+            ? new Date(datosVenta.fecha_venta).toLocaleString('es-EC') 
+            : new Date(datosVenta.fecha_venta).toLocaleString('es-EC');
+
+        doc.setFontSize(10);
+        doc.setFont(undefined, 'normal');
+        doc.text(`Fecha de Emisión: ${fechaStr}`, margen, y);
+        doc.text(`Emitido por: ${datosVenta.nombre_usuario || datosVenta.usuario || 'N/A'}`, 190, y, { align: 'right' });
+        y += 10;
+        
+        // Bloque Cliente
+        doc.setFillColor(245, 245, 245);
+        doc.rect(margen, y, 170, 25, 'F');
+        y += 7;
+        doc.setFont(undefined, 'bold');
+        doc.text('INFORMACIÓN DEL CLIENTE:', margen + 5, y);
+        y += 6;
+        doc.setFont(undefined, 'normal');
+        doc.text(`Nombre: ${datosVenta.cliente_nombre}`, margen + 5, y);
+        doc.text(`RUC/CI: ${datosVenta.cliente_ruc_ci || 'N/A'}`, 120, y);
+        y += 6;
+        doc.text(`Teléfono: ${datosVenta.cliente_telefono || 'N/A'}`, margen + 5, y);
+        doc.text(`Email: ${datosVenta.cliente_email || 'N/A'}`, 120, y);
+        y += 15;
+        
+        // Tabla Detalle
+        doc.setFont(undefined, 'bold');
+        doc.text('DESCRIPCIÓN', margen, y);
+        doc.text('CANT.', 100, y);
+        doc.text('P.UNIT', 130, y);
+        doc.text('TOTAL', 170, y);
+        y += 4;
+        doc.line(margen, y, 190, y);
+        y += 7;
+        
+        doc.setFont(undefined, 'normal');
+        if (datosVenta.productos && Array.isArray(datosVenta.productos)) {
+            datosVenta.productos.forEach(p => {
+                doc.text(p.nombre_material.substring(0, 45), margen, y);
+                doc.text(p.cantidad.toString(), 105, y, { align: 'center' });
+                doc.text(`$${Number(p.precio_unitario || 0).toFixed(2)}`, 140, y, { align: 'right' });
+                doc.text(`$${Number(p.total || 0).toFixed(2)}`, 185, y, { align: 'right' });
+                y += 6;
+                if (y > 270) { doc.addPage(); y = 20; }
+            });
+        }
+        
         y += 5;
-    });
-    
-    y += 5;
-    doc.line(margen, y, 200, y);
-    y += 7;
-    
-    // Totales
-    doc.setFont(undefined, 'bold');
-    doc.setFontSize(10);
-    doc.text('SUBTOTAL:', 125, y);
-    doc.text(`$${Number(datosVenta.subtotal_general || 0).toFixed(2)}`, 185, y, { align: 'right' });
-    y += 6;
-    doc.text('IVA:', 125, y);
-    doc.text(`$${Number(datosVenta.iva_general || 0).toFixed(2)}`, 185, y, { align: 'right' });
-    y += 6;
-    doc.setFontSize(12);
-    doc.text('TOTAL:', 125, y);
-    doc.text(`$${Number(datosVenta.total_general || 0).toFixed(2)}`, 185, y, { align: 'right' });
-    y += 10;
-    
-    doc.setFontSize(10);
-    doc.setFont(undefined, 'normal');
-    doc.text(`Forma de Pago: ${datosVenta.forma_pago}`, margen, y);
-    
-    y = 280;
-    doc.setFontSize(8);
-    doc.setTextColor(128, 128, 128);
-    doc.text('Gracias por su compra', 105, y, { align: 'center' });
-    
-    const filename = isReprint ? `Comprobante_Venta_${datosVenta.id_venta}_REIMPRESION.pdf` : `Comprobante_Venta_${datosVenta.id_venta}.pdf`;
-    doc.save(filename);
+        doc.line(120, y, 190, y);
+        y += 7;
+        
+        // Totales
+        doc.text('SUBTOTAL:', 130, y);
+        doc.text(`$${Number(datosVenta.subtotal_general || 0).toFixed(2)}`, 185, y, { align: 'right' });
+        y += 6;
+        doc.text('IVA:', 130, y);
+        doc.text(`$${Number(datosVenta.iva_general || 0).toFixed(2)}`, 185, y, { align: 'right' });
+        y += 8;
+        doc.setFontSize(12);
+        doc.setFont(undefined, 'bold');
+        doc.text('TOTAL A PAGAR:', 130, y);
+        doc.text(`$${Number(datosVenta.total_general || 0).toFixed(2)}`, 185, y, { align: 'right' });
+        
+        y += 20;
+        doc.setFontSize(9);
+        doc.setFont(undefined, 'normal');
+        doc.text(`Forma de Pago: ${datosVenta.forma_pago}`, margen, y);
+        
+        y = 285;
+        doc.setFontSize(8);
+        doc.setTextColor(150);
+        doc.text('Carrocerías Alvarado - Sistema de Gestión de Inventario', 105, y, { align: 'center' });
+        
+        const filename = isReprint ? `Recibo_CA_${datosVenta.id_venta}_REIMPRESION.pdf` : `Recibo_CA_${datosVenta.id_venta}.pdf`;
+        doc.save(filename);
+    };
+
+    img.onerror = function() {
+        console.error("No se pudo cargar el logo para el PDF. Generando sin logo.");
+        alert("Error al cargar el logo. El PDF se generará sin imagen.");
+    };
 }
 
 // Función para reimprimir comprobante
@@ -339,3 +353,4 @@ $(document).ready(function() {
 
 </body>
 </html>
+

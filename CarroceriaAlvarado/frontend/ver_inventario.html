@@ -4,7 +4,8 @@
     <title>Ver Inventario - Carrocerías Alvarado</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" type="text/css" href="vendor/bootstrap/css/bootstrap.min.css">
+    <meta name="description" content="Inventario de Materiales - Carrocerías Alvarado. Consulta y gestión del stock de materiales con alertas de stock bajo.">
+    <link rel="stylesheet" type="text/css" href="vendor/bootstrap/css/bootstrap5.min.css">
     <link rel="stylesheet" type="text/css" href="fonts/font-awesome-4.7.0/css/font-awesome.min.css">
     <link rel="stylesheet" type="text/css" href="css/main.css">
     <link rel="stylesheet" type="text/css" href="css/modern-design.css">
@@ -73,7 +74,7 @@
                 </button>
                 <div class="user-info">
                     <span>Hola, <strong id="currentUserName">Usuario</strong>!</span>
-                    <a href="#" id="logoutButton" class="ms-3">Cerrar Sesión</a>
+                    <a href="#" id="logoutButton" class="btn-logout ms-3"><i class="fa fa-sign-out"></i> Cerrar Sesión</a>
                 </div>
             </div>
         </nav>
@@ -284,191 +285,187 @@
     </div>
 </div>
 
+
+<!-- Modal de Configuración/Perfil (Reutilizado) -->
+<div class="modal fade" id="settingsModal" tabindex="-1" role="dialog" aria-labelledby="settingsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 15px; overflow: hidden;">
+            <div class="modal-header bg-secondary text-white border-0">
+                <h5 class="modal-title" id="settingsModalLabel">
+                    <i class="fa fa-cog mr-2"></i> Configuraciones Generales
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div id="settingsMessage"></div>
+                <form id="settingsForm">
+                    <div class="form-group mb-3">
+                        <label for="settingResetTokenExpiry" class="font-weight-bold">Duración del Token (minutos)</label>
+                        <input type="number" class="form-control" id="settingResetTokenExpiry" min="1" required style="border-radius: 8px;">
+                        <small class="form-text text-muted">Tiempo de validez para el enlace de reseteo.</small>
+                    </div>
+                    <div class="form-group mb-3">
+                        <label for="settingMaxLoginAttempts" class="font-weight-bold">Máximos Intentos de Login</label>
+                        <input type="number" class="form-control" id="settingMaxLoginAttempts" min="1" required style="border-radius: 8px;">
+                        <small class="form-text text-muted">Número de intentos antes de bloquear la cuenta.</small>
+                    </div>
+                    <div class="form-group mb-3">
+                        <label for="settingGlobalLowStockThreshold" class="font-weight-bold">Limite Global de Stock Bajo</label>
+                        <input type="number" class="form-control" id="settingGlobalLowStockThreshold" min="0" required style="border-radius: 8px;">
+                        <small class="form-text text-muted">Materiales a resaltar bajo este stock.</small>
+                    </div>
+                    <div class="modal-footer border-0 justify-content-center pt-3">
+                        <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal" style="border-radius: 10px;">Cancelar</button>
+                        <button type="submit" class="btn btn-secondary px-4" style="border-radius: 10px; font-weight: 600;">Guardar Configuraciones</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
 <script src="js/config.js"></script>
     <script src="js/dashboard-core.js"></script>
     <script src="vendor/jquery/jquery-3.2.1.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="vendor/bootstrap/js/bootstrap5.bundle.min.js"></script>
 <script src="js/toast.js"></script>
 <script src="js/loading.js"></script>
 
 <script>
-
+// Variables globales
 let umbralGlobalStockBajo = null;
-let todosLosMateriales = []; // Array global con todos los materiales cargados
-let materialesFiltrados = []; // Array con materiales despu�s de aplicar filtros
+let todosLosMateriales = []; 
+let materialesFiltrados = []; 
+let materialIdParaEliminar = null;
 
+/**
+ * Carga los materiales desde la API
+ */
 function loadMateriales(umbralStockBajo) {
-    console.log("loadMateriales() - Iniciando carga de materiales. Umbral de stock bajo:", umbralStockBajo);
+    console.log("loadMateriales() - Iniciando carga de materiales. Umbral:", umbralStockBajo);
     const token = localStorage.getItem('token');
-    const materialesTableBody = $('#materialesTableBody'); // Aseg�rate que este ID exista en tu HTML
+    const $tbody = $('#materialesTableBody');
 
-    materialesTableBody.empty().append('<tr><td colspan="12" class="text-center">Cargando materiales...</td></tr>'); // Ajusta colspan seg�n tus columnas
+    $tbody.empty().append('<tr><td colspan="12" class="text-center py-4"><div class="spinner-border text-primary"></div><p class="mt-2">Cargando materiales...</p></td></tr>');
 
     if (!token) { 
-        console.error("loadMateriales() - No hay token. No se puede llamar a la API. Redirigiendo a login.");
-        materialesTableBody.empty().append('<tr><td colspan="12" class="text-center">Error de autenticación. Redirigiendo...</td></tr>');
         window.location.href = 'index.html'; 
         return; 
     }
-    console.log("loadMateriales() - Token que se usará para la API:", token);
 
     $.ajax({ 
-        url: `${API_BASE_URL}/materiales`,  // Endpoint para obtener materiales
+        url: `${API_BASE_URL}/materiales`,
         method: 'GET',
-        headers: { 
-            'Authorization': 'Bearer ' + token  
-        },
+        headers: { 'Authorization': 'Bearer ' + token },
         success: function(materiales) {
             console.log("loadMateriales() - Materiales recibidos:", materiales);
             
             if (!materiales || !Array.isArray(materiales) || materiales.length === 0) {
-                console.log("loadMateriales() - No hay materiales para mostrar o 'materiales' no es un array.");
-                materialesTableBody.empty().append('<tr><td colspan="9" class="text-center">No hay materiales registrados en el inventario.</td></tr>');
-                $('#totalCount').text('0');
-                $('#resultCount').text('0');
+                $tbody.empty().append('<tr><td colspan="12" class="text-center">No hay materiales registrados en el inventario.</td></tr>');
+                $('#totalCount, #resultCount').text('0');
                 return;
             }
 
-            // Guardar materiales en variable global
             todosLosMateriales = materiales;
             materialesFiltrados = materiales;
             
-            // Poblar los filtros con valores �nicos
+            $('#totalCount').text(todosLosMateriales.length);
+            $('#resultCount').text(todosLosMateriales.length);
+            
             poblarFiltros(materiales);
-            
-            // Mostrar todos los materiales inicialmente
             mostrarMateriales(materiales);
-            
-            // Actualizar contadores
-            $('#totalCount').text(materiales.length);
-            $('#resultCount').text(materiales.length);
         },
-        error: function(xhr, status, error) { 
-            console.error("loadMateriales() - AJAX Error! Status:", xhr.status, "Response:", xhr.responseText, "Error Thrown:", error);
-            materialesTableBody.empty().append(`<tr><td colspan="7" class="text-center">Error al cargar materiales (Código: ${xhr.status}). Verifique la consola.</td></tr>`);
-
-            if (xhr.status === 401 || xhr.status === 403) { 
-                alert("Su sesión ha expirado o no tiene permisos. Será redirigido al login.");
-                localStorage.removeItem('token'); 
-                localStorage.removeItem('userRol'); 
-                localStorage.removeItem('loggedInUsername'); 
-                window.location.href = 'index.html'; 
-            }
+        error: function(xhr) {
+            console.error("Error al cargar materiales:", xhr.responseText);
+            $tbody.empty().append('<tr><td colspan="12" class="text-center text-danger">Error al conectar con el servidor.</td></tr>');
         }
     });
 }
 
-// Función para mostrar materiales en la tabla
+/**
+ * Genera el HTML de la tabla de materiales
+ */
 function mostrarMateriales(materiales) {
-    const materialesTableBody = $('#materialesTableBody');
-    materialesTableBody.empty();
-    
-    if (!materiales || materiales.length === 0) {
-        materialesTableBody.append('<tr><td colspan="9" class="text-center">No se encontraron materiales con los filtros aplicados.</td></tr>');
+    const $tbody = $('#materialesTableBody');
+    $tbody.empty();
+
+    if (materiales.length === 0) {
+        $tbody.append('<tr><td colspan="12" class="text-center">No hay materiales que coincidan con la búsqueda.</td></tr>');
         return;
     }
-    
-    materiales.forEach(function(material) {
-        // Verificar que las propiedades esperadas existan
-        if (typeof material.id_material === 'undefined' || typeof material.nombre === 'undefined' || 
-            typeof material.cantidad === 'undefined' || typeof material.precio_unitario === 'undefined') {
-            console.error("mostrarMateriales() - Material con datos incompletos:", material);
-            return;
+
+    materiales.forEach(function(m) {
+        let stockClass = '';
+        if (m.cantidad <= 0) {
+            stockClass = 'table-danger';
+        } else if (typeof umbralGlobalStockBajo === 'number' && m.cantidad <= umbralGlobalStockBajo) {
+            stockClass = 'table-warning';
         }
 
-        let fechaFormateada = 'N/A';
-        if (material.fecha_ultima_actualizacion) {
-            try {
-                fechaFormateada = new Date(material.fecha_ultima_actualizacion).toLocaleString('es-EC', {
-                    year: 'numeric', month: '2-digit', day: '2-digit',
-                    hour: '2-digit', minute: '2-digit'
-                });
-            } catch(e) { console.warn("Error formateando fecha:", material.fecha_ultima_actualizacion); }
-        }
-        
-        // Botones de acción
-        const editButton = `<button class="btn btn-sm btn-warning btn-editar-material" data-id="${material.id_material}"><i class="fa fa-edit"></i> Editar</button>`;
-        const deleteButton = `<button class="btn btn-sm btn-danger btn-eliminar-material ms-1" data-id="${material.id_material}" data-nombre="${material.nombre}"><i class="fa fa-trash"></i> Eliminar</button>`;
-        const actionButtons = editButton + deleteButton;
+        const fechaActualizacion = m.fecha_actualizacion ? new Date(m.fecha_actualizacion).toLocaleString('es-EC') : 'N/A';
+        const precioVenta = m.precio_venta ? `$${parseFloat(m.precio_venta).toFixed(2)}` : 'N/A';
+        const proveedor = m.nombre_proveedor || '<span class="text-muted">Sin proveedor</span>';
 
-        // Lógica para resaltar stock bajo
-        let filaClase = '';
-        if (typeof umbralGlobalStockBajo === 'number' && material.cantidad <= umbralGlobalStockBajo) {
-            filaClase = 'table-warning';
-            if (material.cantidad <= 0) {
-                filaClase = 'table-danger';
-            }
-        }
-
-        const proveedorNombre = material.nombre_proveedor || 'Sin asignar';
-        const unidadAbreviatura = material.abreviatura_unidad || 'N/A';
-        const ubicacion = material.ubicacion || 'N/A';
-        const numeroFactura = material.numero_factura || 'N/A';
-        const codigoMaterial = material.codigo_material || 'N/A';
-        
-        // Determinar badge de categoría con color diferente
-        let categoriaBadge;
-        if (material.nombre_categoria) {
-            categoriaBadge = `<span class="badge bg-primary">${material.nombre_categoria}</span>`;
-        } else {
-            categoriaBadge = `<span class="badge bg-secondary">Sin categoría</span>`;
-        }
-
-        materialesTableBody.append(
-            `<tr class="${filaClase}"> 
-                <td>${material.id_material}</td>
-                <td><strong>${codigoMaterial}</strong></td>
-                <td>${material.nombre}</td>
-                <td>${categoriaBadge}</td>
-                <td>${material.cantidad}</td>
-                <td>${unidadAbreviatura}</td>
-                <td>${ubicacion}</td>
-                <td>${numeroFactura}</td>
-                <td>${material.precio_venta !== undefined ? '$' + parseFloat(material.precio_venta).toFixed(2) : 'N/A'}</td>
-                <td>${proveedorNombre}</td>
-                <td>${fechaFormateada}</td>
-                <td class="text-center table-actions">
-                    ${actionButtons}
+        $tbody.append(`
+            <tr class="${stockClass}">
+                <td>${m.id_material}</td>
+                <td><strong>${m.codigo_material || '-'}</strong></td>
+                <td>${m.nombre}</td>
+                <td><span class="badge bg-info text-dark">${m.nombre_categoria || 'S/C'}</span></td>
+                <td><strong>${m.cantidad}</strong></td>
+                <td>${m.abreviatura_unidad || m.nombre_unidad || '-'}</td>
+                <td>${m.ubicacion || '-'}</td>
+                <td>${m.numero_factura || '-'}</td>
+                <td>${precioVenta}</td>
+                <td>${proveedor}</td>
+                <td><small>${fechaActualizacion}</small></td>
+                <td>
+                    <div class="btn-group">
+                        <button class="btn btn-sm btn-warning btn-editar-material" data-id="${m.id_material}" title="Editar">
+                            <i class="fa fa-edit"></i>
+                        </button>
+                        <button class="btn btn-sm btn-danger btn-eliminar-material" data-id="${m.id_material}" data-nombre="${m.nombre}" title="Eliminar">
+                            <i class="fa fa-trash"></i>
+                        </button>
+                    </div>
                 </td>
-            </tr>`
-        );
+            </tr>
+        `);
     });
 }
 
-// Función para poblar los filtros con valores únicos
+/**
+ * Llena los selectores de filtros con valores únicos
+ */
 function poblarFiltros(materiales) {
-    // Poblar filtro de unidades
     const unidadesUnicas = [...new Set(materiales.map(m => m.abreviatura_unidad).filter(u => u))];
     const $filterUnidad = $('#filterUnidad');
-    $filterUnidad.find('option:not(:first)').remove(); // Mantener "Todas"
+    $filterUnidad.find('option:not(:first)').remove();
     unidadesUnicas.sort().forEach(unidad => {
         $filterUnidad.append(`<option value="${unidad}">${unidad}</option>`);
     });
     
-    // Poblar filtro de categorías
     const categoriasUnicas = [...new Set(materiales.map(m => m.nombre_categoria).filter(c => c))];
     const $filterCategoria = $('#filterCategoria');
-    $filterCategoria.find('option:not(:first)').remove(); // Mantener "Todas"
+    $filterCategoria.find('option:not(:first)').remove();
     categoriasUnicas.sort().forEach(categoria => {
         $filterCategoria.append(`<option value="${categoria}">${categoria}</option>`);
     });
     
-    // Poblar filtro de proveedores
     const proveedoresUnicos = [...new Set(materiales.map(m => m.nombre_proveedor).filter(p => p))];
     const $filterProveedor = $('#filterProveedor');
-    $filterProveedor.find('option:not(:first)').remove(); // Mantener "Todos"
+    $filterProveedor.find('option:not(:first)').remove();
     proveedoresUnicos.sort().forEach(proveedor => {
         $filterProveedor.append(`<option value="${proveedor}">${proveedor}</option>`);
     });
     
-    // Agregar opción "Sin asignar" si hay materiales sin proveedor
-    const sinProveedor = materiales.some(m => !m.nombre_proveedor);
-    if (sinProveedor) {
+    if (materiales.some(m => !m.nombre_proveedor)) {
         $filterProveedor.append(`<option value="Sin asignar">Sin asignar</option>`);
     }
 }
 
-// Función para aplicar filtros
+/**
+ * Filtra los datos locales según los inputs
+ */
 function aplicarFiltros() {
     const searchTerm = $('#searchInput').val().toLowerCase().trim();
     const unidadSeleccionada = $('#filterUnidad').val();
@@ -476,46 +473,27 @@ function aplicarFiltros() {
     const stockFilter = $('#filterStock').val();
     const proveedorSeleccionado = $('#filterProveedor').val();
     
-    console.log("Aplicando filtros:", { searchTerm, unidadSeleccionada, categoriaSeleccionada, stockFilter, proveedorSeleccionado });
-    
     let filtered = todosLosMateriales;
     
-    // Filtro por búsqueda de texto
     if (searchTerm) {
         filtered = filtered.filter(m => 
             m.nombre.toLowerCase().includes(searchTerm) ||
-            (m.descripcion && m.descripcion.toLowerCase().includes(searchTerm))
+            (m.descripcion && m.descripcion.toLowerCase().includes(searchTerm)) ||
+            (m.codigo_material && m.codigo_material.toLowerCase().includes(searchTerm))
         );
     }
     
-    // Filtro por unidad
-    if (unidadSeleccionada) {
-        filtered = filtered.filter(m => m.abreviatura_unidad === unidadSeleccionada);
-    }
+    if (unidadSeleccionada) filtered = filtered.filter(m => m.abreviatura_unidad === unidadSeleccionada);
+    if (categoriaSeleccionada) filtered = filtered.filter(m => m.nombre_categoria === categoriaSeleccionada);
     
-    // Filtro por categoría
-    if (categoriaSeleccionada) {
-        filtered = filtered.filter(m => m.nombre_categoria === categoriaSeleccionada);
-    }
-    
-    // Filtro por stock
     if (stockFilter === 'sin-stock') {
         filtered = filtered.filter(m => m.cantidad <= 0);
     } else if (stockFilter === 'bajo-stock') {
-        filtered = filtered.filter(m => 
-            m.cantidad > 0 && 
-            typeof umbralGlobalStockBajo === 'number' && 
-            m.cantidad <= umbralGlobalStockBajo
-        );
+        filtered = filtered.filter(m => m.cantidad > 0 && typeof umbralGlobalStockBajo === 'number' && m.cantidad <= umbralGlobalStockBajo);
     } else if (stockFilter === 'con-stock') {
-        filtered = filtered.filter(m => 
-            typeof umbralGlobalStockBajo === 'number' ? 
-            m.cantidad > umbralGlobalStockBajo : 
-            m.cantidad > 0
-        );
+        filtered = filtered.filter(m => typeof umbralGlobalStockBajo === 'number' ? m.cantidad > umbralGlobalStockBajo : m.cantidad > 0);
     }
     
-    // Filtro por proveedor
     if (proveedorSeleccionado) {
         if (proveedorSeleccionado === 'Sin asignar') {
             filtered = filtered.filter(m => !m.nombre_proveedor);
@@ -529,7 +507,9 @@ function aplicarFiltros() {
     $('#resultCount').text(filtered.length);
 }
 
-// Calcular precio de venta en modal de edici�n
+/**
+ * Lógica de cálculo de precio en modal
+ */
 function calcularPrecioVentaEdicion() {
     const precioCompra = parseFloat($('#editMaterialPrecioCompra').val()) || 0;
     const porcentaje = parseInt($('#editMaterialPorcentajeGanancia').val()) || 0;
@@ -542,391 +522,182 @@ function calcularPrecioVentaEdicion() {
     }
 }
 
-
 $(document).ready(function () {
-    
-
-    // Verificaci�n de token y rol al cargar la p�gina
     const token = localStorage.getItem('token');
     const userRol = localStorage.getItem('userRol');
     const loggedInUsername = localStorage.getItem('loggedInUsername');
-
-    console.log("ver_inventario.html $(document).ready - Token:", token);
-    console.log("ver_inventario.html $(document).ready - Rol:", userRol);
-    console.log("ver_inventario.html $(document).ready - Username:", loggedInUsername);
-
-    // Definir roles que pueden acceder a esta p�gina
     const rolesPermitidos = ['Administrador', 'Supervisor', 'Encargado de Inventario']; 
 
     if (!token || !userRol || !rolesPermitidos.includes(userRol)) {
-        console.log("ver_inventario.html - Acceso denegado o no autenticado. Redirigiendo a login.");
         window.location.href = 'index.html';
         return; 
     }
     
-    // Si el usuario est� autorizado, actualizar el saludo con el nombre de usuario
-    if (loggedInUsername && loggedInUsername !== "undefined" && loggedInUsername.trim() !== "") {
-        if ($('#currentUserName').length) { 
-            $('#currentUserName').text(loggedInUsername);
-        } else {
-            console.warn("ver_inventario.html - Elemento #currentUserName no encontrado para mostrar el nombre.");
+    if (loggedInUsername) {
+        $('#currentUserName').text(loggedInUsername);
+    }
+
+    // --- Carga Inicial ---
+    // 1. Obtener Umbral 2. Cargar Materiales
+    $.ajax({
+        url: `${API_BASE_URL}/configuraciones`,
+        method: 'GET',
+        headers: { 'Authorization': 'Bearer ' + token },
+        success: function(config) {
+            umbralGlobalStockBajo = config.global_low_stock_threshold || null;
+            loadMateriales(umbralGlobalStockBajo);
+        },
+        error: function() {
+            console.warn("Error al cargar configuraciones. Usando valores por defecto.");
+            loadMateriales(null);
         }
-    } else {
-        console.log("ver_inventario.html - loggedInUsername no encontrado/inválido en localStorage.");
-    }
-
-    // Manejador del bot�n de Logout
-    // Aseg�rate que el bot�n de logout en esta p�gina tenga id="logoutButton"
-    
-
-    // Eventos para recalcular precio de venta en modal de edici�n
-    $(document).on('input change', '#editMaterialPrecioCompra, #editMaterialPorcentajeGanancia', calcularPrecioVentaEdicion);
-
-    // Cargar proveedores en el select del modal de edici�n
-    function cargarProveedoresEnModal() {
-        const $selectProveedor = $('#editMaterialProveedor');
-        $.ajax({
-            url: `${API_BASE_URL}/proveedores`,
-            method: 'GET',
-            headers: { 'Authorization': 'Bearer ' + token },
-            success: function(proveedores) {
-                $selectProveedor.empty().append('<option value="">Sin asignar</option>');
-                proveedores.forEach(function(p) {
-                    if (p.estado === 'Activo') {
-                        $selectProveedor.append(`<option value="${p.id_proveedor}">${p.nombre_proveedor} (${p.ruc})</option>`);
-                    }
-                });
-            },
-            error: function(xhr) {
-                console.error('Error al cargar proveedores:', xhr.responseText);
-            }
-        });
-    }
-    
-    cargarProveedoresEnModal(); // Cargar al iniciar
-    
-    // Cargar categor�as en el select del modal de edici�n
-    function cargarCategoriasEnModal() {
-        const $selectCategoria = $('#editMaterialCategoria');
-        $.ajax({
-            url: `${API_BASE_URL}/categorias-materiales`,
-            method: 'GET',
-            headers: { 'Authorization': 'Bearer ' + token },
-            success: function(categorias) {
-                $selectCategoria.empty().append('<option value="">Seleccione una categoría...</option>');
-                const categoriasActivas = categorias.filter(cat => cat.estado === 1);
-                categoriasActivas.forEach(function(cat) {
-                    $selectCategoria.append(`<option value="${cat.id_categoria}" data-prefijo="${cat.codigo_prefijo}">${cat.codigo_prefijo} - ${cat.nombre_categoria}</option>`);
-                });
-            },
-            error: function(xhr) {
-                console.error('Error al cargar categorías:', xhr.responseText);
-            }
-        });
-    }
-    
-    cargarCategoriasEnModal(); // Cargar al iniciar
-    
-    // Preview del código en modal de edición
-    function actualizarPreviewCodigoEdicion() {
-        const categoriaSelect = $('#editMaterialCategoria');
-        const prefijo = categoriaSelect.find('option:selected').data('prefijo') || '---';
-        const numero = $('#editMaterialCodigoNumero').val().padStart(5, '0');
-        
-        $('#editCodigoPrefijo').text(prefijo);
-        
-        if (prefijo !== '---' && numero.length === 5) {
-            const codigoCompleto = prefijo + numero;
-            $('#editCodigoCompleto').text(codigoCompleto);
-            $('#editCodigoPreview').slideDown();
-        } else {
-            $('#editCodigoPreview').slideUp();
-        }
-    }
-    
-    $('#editMaterialCategoria').on('change', actualizarPreviewCodigoEdicion);
-    $('#editMaterialCodigoNumero').on('input', function() {
-        this.value = this.value.replace(/[^0-9]/g, '');
-        actualizarPreviewCodigoEdicion();
     });
 
-    // --- Event Listeners para Filtros ---
-    
-    // Búsqueda con debounce
+    // Cargar proveedores y categorías para el modal de edición
+    $.ajax({
+        url: `${API_BASE_URL}/proveedores`,
+        method: 'GET',
+        headers: { 'Authorization': 'Bearer ' + token },
+        success: function(proveedores) {
+            const $select = $('#editMaterialProveedor');
+            $select.empty().append('<option value="">Sin asignar</option>');
+            proveedores.forEach(p => {
+                if (p.estado === 'Activo') $select.append(`<option value="${p.id_proveedor}">${p.nombre_proveedor}</option>`);
+            });
+        }
+    });
+
+    $.ajax({
+        url: `${API_BASE_URL}/categorias-materiales`,
+        method: 'GET',
+        headers: { 'Authorization': 'Bearer ' + token },
+        success: function(categorias) {
+            const $select = $('#editMaterialCategoria');
+            $select.empty().append('<option value="">Seleccione una categoría...</option>');
+            categorias.filter(c => c.estado === 1).forEach(cat => {
+                $select.append(`<option value="${cat.id_categoria}" data-prefijo="${cat.codigo_prefijo}">${cat.nombre_categoria}</option>`);
+            });
+        }
+    });
+
+    // --- Event Listeners ---
+    $(document).on('input change', '#editMaterialPrecioCompra, #editMaterialPorcentajeGanancia', calcularPrecioVentaEdicion);
+
     let searchTimeout;
     $('#searchInput').on('keyup', function() {
         clearTimeout(searchTimeout);
-        searchTimeout = setTimeout(aplicarFiltros, 300); // 300ms delay
+        searchTimeout = setTimeout(aplicarFiltros, 300);
     });
     
-    // Filtros de selects
     $('#filterUnidad, #filterCategoria, #filterStock, #filterProveedor').on('change', aplicarFiltros);
     
-    // Botón limpiar filtros
     $('#btnLimpiarFiltros').on('click', function() {
         $('#searchInput').val('');
-        $('#filterUnidad').val('');
-        $('#filterCategoria').val('');
-        $('#filterStock').val('');
-        $('#filterProveedor').val('');
+        $('#filterUnidad, #filterCategoria, #filterStock, #filterProveedor').val('');
         aplicarFiltros();
     });
 
-    // --- Manejador para abrir modal de edición ---
+    // Abrir Modal Edición
     $(document).on('click', '.btn-editar-material', function() {
         const materialId = $(this).data('id');
-        console.log("Editando material ID:", materialId);
-
-        // Obtener datos del material
         $.ajax({
             url: `${API_BASE_URL}/materiales/${materialId}`,
             method: 'GET',
             headers: { 'Authorization': 'Bearer ' + token },
-            success: function(material) {
-                console.log("Material obtenido:", material);
+            success: function(m) {
+                $('#editMaterialId').val(m.id_material);
+                $('#editMaterialNombre').val(m.nombre);
+                $('#editMaterialCategoria').val(m.id_categoria || '');
+                $('#editMaterialCodigoNumero').val(m.codigo_material ? m.codigo_material.substring(3) : '');
+                $('#editMaterialDescripcion').val(m.descripcion || '');
+                $('#editMaterialUbicacion').val(m.ubicacion || '');
+                $('#editMaterialNumeroFactura').val(m.numero_factura || '');
+                $('#editMaterialPrecioCompra').val(m.precio_compra || m.precio_unitario);
+                $('#editMaterialPorcentajeGanancia').val(m.porcentaje_ganancia || 20);
+                $('#editMaterialProveedor').val(m.id_proveedor || '');
                 
-                // Llenar el formulario
-                $('#editMaterialId').val(material.id_material);
-                $('#editMaterialNombre').val(material.nombre);
-                $('#editMaterialCategoria').val(material.id_categoria || '');
-                
-                // Llenar código (extraer solo los 5 dígitos)
-                if (material.codigo_material && material.codigo_material.length > 3) {
-                    const codigoNumero = material.codigo_material.substring(3); // Quitar prefijo
-                    $('#editMaterialCodigoNumero').val(codigoNumero);
-                } else {
-                    $('#editMaterialCodigoNumero').val('');
-                }
-                
-                $('#editMaterialDescripcion').val(material.descripcion || '');
-                $('#editMaterialUbicacion').val(material.ubicacion || '');
-                $('#editMaterialNumeroFactura').val(material.numero_factura || '');
-                $('#editMaterialPrecioCompra').val(material.precio_compra || material.precio_unitario);
-                $('#editMaterialPorcentajeGanancia').val(material.porcentaje_ganancia || 20);
-                $('#editMaterialProveedor').val(material.id_proveedor || '');
-                
-                // Actualizar preview del código
-                actualizarPreviewCodigoEdicion();
-                
-                // Calcular precio de venta
                 calcularPrecioVentaEdicion();
+                const prefijo = $('#editMaterialCategoria').find('option:selected').data('prefijo') || '---';
+                $('#editCodigoPrefijo').text(prefijo);
                 
-                // Limpiar mensaje anterior (exito o error)
                 $('#mensajeEditarMaterial').text('').removeClass('alert alert-success alert-danger');
-                
-                // Mostrar modal
-                var editModal = new bootstrap.Modal(document.getElementById('editMaterialModal'));
-                editModal.show();
-            },
-            error: function(xhr) {
-                console.error("Error al obtener material:", xhr.responseText);
-                alert("Error al cargar los datos del material");
+                new bootstrap.Modal(document.getElementById('editMaterialModal')).show();
             }
         });
     });
 
-    // --- Manejador para guardar cambios del material ---
+    // Guardar Edición
     $('#btnGuardarEdicion').on('click', function() {
         const materialId = $('#editMaterialId').val();
-        const nombre = $('#editMaterialNombre').val().trim();
-        const idCategoria = $('#editMaterialCategoria').val();
-        const codigoNumero = $('#editMaterialCodigoNumero').val().trim();
-        const descripcion = $('#editMaterialDescripcion').val().trim();
-        const ubicacion = $('#editMaterialUbicacion').val().trim();
-        const numeroFactura = $('#editMaterialNumeroFactura').val().trim();
-        const precioCompra = $('#editMaterialPrecioCompra').val();
-        const porcentajeGanancia = $('#editMaterialPorcentajeGanancia').val();
-        const idProveedor = $('#editMaterialProveedor').val();
-        const mensajeDiv = $('#mensajeEditarMaterial');
-        
-        // Limpiar mensaje al inicio
-        mensajeDiv.text('').removeClass('alert alert-success alert-danger');
-
-        if (!nombre || !idCategoria || !codigoNumero || !precioCompra || !porcentajeGanancia) {
-            mensajeDiv.text('El nombre, categoría, código, precio de compra y porcentaje son obligatorios.').removeClass('alert-success').addClass('alert alert-danger');
-            return;
-        }
-        
-        // Validar código (5 dígitos)
-        if (!/^\d{5}$/.test(codigoNumero)) {
-            mensajeDiv.text('El código debe ser exactamente 5 dígitos numéricos.').removeClass('alert-success').addClass('alert alert-danger');
-            return;
-        }
-
-        const datosActualizados = {
-            nombre: nombre,
-            id_categoria: parseInt(idCategoria),
-            codigo_numero: codigoNumero,
-            descripcion: descripcion,
-            ubicacion: ubicacion || null,
-            numero_factura: numeroFactura || null,
-            precio_compra: parseFloat(precioCompra),
-            porcentaje_ganancia: parseInt(porcentajeGanancia),
-            id_proveedor: idProveedor || null
+        const data = {
+            nombre: $('#editMaterialNombre').val().trim(),
+            id_categoria: parseInt($('#editMaterialCategoria').val()),
+            codigo_numero: $('#editMaterialCodigoNumero').val().trim(),
+            descripcion: $('#editMaterialDescripcion').val().trim(),
+            ubicacion: $('#editMaterialUbicacion').val().trim() || null,
+            numero_factura: $('#editMaterialNumeroFactura').val().trim() || null,
+            precio_compra: parseFloat($('#editMaterialPrecioCompra').val()),
+            porcentaje_ganancia: parseInt($('#editMaterialPorcentajeGanancia').val()),
+            id_proveedor: $('#editMaterialProveedor').val() || null
         };
-        
-        // Activar loading state
+
+        if (!data.nombre || !data.id_categoria || !data.codigo_numero) {
+            $('#mensajeEditarMaterial').text('Campos obligatorios faltantes').addClass('alert alert-danger');
+            return;
+        }
+
         setButtonLoading('#btnGuardarEdicion', 'Guardando...');
 
         $.ajax({
             url: `${API_BASE_URL}/materiales/${materialId}`,
             method: 'PUT',
-            headers: {
-                'Authorization': 'Bearer ' + token,
-                'Content-Type': 'application/json'
-            },
-            data: JSON.stringify(datosActualizados),
-            success: function(response) {
-                console.log("Material actualizado:", response);
-                mensajeDiv.text('Material actualizado exitosamente').removeClass('alert-danger').addClass('alert alert-success');
-                
-                // Mostrar toast de éxito
-                showSuccessToast('Material actualizado exitosamente');
-                
-                // Resetear loading state
+            headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+            data: JSON.stringify(data),
+            success: function() {
+                showSuccessToast('Material actualizado');
                 resetButtonLoading('#btnGuardarEdicion');
-                
-                setTimeout(function() {
-                    var editModalInstance = bootstrap.Modal.getInstance(document.getElementById('editMaterialModal'));
-                    if (editModalInstance) { editModalInstance.hide(); }
-                    loadMateriales(umbralGlobalStockBajo);
-                }, 1500);
+                bootstrap.Modal.getInstance(document.getElementById('editMaterialModal')).hide();
+                loadMateriales(umbralGlobalStockBajo);
             },
             error: function(xhr) {
-                console.error("Error al actualizar material:", xhr.responseText);
-                const errorMsg = xhr.responseJSON?.error || 'Error al actualizar el material';
-                mensajeDiv.text(errorMsg).removeClass('alert-success').addClass('alert alert-danger');
-                
-                // Mostrar toast de error
-                showErrorToast(errorMsg);
-                
-                // Resetear loading state
+                const msg = xhr.responseJSON?.error || 'Error al actualizar';
+                $('#mensajeEditarMaterial').text(msg).addClass('alert alert-danger');
                 resetButtonLoading('#btnGuardarEdicion');
             }
         });
     });
 
-    // --- Obtener Configuraciones y Luego Cargar Materiales ---
-    console.log("ver_inventario.html - Obteniendo configuraciones del sistema...");
-    $.ajax({
-        url: `${API_BASE_URL}/configuraciones`, // Endpoint GET para obtener configuraciones
-        method: 'GET',
-        headers: { 'Authorization': 'Bearer ' + token }, // Reutilizar el token ya validado para esta p�gina
-        success: function(config) {
-            console.log("ver_inventario.html - Configuraciones recibidas:", config);
-            if (config && typeof config.global_low_stock_threshold === 'number') {
-                umbralGlobalStockBajo = config.global_low_stock_threshold;
-            } else {
-                console.warn("ver_inventario.html - No se pudo obtener un umbral de stock bajo válido de la configuración. Se usará null (sin resaltado por umbral).");
-                umbralGlobalStockBajo = null; // O un valor por defecto, ej: 5, si prefieres que siempre haya un umbral
-            }
-            // Una vez obtenida la configuración (o el fallback), cargar los materiales
-            loadMateriales(umbralGlobalStockBajo);
-        },
-        error: function(xhr) {
-            console.error("ver_inventario.html - Error al cargar configuraciones. Status:", xhr.status, "Response:", xhr.responseText);
-            alert("Advertencia: Error al cargar las configuraciones del sistema. El resaltado de stock bajo podría no funcionar. Intentando cargar materiales...");
-            // Cargar materiales sin un umbral específico si falla la carga de configuración
-            loadMateriales(null); 
-        }
-    });
-
-    // --- Manejadores de Eventos para Eliminar Material ---
-    var materialIdParaEliminar = null; // Variable para guardar el ID del material a eliminar
-
-    // Cuando se hace clic en un bot�n "Eliminar Material" de la tabla
+    // Modal Eliminar
     $(document).on('click', '.btn-eliminar-material', function() {
         materialIdParaEliminar = $(this).data('id'); 
-        const materialNombre = $(this).data('nombre');
-        
-        console.log("Modal eliminar para material ID:", materialIdParaEliminar, "Nombre:", materialNombre);
-
-        if ($('#materialNameToDelete').length) { // Asegurarse que el elemento del modal exista
-            $('#materialNameToDelete').text(materialNombre || 'este material'); 
-        } else {
-            console.warn("Elemento #materialNameToDelete no encontrado en el modal de confirmación.")
-        }
-        
-        var deleteModalEl = document.getElementById('confirmDeleteMaterialModal');
-        if (deleteModalEl) { // Asegurarse que el modal exista
-            var deleteModal = new bootstrap.Modal(deleteModalEl);
-            deleteModal.show();
-        } else {
-            console.error("Error: No se encontró el elemento del modal #confirmDeleteMaterialModal");
-            alert("Error de interfaz: No se pudo mostrar la confirmación de eliminación.");
-        }
+        $('#materialNameToDelete').text($(this).data('nombre'));
+        new bootstrap.Modal(document.getElementById('confirmDeleteMaterialModal')).show();
     });
 
-
-    // Cuando se hace clic en el botón "Sí, Eliminar" del modal de confirmación
     $('#confirmDeleteMaterialButton').on('click', function() {
-        console.log("Botón 'Sí, Eliminar' del modal clickeado.");
-
-        if (!materialIdParaEliminar) {
-            console.error("No se ha seleccionado un material para eliminar (materialIdParaEliminar es null).");
-            alert("Error: No se ha especificado qué material eliminar. Intente de nuevo.");
-            var deleteModalInstance = bootstrap.Modal.getInstance(document.getElementById('confirmDeleteMaterialModal'));
-            if (deleteModalInstance) { deleteModalInstance.hide(); }
-            return;
-        }
-
-        const currentToken = localStorage.getItem('token'); // Re-obtener token por si acaso
-        if (!currentToken) {
-            alert("Token no encontrado. Por favor, inicie sesión de nuevo.");
-            var deleteModalInstance = bootstrap.Modal.getInstance(document.getElementById('confirmDeleteMaterialModal'));
-            if (deleteModalInstance) { deleteModalInstance.hide(); }
-            window.location.href = 'index.html';
-            return;
-        }
-        
-        console.log("Confirmada eliminación para material ID:", materialIdParaEliminar);
-
+        if (!materialIdParaEliminar) return;
         $.ajax({
             url: `${API_BASE_URL}/materiales/${materialIdParaEliminar}`, 
             method: 'DELETE',
-            headers: {
-                'Authorization': 'Bearer ' + currentToken
-            },
-            success: function(response) {
-                console.log("Respuesta de eliminar material:", response);
-                
-                // Mostrar toast de éxito
-                showSuccessToast(response.message || "Material eliminado con éxito");
-                
-                var deleteModalInstance = bootstrap.Modal.getInstance(document.getElementById('confirmDeleteMaterialModal'));
-                if (deleteModalInstance) { deleteModalInstance.hide(); }
-                
-                loadMateriales(umbralGlobalStockBajo); // Recargar la lista con el umbral actual
+            headers: { 'Authorization': 'Bearer ' + token },
+            success: function() {
+                showSuccessToast("Material eliminado con éxito");
+                bootstrap.Modal.getInstance(document.getElementById('confirmDeleteMaterialModal')).hide();
+                loadMateriales(umbralGlobalStockBajo);
                 materialIdParaEliminar = null; 
             },
             error: function(xhr) {
-                console.error("Error al eliminar material. Status:", xhr.status, "Response:", xhr.responseText);
-                
-                // Mostrar toast de error
-                showErrorToast(xhr.responseJSON?.error || "Error al eliminar el material");
-                
-                var deleteModalInstance = bootstrap.Modal.getInstance(document.getElementById('confirmDeleteMaterialModal'));
-                if (deleteModalInstance) { deleteModalInstance.hide(); }
-                materialIdParaEliminar = null; 
-
-                if (xhr.status === 401 || xhr.status === 403) {
-                    localStorage.removeItem('token'); 
-                    localStorage.removeItem('userRol'); 
-                    localStorage.removeItem('loggedInUsername');
-                    window.location.href = 'index.html';
-                }
+                showErrorToast(xhr.responseJSON?.error || "Error al eliminar");
+                bootstrap.Modal.getInstance(document.getElementById('confirmDeleteMaterialModal')).hide();
             }
         });
     });
 
-    // Limpiar materialIdParaEliminar cuando el modal se cierre por cualquier otra razón
     $('#confirmDeleteMaterialModal').on('hidden.bs.modal', function () {
-        console.log("Modal de eliminación cerrado (evento hidden.bs.modal), reseteando ID a eliminar si aún existe.");
         materialIdParaEliminar = null; 
     });
-
 });
-
 </script>
 </body>
 </html>
+

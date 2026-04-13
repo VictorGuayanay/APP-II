@@ -151,6 +151,20 @@ body {
   transform: translateY(-2px);
 }
 
+.dashboard-card .card-body {
+    padding: 1.5rem 2.5rem; /* Increased horizontal padding */
+}
+
+.table-responsive {
+    margin-top: 10px;
+    padding: 0 15px; /* More margin on the sides */
+}
+
+/* Specific fix for tables looking "too close to the corner" */
+.content-area {
+    padding: 25px 35px !important; /* Increased global padding for better margins */
+}
+
 .dashboard-card .card-header {
   background: transparent !important;
   border-bottom: 1px solid rgba(226, 232, 240, 0.8) !important;
@@ -297,6 +311,33 @@ a[aria-expanded="true"] {
   background-color: var(--primary-hover) !important;
   transform: translateY(-1px);
   box-shadow: 0 4px 10px rgba(251, 146, 60, 0.3);
+}
+
+/* Logout Button Special Style */
+.btn-logout {
+  color: var(--text-muted) !important;
+  border: 1px solid rgba(251, 146, 60, 0.2) !important;
+  background: transparent !important;
+  font-size: 0.85rem !important;
+  padding: 6px 15px !important;
+  border-radius: var(--radius-sm) !important;
+  transition: var(--transition) !important;
+  text-decoration: none !important;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.btn-logout:hover, .btn-logout:active, .btn-logout:focus {
+  background-color: var(--primary) !important;
+  color: #fff !important;
+  border-color: var(--primary) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(251, 146, 60, 0.2);
+}
+
+.btn-logout i {
+  font-size: 1rem;
 }
 
 /* Scrollbar Refining */
