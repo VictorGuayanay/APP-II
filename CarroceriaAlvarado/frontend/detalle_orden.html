@@ -12,6 +12,22 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
+    <style>
+        .bg-light-danger { background-color: rgba(220, 53, 69, 0.1); }
+        .bg-light-success { background-color: rgba(40, 167, 69, 0.1); }
+        .action-card {
+            transition: transform 0.2s, box-shadow 0.2s;
+            cursor: default;
+        }
+        .action-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important;
+        }
+        button:disabled {
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+    </style>
 </head>
 <body>
 
@@ -30,7 +46,7 @@
                     <li><a href="vision_general.html">Visión General</a></li>
                 </ul>
             </li>
-            <li class="active"> 
+            <li> 
                 <a href="admin.html">
                     <i class="fa fa-users"></i> Panel Principal
                 </a>
@@ -50,7 +66,7 @@
             <li><a href="ingresar_cliente.html"><i class="fa fa-user-plus"></i> Ingreso Clientes</a></li>
             <li><a href="ingresar_proveedor.html"><i class="fa fa-truck"></i> Ingreso Proveedores</a></li>
             <li><a href="ver_proveedores.html"><i class="fa fa-list"></i> Ver Proveedores</a></li>
-            <li><a href="orden_trabajo.html"><i class="fa fa-briefcase"></i> Órdenes de Trabajo</a></li>
+            <li class="active"><a href="orden_trabajo.html"><i class="fa fa-briefcase"></i> Órdenes de Trabajo</a></li>
             <li><a href="listar_ordenes_trabajo.html"><i class="fa fa-briefcase"></i> Listar Órdenes de Trabajo</a></li>
             <li><a href="reportes.html"><i class="fa fa-bar-chart"></i> Reportes</a></li>
             <li><a href="#" data-bs-toggle="modal" data-bs-target="#settingsModal" ><i class="fa fa-cog"></i> Configuración</a></li>
@@ -179,32 +195,32 @@
                         </div>
                     </div>
                     
-                    <div class="row mt-3" id="accionesOrdenContainer">
+                    <div class="row mt-3 g-4" id="accionesOrdenContainer">
                         <!-- Finalizar Orden -->
-                        <div class="col-md-6 mb-3">
-                            <div class="card border-danger h-100">
-                                <div class="card-body text-center">
-                                    <i class="fa fa-check-circle fa-3x text-danger mb-3"></i>
-                                    <h5 class="card-title">Finalizar Orden</h5>
-                                    <p class="card-text text-muted">Confirme los materiales utilizados y finalice la orden de trabajo</p>
-                                    <button class="btn btn-danger btn-lg w-100" id="finalizeOrderButton">
-                                        <i class="fa fa-check"></i> Finalizar Orden
-                                    </button>
+                        <div class="col-md-6">
+                            <div class="action-card h-100 p-4 border rounded shadow-sm text-center bg-white">
+                                <div class="action-icon bg-light-danger mb-3 mx-auto d-flex align-items-center justify-content-center" style="width: 70px; height: 70px; border-radius: 50%;">
+                                    <i class="fa fa-check-circle fa-2x text-danger"></i>
                                 </div>
+                                <h5 class="fw-bold">Finalizar Trabajo</h5>
+                                <p class="text-muted small mb-4">Cierra la orden, confirma el uso de materiales y actualiza el inventario.</p>
+                                <button class="btn btn-danger btn-lg w-100 shadow-sm py-2" id="finalizeOrderButton">
+                                    <i class="fa fa-flag-checkered me-2"></i> Finalizar Orden
+                                </button>
                             </div>
                         </div>
                         
                         <!-- Generar Comprobante -->
-                        <div class="col-md-6 mb-3">
-                            <div class="card border-success h-100">
-                                <div class="card-body text-center">
-                                    <i class="fa fa-file-text fa-3x text-success mb-3"></i>
-                                    <h5 class="card-title">Generar Comprobante</h5>
-                                    <p class="card-text text-muted">Genere el comprobante de pago para el cliente</p>
-                                    <button class="btn btn-success btn-lg w-100" id="generatePaymentButton">
-                                        <i class="fa fa-file-pdf-o"></i> Generar Comprobante
-                                    </button>
+                        <div class="col-md-6">
+                            <div class="action-card h-100 p-4 border rounded shadow-sm text-center bg-white">
+                                <div class="action-icon bg-light-success mb-3 mx-auto d-flex align-items-center justify-content-center" style="width: 70px; height: 70px; border-radius: 50%;">
+                                    <i class="fa fa-file-text fa-2x text-success"></i>
                                 </div>
+                                <h5 class="fw-bold">Comprobante de Pago</h5>
+                                <p class="text-muted small mb-4">Genera el documento PDF de pago para entregar al cliente.</p>
+                                <button class="btn btn-success btn-lg w-100 shadow-sm py-2" id="generatePaymentButton">
+                                    <i class="fa fa-file-pdf-o me-2"></i> Generar Comprobante
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -414,10 +430,11 @@
 
 </div>
 
-<script src="js/config.js"></script>`r`n    <script src="js/dashboard-core.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="js/config.js"></script>
+    <script src="js/dashboard-core.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
-<script src="vendor/bootstrap/js/bootstrap5.bundle.min.js"></script>
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="vendor/bootstrap/js/bootstrap5.bundle.min.js"></script>
 
 <script>
     let costoTotalActualDeLaOrden = 0;
@@ -493,13 +510,26 @@
         });
     }
 
-    // Funci?n para calcular d?as laborales entre dos fechas
+    // Función para calcular días laborales entre dos fechas
     function calcularDiasLaborales(fechaInicio, fechaFin) {
-        const inicio = new Date(fechaInicio);
-        const fin = fechaFin ? new Date(fechaFin) : new Date();
-        const diffTime = Math.abs(fin - inicio);
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        if (!fechaInicio) return 0;
+        // Evitar desfase de zona horaria usando el mediodía
+        const inicio = new Date(fechaInicio.split('T')[0] + 'T12:00:00');
+        const fin = fechaFin ? new Date(fechaFin.split('T')[0] + 'T12:00:00') : new Date();
+        const diffTime = fin - inicio;
+        if (diffTime < 0) return 1; // Mínimo 1 día si fin es antes que inicio por error
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) || 1;
         return diffDays;
+    }
+
+    function formatearFechaSimple(fechaStr) {
+        if (!fechaStr) return 'Pendiente';
+        const soloFecha = fechaStr.split('T')[0];
+        const partes = soloFecha.split('-');
+        if (partes.length === 3) {
+            return `${partes[2]}/${partes[1]}/${partes[0]}`;
+        }
+        return fechaStr;
     }
 
     // Funci?n para calcular el costo de mano de obra
@@ -512,13 +542,13 @@
         const detalles = [];
         
         empleados.forEach(emp => {
-            const costoEmpleado = horasTotales * (emp.costo_hora || 0);
+            const costoEmpleado = horasTotales * (parseFloat(emp.costo_hora) || 0);
             costoTotalManoObra += costoEmpleado;
             
             detalles.push({
                 nombre: emp.nombre,
                 cargo: emp.cargo_empleado,
-                costo_hora: emp.costo_hora || 0,
+                costo_hora: parseFloat(emp.costo_hora) || 0,
                 dias: diasLaborales,
                 horas: horasTotales,
                 costo_total: costoEmpleado
@@ -594,34 +624,56 @@
             success: function(orden) {
                 console.log("Detalles de la orden recibidos:", orden);
                 
-                const fechaInicio = new Date(orden.fecha_inicio).toLocaleDateString('es-EC');
-                const fechaFin = orden.fecha_fin ? new Date(orden.fecha_fin).toLocaleDateString('es-EC') : 'Pendiente';
+                const fechaInicio = formatearFechaSimple(orden.fecha_inicio);
+                const fechaFin = formatearFechaSimple(orden.fecha_fin);
                 
-                let empleadosHtml = '<p class="mb-0"><strong>Empleado(s) Asignado(s):</strong></p>';
+                let empleadosHtml = '';
                 if (orden.empleados_asignados && orden.empleados_asignados.length > 0) {
                     const listaHtml = orden.empleados_asignados.map(function(emp) {
-                        return `<li class="d-flex justify-content-between align-items-center">${emp.nombre} (${emp.cargo_empleado}) 
-                                <button class="btn btn-outline-secondary btn-sm btn-cambiar-asignacion" 
+                        return `<li class="list-group-item d-flex justify-content-between align-items-center bg-light border-0 py-1">
+                                <span><i class="fa fa-user-o"></i> ${emp.nombre} <small class="text-muted">(${emp.cargo_empleado})</small></span> 
+                                <button class="btn btn-outline-primary btn-sm btn-cambiar-asignacion" 
                                         data-id-orden="${idOrden}" 
                                         data-id-empleado-antiguo="${emp.id_empleado}">
-                                    Cambiar
+                                    <i class="fa fa-exchange"></i> Reasignar
                                 </button>
                             </li>`;
                     }).join('');
-                    empleadosHtml += `<ul class="list-group list-group-flush">${listaHtml}</ul>`;
+                    empleadosHtml += `<ul class="list-group list-group-flush border rounded overflow-hidden">${listaHtml}</ul>`;
                 } else {
                     empleadosHtml += '<p class="text-muted">Ningún empleado asignado todavía.</p>';
                 }
 
                 const infoHtml = `
-                    <p><strong>Cliente:</strong> ${orden.nombre_cliente}</p>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-primary"><i class="fa fa-user"></i> Datos del Cliente</h6>
+                            <p class="mb-1"><strong>Nombre:</strong> ${orden.nombre_cliente || 'N/A'}</p>
+                            <p class="mb-1"><strong>Cédula/RUC:</strong> ${orden.cedula_cliente || 'N/A'}</p>
+                            <p class="mb-1"><strong>Teléfono:</strong> ${orden.telefono_cliente || 'N/A'}</p>
+                            <p class="mb-1"><strong>Email:</strong> ${orden.email_cliente || 'N/A'}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-primary"><i class="fa fa-info-circle"></i> Estado de la Orden</h6>
+                            <p class="mb-1"><strong>Estado Actual:</strong> <span class="badge ${orden.estado === 'Finalizado' ? 'bg-danger' : 'bg-warning text-dark'}">${orden.estado}</span></p>
+                            <p class="mb-1"><strong>Fecha Inicio:</strong> ${fechaInicio}</p>
+                            <p class="mb-1"><strong>Fecha Fin:</strong> ${fechaFin}</p>
+                        </div>
+                    </div>
                     <hr>
-                    ${empleadosHtml} 
+                    <div class="row">
+                        <div class="col-12">
+                            <h6 class="text-primary"><i class="fa fa-align-left"></i> Descripción</h6>
+                            <p class="mb-0 text-muted">${orden.descripcion}</p>
+                        </div>
+                    </div>
                     <hr>
-                    <p><strong>Fechas (Inicio - Fin):</strong> ${fechaInicio} - ${fechaFin}</p>
-                    <p><strong>Estado:</strong> <span class="badge bg-primary">${orden.estado}</span></p>
-                    <p><strong>Descripción:</strong></p>
-                    <p>${orden.descripcion}</p>
+                    <div class="row">
+                        <div class="col-12">
+                            <h6 class="text-primary"><i class="fa fa-users"></i> Personal Asignado</h6>
+                            ${empleadosHtml}
+                        </div>
+                    </div>
                 `;
                 $infoGeneralDiv.html(infoHtml);
 
@@ -656,15 +708,29 @@
                 });
                 console.log("Estado de la orden:", orden.estado);
                 
-                // Verificar si la orden est? finalizada y mostrar/ocultar elementos
-                if (orden.estado === 'Finalizado') {
-                    console.log("Orden finalizada, ocultando botones de acción");
-                    $('#accionesOrdenContainer').hide();
-                    $('#ordenFinalizadaAlert').show();
+                // Verificar si la orden está finalizada y mostrar/ocultar elementos
+                if (orden.estado === 'Finalizado' || orden.estado === 'Facturado') {
+                    console.log("Orden finalizada/facturada, gestionando botones");
+                    $('#finalizeOrderButton').prop('disabled', true).html('<i class="fa fa-check"></i> Trabajo Finalizado');
+                    
+                    if (orden.estado === 'Facturado' || orden.comprobante_id || orden.has_comprobante) {
+                        $('#generatePaymentButton').prop('disabled', true).html('<i class="fa fa-file-pdf-o"></i> Comprobante Generado');
+                    }
+                    
+                    // Si ya está facturado, mostrar mensaje informativo
+                    if (orden.estado === 'Facturado') {
+                        $('#ordenFinalizadaAlert').removeClass('alert-success').addClass('alert-info').show();
+                        $('#ordenFinalizadaAlert .alert-heading').html('<i class="fa fa-info-circle"></i> Orden Facturada');
+                        $('#ordenFinalizadaAlert p').text('Esta orden ya ha sido facturada y el comprobante ha sido generado.');
+                    } else {
+                        $('#ordenFinalizadaAlert').show();
+                    }
                 } else {
-                    console.log("Orden no finalizada, mostrando botones de acción");
+                    console.log("Orden en proceso, botones habilitados");
                     $('#accionesOrdenContainer').show();
                     $('#ordenFinalizadaAlert').hide();
+                    $('#finalizeOrderButton').prop('disabled', false);
+                    $('#generatePaymentButton').prop('disabled', false);
                 }
 
                 // NUEVO: Calcular y mostrar mano de obra
@@ -685,10 +751,10 @@
                             <tr>
                                 <td>${detalle.nombre}</td>
                                 <td>${detalle.cargo}</td>
-                                <td>$${detalle.costo_hora.toFixed(2)}</td>
+                                <td>$${parseFloat(detalle.costo_hora).toFixed(2)}</td>
                                 <td>${detalle.dias} días</td>
                                 <td>${detalle.horas} hrs</td>
-                                <td>$${detalle.costo_total.toFixed(2)}</td>
+                                <td>$${parseFloat(detalle.costo_total).toFixed(2)}</td>
                             </tr>
                         `);
                     });
@@ -877,13 +943,23 @@
                 success: function(response) {
                     console.log('Comprobante generado:', response);
                     $('#mensajeAnadirMaterial').text(response.message || "Comprobante generado con éxito.").removeClass('alert-info alert-danger').addClass('alert alert-success show');
-                    $('#generatePaymentButton').prop('disabled', true); // Deshabilitar botón tras éxito
+                    $('#generatePaymentButton').prop('disabled', true).html('<i class="fa fa-file-pdf-o"></i> Comprobante Generado');
                     bootstrap.Modal.getInstance(document.getElementById('confirmPaymentModal')).hide();
                     cargarDetallesDeOrden(idOrden);
                 },
                 error: function(xhr) {
                     console.error('Error al generar comprobante:', xhr.responseText);
-                    showError(xhr.responseJSON?.error || "Error al generar el comprobante.");
+                    const errorMsg = xhr.responseJSON?.error || "Error al generar el comprobante.";
+                    
+                    if (errorMsg.includes("Ya existe un comprobante")) {
+                        $('#generatePaymentButton').prop('disabled', true).html('<i class="fa fa-file-pdf-o"></i> Comprobante Ya Existente');
+                        bootstrap.Modal.getInstance(document.getElementById('confirmPaymentModal')).hide();
+                        $('#ordenFinalizadaAlert').removeClass('alert-success').addClass('alert-info text-dark').show();
+                        $('#ordenFinalizadaAlert .alert-heading').html('<i class="fa fa-info-circle"></i> Comprobante Existente');
+                        $('#ordenFinalizadaAlert p').text(errorMsg);
+                    } else {
+                        showError(errorMsg);
+                    }
                 }
             });
         });
@@ -906,28 +982,15 @@
                         // Llenar información general
                         $('#modalOrdenId').text(idOrden);
                         $('#modalCliente').text(orden.nombre_cliente || '-');
-                        $('#modalFechaInicio').text(orden.fecha_inicio ? new Date(orden.fecha_inicio).toLocaleDateString('es-EC') : '-');
-                        $('#modalFechaFin').text(orden.fecha_fin ? new Date(orden.fecha_fin).toLocaleDateString('es-EC') : '-');
+                        $('#modalFechaInicio').text(formatearFechaSimple(orden.fecha_inicio));
+                        $('#modalFechaFin').text(formatearFechaSimple(orden.fecha_fin));
                         $('#modalDescripcion').text(orden.descripcion || '-');
                         
-                        // Calcular días laborales y horas
-                        let diasLaborales = 0;
-                        let horasTotales = 0;
-                        if (orden.fecha_inicio && orden.fecha_fin) {
-                            const fechaInicio = new Date(orden.fecha_inicio);
-                            const fechaFin = new Date(orden.fecha_fin);
-                            const diffTime = Math.abs(fechaFin - fechaInicio);
-                            diasLaborales = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                            horasTotales = diasLaborales * 8; // 8 horas por día
-                            
-                            console.log('DEBUG MODAL - Cálculo de días:', {
-                                fecha_inicio: orden.fecha_inicio,
-                                fecha_fin: orden.fecha_fin,
-                                diffTime,
-                                diasLaborales,
-                                horasTotales
-                            });
-                        }
+                        // Calcular días laborales y horas usando la función central
+                        const diasLaborales = calcularDiasLaborales(orden.fecha_inicio, orden.fecha_fin);
+                        const horasTotales = diasLaborales * 8; 
+                        
+                        console.log('DEBUG MODAL - Cálculo:', { diasLaborales, horasTotales });
                         
                         // Llenar empleados asignados
                         const $modalEmpleadosBody = $('#modalEmpleadosBody');
@@ -936,7 +999,7 @@
                         
                         if (orden.empleados_asignados && orden.empleados_asignados.length > 0) {
                             orden.empleados_asignados.forEach(function(emp) {
-                                const costoHora = emp.costo_hora || 0;
+                                const costoHora = parseFloat(emp.costo_hora) || 0;
                                 const costoTotal = horasTotales * costoHora;
                                 costoTotalManoObra += costoTotal;
                                 

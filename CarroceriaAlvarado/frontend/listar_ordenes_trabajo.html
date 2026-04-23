@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <title>Lista de Ordenes de Trabajo - Carroceróas Alvarado</title>
+    <title>Lista de Órdenes de Trabajo - Carrocerías Alvarado</title>
     <meta charset="UTF-8">
     <meta name="description" content="Órdenes de Trabajo - Carrocerías Alvarado. Listado y seguimiento de todas las órdenes de trabajo activas y finalizadas.">
     <link rel="stylesheet" type="text/css" href="vendor/bootstrap/css/bootstrap5.min.css">
@@ -98,6 +98,34 @@
                     </a>
                 </div>
                 <div class="card-body">
+                    <!-- Filtros -->
+                    <div class="row mb-4 g-3 bg-light p-3 rounded border">
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold small text-uppercase mb-1"><i class="fa fa-user"></i> Cliente</label>
+                            <input type="text" id="filterCliente" class="form-control form-control-sm" placeholder="Nombre del cliente...">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold small text-uppercase mb-1"><i class="fa fa-calendar"></i> Fecha Inicio</label>
+                            <input type="date" id="filterFecha" class="form-control form-control-sm">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold small text-uppercase mb-1"><i class="fa fa-info-circle"></i> Estado</label>
+                            <select id="filterEstado" class="form-control form-control-sm">
+                                <option value="">Todos los estados</option>
+                                <option value="Asignado">Asignado</option>
+                                <option value="En Proceso">En Proceso</option>
+                                <option value="Finalizado">Finalizado</option>
+                                <option value="Facturado">Facturado</option>
+                                <option value="Cancelado">Cancelado</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
+                            <button id="btnLimpiarFiltros" class="btn btn-outline-secondary btn-sm w-100">
+                                <i class="fa fa-eraser"></i> Limpiar
+                            </button>
+                        </div>
+                    </div>
+
                     <div class="table-responsive">
                         <table class="table table-striped table-hover">
                             <thead>
@@ -192,272 +220,227 @@
 
 <script>
 
-function loadOrdenesDeTrabajo() {
-    console.log("Cargando órdenes de trabajo (lógica multi-empleado)...");
-    const token = localStorage.getItem('token');
-    const $tableBody = $('#ordenesTableBody');
-    $tableBody.html('<tr><td colspan="7" class="text-center">Cargando...</td></tr>');
+let allOrdenasData = [];
 
+function renderOrdenes(ordenes) {
+    const $tableBody = $('#ordenesTableBody');
+    $tableBody.empty();
+    
+    if (ordenes && ordenes.length > 0) {
+        const hoy = new Date();
+        
+        ordenes.forEach(function(orden) {
+            const fechaInicio = orden.fecha_inicio ? orden.fecha_inicio.split('T')[0].split('-').reverse().join('/') : 'N/A';
+            const fechaFin = orden.fecha_fin ? orden.fecha_fin.split('T')[0].split('-').reverse().join('/') : 'N/A';
+            
+            let rowClass = '';
+            let alertIcon = '';
+            if (orden.fecha_fin && orden.estado !== 'Finalizado' && orden.estado !== 'Facturado' && orden.estado !== 'Cancelado') {
+                const fechaFinDate = new Date(orden.fecha_fin);
+                const diasRestantes = Math.ceil((fechaFinDate - hoy) / (1000 * 60 * 60 * 24));
+                
+                if (diasRestantes <= 7 && diasRestantes >= 0) {
+                    rowClass = 'table-warning';
+                    if (diasRestantes === 0) alertIcon = '<i class="fa fa-exclamation-triangle text-danger" title="¡Vence hoy!"></i> ';
+                    else alertIcon = `<i class="fa fa-clock-o text-warning" title="Vence en ${diasRestantes} días"></i> `;
+                } else if (diasRestantes < 0) {
+                    rowClass = 'table-danger';
+                    alertIcon = '<i class="fa fa-times-circle text-danger" title="¡Vencida!"></i> ';
+                }
+            }
+            
+            let empleadosAsignadosStr = (orden.empleados_asignados && orden.empleados_asignados.length > 0) 
+                ? orden.empleados_asignados.join(', ') : "Sin asignar";
+
+            let badgeColor = 'bg-secondary';
+            if (orden.estado === 'Finalizado') badgeColor = 'bg-success';
+            else if (orden.estado === 'Asignado') badgeColor = 'bg-primary';
+            else if (orden.estado === 'Facturado') badgeColor = 'bg-info';
+            else if (orden.estado === 'En Proceso') badgeColor = 'bg-warning text-dark';
+
+            const fila = `
+                <tr class="${rowClass}">
+                    <td>${alertIcon}${orden.id_orden}</td>
+                    <td>${orden.nombre_cliente}</td>
+                    <td><small>${orden.descripcion.substring(0, 50)}${orden.descripcion.length > 50 ? '...' : ''}</small></td>
+                    <td>${empleadosAsignadosStr}</td>
+                    <td>${fechaInicio} - ${fechaFin}</td>
+                    <td><span class="badge ${badgeColor}">${orden.estado}</span></td>
+                    <td class="text-nowrap">
+                        <button class="btn btn-info btn-sm btn-calcular-recursos me-1" data-id="${orden.id_orden}" title="Calcular"><i class="fa fa-calculator"></i></button>
+                        <a href="editar_orden.html?id=${orden.id_orden}" class="btn btn-warning btn-sm me-1" title="Editar"><i class="fa fa-edit"></i></a>
+                        <a href="detalle_orden.html?id=${orden.id_orden}" class="btn btn-primary btn-sm me-1" title="Detalles"><i class="fa fa-eye"></i></a>
+                        <button class="btn btn-danger btn-sm btn-imprimir-orden" data-id="${orden.id_orden}" title="PDF"><i class="fa fa-print"></i></button>
+                    </td>
+                </tr>
+            `;
+            $tableBody.append(fila);
+        });
+    } else {
+        $tableBody.html('<tr><td colspan="7" class="text-center">No se encontraron órdenes con estos filtros.</td></tr>');
+    }
+}
+
+function loadOrdenesDeTrabajo() {
+    const token = localStorage.getItem('token');
     $.ajax({
         url: `${API_BASE_URL}/ordenes-trabajo`,
         method: 'GET',
         headers: { 'Authorization': 'Bearer ' + token },
         success: function(ordenes) {
-            $tableBody.empty();
-            if (ordenes && ordenes.length > 0) {
-                // Calcular fecha lómite para órdenes por vencer (7 dóas)
-                const hoy = new Date();
-                const fechaLimite = new Date();
-                fechaLimite.setDate(hoy.getDate() + 7);
-                
-                ordenes.forEach(function(orden) {
-                    // Formatear fechas sin conversión de zona horaria
-                    const fechaInicio = orden.fecha_inicio ? orden.fecha_inicio.split('T')[0].split('-').reverse().join('/') : 'N/A';
-                    const fechaFin = orden.fecha_fin ? orden.fecha_fin.split('T')[0].split('-').reverse().join('/') : 'N/A';
-                    
-                    // Verificar si la orden estó por vencer
-                    let rowClass = '';
-                    let alertIcon = '';
-                    if (orden.fecha_fin && orden.estado !== 'Finalizado' && orden.estado !== 'Completado' && orden.estado !== 'Cancelado') {
-                        const fechaFinDate = new Date(orden.fecha_fin);
-                        const diasRestantes = Math.ceil((fechaFinDate - hoy) / (1000 * 60 * 60 * 24));
-                        
-                        if (diasRestantes <= 7 && diasRestantes >= 0) {
-                            rowClass = 'table-warning'; // Fondo amarillo para órdenes por vencer
-                            if (diasRestantes === 0) {
-                                alertIcon = '<i class="fa fa-exclamation-triangle text-danger" title="óVence hoy!"></i> ';
-                            } else if (diasRestantes === 1) {
-                                alertIcon = '<i class="fa fa-exclamation-triangle text-warning" title="Vence maóana"></i> ';
-                            } else {
-                                alertIcon = `<i class="fa fa-clock-o text-warning" title="Vence en ${diasRestantes} dóas"></i> `;
-                            }
-                        } else if (diasRestantes < 0) {
-                            rowClass = 'table-danger'; // Fondo rojo para órdenes vencidas
-                            alertIcon = '<i class="fa fa-times-circle text-danger" title="óOrden vencida!"></i> ';
-                        }
-                    }
-                    
-                    // Convertir la lista de empleados en un string separado por comas
-                    let empleadosAsignadosStr = "Sin asignar";
-                    if (orden.empleados_asignados && orden.empleados_asignados.length > 0) {
-                        empleadosAsignadosStr = orden.empleados_asignados.join(', ');
-                    }
-
-                    const botonCalcular = `<button class="btn btn-info btn-sm btn-calcular-recursos me-1" data-id="${orden.id_orden}" title="Calcular Recursos"><i class="fa fa-calculator"></i></button>`;
-                    const botonEditar = `<a href="editar_orden.html?id=${orden.id_orden}" class="btn btn-warning btn-sm me-1" title="Editar Orden"><i class="fa fa-edit"></i></a>`;
-                    const botonDetalles = `<a href="detalle_orden.html?id=${orden.id_orden}" class="btn btn-primary btn-sm me-1" title="Ver Detalles"><i class="fa fa-eye"></i></a>`;
-                    const botonImprimir = `<button class="btn btn-danger btn-sm btn-imprimir-orden" data-id="${orden.id_orden}" title="Imprimir PDF"><i class="fa fa-print"></i></button>`;
-
-                    // Determinar el color del badge segón el estado
-                    let badgeColor;
-                    if (orden.estado === 'Finalizado') {
-                        badgeColor = 'bg-success'; // Verde para finalizadas
-                    } else if (orden.estado === 'Asignado') {
-                        badgeColor = 'bg-primary'; // Azul para asignadas
-                    } else {
-                        badgeColor = 'bg-secondary'; // Gris para otros estados
-                    }
-                    
-                    const fila = `
-                        <tr class="${rowClass}">
-                            <td>${alertIcon}${orden.id_orden}</td>
-                            <td>${orden.nombre_cliente}</td>
-                            <td>${orden.descripcion}</td>
-                            <td>${empleadosAsignadosStr}</td>
-                            <td>${fechaInicio} - ${fechaFin}</td>
-                            <td><span class="badge ${badgeColor}">${orden.estado}</span></td>
-                            <td class="text-nowrap">
-                                ${botonCalcular}${botonEditar}${botonDetalles}${botonImprimir}
-                            </td>
-                        </tr>
-                    `;
-                    $tableBody.append(fila);
-                });
-            } else {
-                $tableBody.html('<tr><td colspan="7" class="text-center">No hay órdenes de trabajo registradas.</td></tr>');
-            }
+            allOrdenasData = ordenes;
+            renderOrdenes(allOrdenasData);
         },
         error: function(xhr) {
-            console.error("Error al cargar órdenes de trabajo:", xhr.responseText);
-            $tableBody.html('<tr><td colspan="7" class="text-center text-danger">Error al cargar las órdenes de trabajo.</td></tr>');
+            console.error("Error al cargar órdenes:", xhr.responseText);
+            $('#ordenesTableBody').html('<tr><td colspan="7" class="text-center text-danger">Error al cargar datos.</td></tr>');
         }
     });
+}
+
+function aplicarFiltros() {
+    const cliente = $('#filterCliente').val().toLowerCase();
+    const fecha = $('#filterFecha').val();
+    const estado = $('#filterEstado').val();
+
+    const filtradas = allOrdenasData.filter(orden => {
+        const matchCliente = orden.nombre_cliente.toLowerCase().includes(cliente);
+        const matchEstado = estado === "" || orden.estado === estado;
+        const matchFecha = fecha === "" || (orden.fecha_inicio && orden.fecha_inicio.startsWith(fecha));
+        
+        return matchCliente && matchEstado && matchFecha;
+    });
+
+    renderOrdenes(filtradas);
 }
 
 // Define esta nueva función fuera de $(document).ready()
 function generarPDFDeOrden(orden) {
     const { jsPDF } = window.jspdf;
-    const doc = new jsPDF({
-        orientation: 'portrait', // Orientación vertical
-        unit: 'pt',
-        format: 'a4'
-    });
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' });
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
 
     var logo = new Image();
-    logo.src = 'images/logo.jpg'; // IMPORTANTE: Usa la ruta correcta a tu logo!
+    logo.src = 'images/logo.jpg';
     logo.onload = function() {
         // --- ENCABEZADO ---
-        doc.addImage(this, 'JPG', 40, 20, 50, 50); // Logo en la parte superior izquierda
+        doc.addImage(this, 'JPG', 40, 25, 60, 60);
         
-        doc.setFontSize(16);
-        doc.setTextColor(40);
-        doc.setFont(undefined, 'bold');
-        doc.text("CARROCERÍAS ALVARADO", 110, 35);
+        doc.setFontSize(22); doc.setTextColor(74, 35, 17); doc.setFont(undefined, 'bold');
+        doc.text("CARROCERÍAS ALVARADO", pageWidth - 40, 45, { align: 'right' });
         
-        doc.setFontSize(9);
-        doc.setFont(undefined, 'normal');
-        doc.text("Telf: +593 99 991 1866", 110, 50);
-        doc.text("Email: carroceriasalvarado@hotmail.com", 110, 62);
-        doc.text("Dir: Avda. Monseñor Leonidas Proaño (a pocos metros de la línea férrea)", 110, 74);
-        doc.text("Riobamba, Ecuador", 110, 86);
+        doc.setFontSize(9); doc.setTextColor(100); doc.setFont(undefined, 'normal');
+        doc.text("Telf: +593 99 991 1866", pageWidth - 40, 60, { align: 'right' });
+        doc.text("Email: carroceriasalvarado@hotmail.com", pageWidth - 40, 72, { align: 'right' });
+        doc.text("Dir: Avda. Monseñor Leonidas Proaño (a pocos metros de la línea férrea),", pageWidth - 40, 84, { align: 'right' });
+        doc.text("Riobamba, Ecuador", pageWidth - 40, 96, { align: 'right' });
         
-        // --- LEYENDA TRIBUTARIA EN ENCABEZADO ---
-        doc.setFontSize(8);
-        doc.setTextColor(200, 0, 0);
-        doc.setFont(undefined, 'bold');
-        doc.text("DOCUMENTO CONTROL INTERNO - SIN VALOR TRIBUTARIO", doc.internal.pageSize.getWidth() / 2, 20, { align: 'center' });
+        // Recuadro de Leyenda Legal
+        let currentY = 120;
+        doc.setDrawColor(200, 0, 0); doc.setLineWidth(1);
+        doc.rect(60, currentY, pageWidth - 120, 25);
+        doc.setFontSize(10); doc.setTextColor(200, 0, 0); doc.setFont(undefined, 'bold');
+        doc.text("ESTE DOCUMENTO ES UN REGISTRO INTERNO Y NO TIENE VALOR TRIBUTARIO", pageWidth / 2, currentY + 16, { align: 'center' });
         
-        doc.setFont(undefined, 'normal');
-        doc.setTextColor(40);
+        doc.setDrawColor(220); doc.line(40, currentY + 45, pageWidth - 40, currentY + 45);
         
-        doc.line(40, 115, 555, 115); // Línea divisoria
-
-        // --- INFORMACIóN GENERAL ---
-        let currentY = 130; // Posición Y inicial para el contenido
-        doc.setFontSize(12);
-        doc.text(`Cliente: ${orden.nombre_cliente}`, 40, currentY);
-        doc.text(`Estado: ${orden.estado}`, 350, currentY);
-        currentY += 20;
-        // Formatear fechas sin conversión de zona horaria
-        const fechaInicio = orden.fecha_inicio ? orden.fecha_inicio.split('T')[0].split('-').reverse().join('/') : 'N/A';
-        const fechaFin = orden.fecha_fin ? orden.fecha_fin.split('T')[0].split('-').reverse().join('/') : 'Pendiente';
-        doc.text(`Fechas: ${fechaInicio} a ${fechaFin}`, 40, currentY);
-        currentY += 20;
-        doc.text("Descripción del Trabajo:", 40, currentY);
+        // --- TÍTULO ---
+        currentY += 75;
+        doc.setFontSize(16); doc.setTextColor(74, 35, 17); doc.setFont(undefined, 'bold');
+        doc.text(`ORDEN DE TRABAJO #${orden.id_orden}`, pageWidth / 2, currentY, { align: 'center' });
+        
+        // --- DATOS CLIENTE Y DETALLES ---
+        currentY += 35;
+        doc.setFontSize(9); doc.setTextColor(150); doc.setFont(undefined, 'normal');
+        doc.text("DATOS DEL CLIENTE", 40, currentY);
+        doc.text("DETALLES DE LA ORDEN", pageWidth - 40, currentY, { align: 'right' });
+        
         currentY += 15;
-        // La función splitTextToSize divide el texto largo en lóneas que quepan en el ancho
-        const descripcionLines = doc.splitTextToSize(orden.descripcion, 515); 
-        doc.text(descripcionLines, 40, currentY);
-        currentY += (descripcionLines.length * 12) + 10; // Incrementar Y basado en el nómero de lóneas
-
-
-        // --- CALCULAR MANO DE OBRA ---
-        let costoTotalManoObra = 0;
-        if (orden.empleados_asignados && orden.empleados_asignados.length > 0 && orden.fecha_inicio && orden.fecha_fin) {
-            // Calcular dóas laborales
-            const fechaInicioDate = new Date(orden.fecha_inicio);
-            const fechaFinDate = new Date(orden.fecha_fin);
-            const diffTime = Math.abs(fechaFinDate - fechaInicioDate);
-            const diasLaborales = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-            const horasPorDia = 8;
-            const horasTotales = diasLaborales * horasPorDia;
-            
-            // Calcular costo total de mano de obra
-            orden.empleados_asignados.forEach(emp => {
-                costoTotalManoObra += horasTotales * (emp.costo_hora || 0);
-            });
-        }
-
-        // --- MATERIALES UTILIZADOS ---
+        doc.setFontSize(11); doc.setTextColor(40); doc.setFont(undefined, 'bold');
+        doc.text(orden.nombre_cliente || 'Cliente S/N', 40, currentY);
+        doc.setFontSize(10); doc.setFont(undefined, 'normal');
+        const fHoy = new Date().toLocaleDateString('es-EC');
+        doc.text(`Fecha Emisión: ${fHoy}`, pageWidth - 40, currentY, { align: 'right' });
+        
+        currentY += 13;
+        doc.text(`Estado: ${orden.estado}`, 40, currentY);
+        doc.text(`Usuario: Admin`, pageWidth - 40, currentY, { align: 'right' });
+        
+        currentY += 13;
+        const fIni = orden.fecha_inicio ? orden.fecha_inicio.split('T')[0].split('-').reverse().join('/') : 'N/A';
+        const fFin = orden.fecha_fin ? orden.fecha_fin.split('T')[0].split('-').reverse().join('/') : 'Pendiente';
+        doc.text(`Periodo: ${fIni} a ${fFin}`, 40, currentY);
+        doc.text(`Referencia: OT-${orden.id_orden}`, pageWidth - 40, currentY, { align: 'right' });
+        
+        // --- TABLA DE MATERIALES ---
+        currentY += 30;
         let costoTotalMateriales = 0;
+        const bodyMateriales = [];
         if (orden.materiales_asignados && orden.materiales_asignados.length > 0) {
-            const bodyMateriales = orden.materiales_asignados.map(mat => {
-                costoTotalMateriales += mat.costo_total;
-                return [mat.nombre_material, mat.cantidad_usada, `$${parseFloat(mat.costo_total).toFixed(2)}`];
+            orden.materiales_asignados.forEach(mat => {
+                costoTotalMateriales += parseFloat(mat.costo_total);
+                const punit = (parseFloat(mat.costo_total) / parseFloat(mat.cantidad_usada)).toFixed(2);
+                bodyMateriales.push([mat.nombre_material, mat.cantidad_usada.toString(), `$${punit}`, `$${parseFloat(mat.costo_total).toFixed(2)}`]);
             });
-
-            doc.autoTable({
-                head: [['Material Utilizado', 'Cantidad', 'Costo']],
-                body: bodyMateriales,
-                startY: currentY,
-                theme: 'grid',
-                margin: { left: 40, right: 40 }
+        }
+        
+        // --- MANO DE OBRA ---
+        let costoTotalManoObra = 0;
+        if (orden.fecha_inicio && orden.fecha_fin && orden.empleados_asignados) {
+            const dateIni = new Date(orden.fecha_inicio);
+            const dateFin = new Date(orden.fecha_fin);
+            const dias = Math.ceil(Math.abs(dateFin - dateIni) / (1000 * 60 * 60 * 24)) || 1;
+            orden.empleados_asignados.forEach(emp => {
+                costoTotalManoObra += (dias * 8 * (parseFloat(emp.costo_hora) || 0));
             });
-            currentY = doc.lastAutoTable.finalY + 10;
+        }
+        if (costoTotalManoObra > 0) {
+            bodyMateriales.push(['Servicio de Mano de Obra Especializada', '1', `$${costoTotalManoObra.toFixed(2)}`, `$${costoTotalManoObra.toFixed(2)}`]);
         }
 
-        // --- RESUMEN FINANCIERO ---
-        // Usar los valores almacenados en la orden y convertir a nómeros
-        const subtotalMateriales = parseFloat(orden.subtotal_materiales) || costoTotalMateriales;
-        const margenPorcentaje = parseInt(orden.margen_ganancia) || 20;
-        const ivaPorcentaje = parseInt(orden.iva_porcentaje) || 0;
-        
-        // Si la orden tiene valores guardados, usarlos; si no, calcular
-        let subtotalConMargen, montoIva, totalFinal;
-        
-        if (orden.total_orden && parseFloat(orden.total_orden) > 0) {
-            // Usar valores guardados en la BD PERO siempre sumar la mano de obra
-            subtotalConMargen = parseFloat(orden.subtotal_con_margen);
-            montoIva = parseFloat(orden.monto_iva);
-            // IMPORTANTE: El total_orden en BD no incluye mano de obra, hay que sumarla
-            totalFinal = parseFloat(orden.total_orden) + costoTotalManoObra;
-        } else {
-            // Calcular: El margen e IVA se aplican sobre SOLO los materiales (no sobre mano de obra)
-            subtotalConMargen = subtotalMateriales * (1 + margenPorcentaje / 100);
-            montoIva = subtotalConMargen * (ivaPorcentaje / 100);
-            // El total final incluye: materiales con margen + IVA + mano de obra
-            totalFinal = subtotalConMargen + montoIva + costoTotalManoObra;
-        }
-        
-        // Construir tabla financiera
-        const bodyFinanciero = [
-            [{content: 'Costo Total de Materiales', styles: {halign: 'right', fontStyle: 'bold', fillColor: [240, 240, 240]}}, {content: `$${subtotalMateriales.toFixed(2)}`, styles: {fontStyle: 'bold', halign: 'right', fillColor: [240, 240, 240]}}],
-            [{content: 'Total Mano de Obra', styles: {halign: 'right', fontStyle: 'bold', fillColor: [240, 240, 240]}}, {content: `$${costoTotalManoObra.toFixed(2)}`, styles: {fontStyle: 'bold', halign: 'right', fillColor: [240, 240, 240]}}]
-        ];
-        
-        // Solo agregar margen si existe
-        if (margenPorcentaje > 0) {
-            const margenMonto = subtotalConMargen - subtotalMateriales;
-            bodyFinanciero.push(
-                [{content: `Margen de Ganancia (${margenPorcentaje}%)`, styles: {halign: 'right', fontStyle: 'bold', fillColor: [240, 240, 240]}}, {content: `$${margenMonto.toFixed(2)}`, styles: {fontStyle: 'bold', halign: 'right', fillColor: [240, 240, 240]}}]
-            );
-        }
-        
-        // Solo agregar IVA si existe
-        if (ivaPorcentaje > 0) {
-            bodyFinanciero.push(
-                [{content: `IVA (${ivaPorcentaje}%)`, styles: {halign: 'right', fontStyle: 'bold', fillColor: [240, 240, 240]}}, {content: `$${montoIva.toFixed(2)}`, styles: {fontStyle: 'bold', halign: 'right', fillColor: [240, 240, 240]}}]
-            );
-        }
-        
-        // Agregar total final
-        bodyFinanciero.push(
-            [{content: 'TOTAL A COBRAR AL CLIENTE', styles: {halign: 'right', fontStyle: 'bold', fontSize: 14, fillColor: [26, 188, 156], textColor: [255, 255, 255]}}, {content: `$${totalFinal.toFixed(2)}`, styles: {fontStyle: 'bold', fontSize: 14, fillColor: [26, 188, 156], textColor: [255, 255, 255], halign: 'right'}}]
-        );
-        
         doc.autoTable({
-            body: bodyFinanciero,
+            head: [['DESCRIPCIÓN', 'CANT.', 'P.UNIT.', 'TOTAL']],
+            body: bodyMateriales.length > 0 ? bodyMateriales : [['No se han registrado materiales o mano de obra.', '0', '$0.00', '$0.00']],
             startY: currentY,
-            theme: 'plain',
+            theme: 'grid',
+            headStyles: { fillColor: [254, 245, 239], textColor: [74, 35, 17], fontSize: 9, fontStyle: 'bold' },
             margin: { left: 40, right: 40 }
         });
         
-        // --- PIE DE PóGINA CON LEYENDA TRIBUTARIA ---
-        const pageHeight = doc.internal.pageSize.getHeight();
-        const pageWidth = doc.internal.pageSize.getWidth();
-        let footerY = pageHeight - 50;
+        currentY = doc.lastAutoTable.finalY;
         
-        doc.setFontSize(9);
-        doc.setTextColor(100);
-        doc.text("Este documento es un resumen informativo de la orden de trabajo.", pageWidth / 2, footerY, { align: 'center' });
-        
-        currentY += 20;
-        doc.setFontSize(9);
-        doc.setFont(undefined, 'bold');
-        doc.setTextColor(200, 0, 0);
-        doc.text("DOCUMENTO CONTROL INTERNO - SIN VALOR TRIBUTARIO", pageWidth / 2, footerY + 15, { align: 'center' });
-        doc.setTextColor(40);
-        doc.setFont(undefined, 'normal');
+        // --- RESUMEN FINANCIERO ---
+        const subtotalMateriales = parseFloat(orden.subtotal_materiales) || costoTotalMateriales;
+        const margenPct = parseFloat(orden.margen_ganancia) || 20;
+        const ivaPct = parseFloat(orden.iva_porcentaje) || 0;
+        const subtotalMargen = subtotalMateriales * (1 + margenPct / 100);
+        const montoIva = subtotalMargen * (ivaPct / 100);
+        const totalFinal = subtotalMargen + montoIva + costoTotalManoObra;
 
-        // Guardar el PDF
-        doc.save(`orden_de_trabajo_${orden.id_orden}.pdf`);
+        doc.autoTable({
+            body: [
+                [{content: 'SUBTOTAL:', styles: {halign: 'right', fontStyle: 'bold'}}, {content: `$${(subtotalMargen + costoTotalManoObra).toFixed(2)}`, styles: {halign: 'right'}}],
+                [{content: 'IVA:', styles: {halign: 'right', fontStyle: 'bold'}}, {content: `$${montoIva.toFixed(2)}`, styles: {halign: 'right'}}],
+                [{content: 'TOTAL A PAGAR:', styles: {halign: 'right', fontStyle: 'bold', fontSize: 13, fillColor: [220, 220, 220]}}, {content: `$${totalFinal.toFixed(2)}`, styles: {halign: 'right', fontStyle: 'bold', fontSize: 13, fillColor: [220, 220, 220]}}]
+            ],
+            startY: currentY,
+            theme: 'plain',
+            columnStyles: { 0: { cellWidth: pageWidth - 180 }, 1: { cellWidth: 100 } },
+            margin: { left: 40, right: 40 }
+        });
+        
+        // --- PIE DE PÁGINA ---
+        currentY = pageHeight - 80;
+        doc.setFontSize(10); doc.setTextColor(100); doc.setFont(undefined, 'normal');
+        doc.setDrawColor(230); doc.line(40, currentY - 10, pageWidth - 40, currentY - 10);
+        doc.text("Muchas gracias por su preferencia. Carrocerías Alvarado agradece su confianza.", pageWidth / 2, currentY, { align: 'center' });
+        doc.text("Este documento es generado automáticamente por el sistema de inventario.", pageWidth / 2, currentY + 15, { align: 'center' });
+        
+        doc.save(`orden_trabajo_${orden.id_orden}.pdf`);
     };
-    logo.onerror = function() {
-        alert("Error al cargar el logo. El PDF se generaró sin ól.");
-        // Podróas tener una función de fallback aquó si lo deseas
-    };
+    logo.onerror = function() { alert("Error al cargar el logo."); };
 }
-
 
 // Función para cargar notificaciones
 function cargarNotificaciones() {
@@ -535,6 +518,18 @@ $(document).ready(function() {
 
     // Cargar órdenes al iniciar
     loadOrdenesDeTrabajo();
+
+    // Eventos de filtros
+    $('#filterCliente, #filterFecha, #filterEstado').on('input change', function() {
+        aplicarFiltros();
+    });
+
+    $('#btnLimpiarFiltros').on('click', function() {
+        $('#filterCliente').val('');
+        $('#filterFecha').val('');
+        $('#filterEstado').val('');
+        renderOrdenes(allOrdenasData);
+    });
 
     // Manejador para el botón "Calcular Recursos"
     $(document).on('click', '.btn-calcular-recursos', function() {

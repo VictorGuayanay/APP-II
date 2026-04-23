@@ -73,17 +73,24 @@
                 <div class="card-header">Filtros de Bósqueda</div>
                 <div class="card-body">
                     <form id="formConsultarComprobantes">
-                        <div class="row align-items-end">
-                            <div class="col-md-5">
-                                <label for="fechaDesde" class="form-label">Fecha Desde</label>
+                        <div class="row align-items-end g-3">
+                            <div class="col-md-3">
+                                <label for="fechaDesde" class="form-label fw-bold small">Fecha Desde</label>
                                 <input type="date" class="form-control" id="fechaDesde">
                             </div>
-                            <div class="col-md-5">
-                                <label for="fechaHasta" class="form-label">Fecha Hasta</label>
+                            <div class="col-md-3">
+                                <label for="fechaHasta" class="form-label fw-bold small">Fecha Hasta</label>
                                 <input type="date" class="form-control" id="fechaHasta">
                             </div>
+                            <div class="col-md-4">
+                                <label for="buscarCliente" class="form-label fw-bold small">Filtrar por Cliente</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fa fa-search"></i></span>
+                                    <input type="text" class="form-control" id="buscarCliente" placeholder="Nombre del cliente...">
+                                </div>
+                            </div>
                             <div class="col-md-2">
-                                <button type="submit" class="btn btn-primary w-100">Buscar</button>
+                                <button type="submit" class="btn btn-primary w-100">Consultar</button>
                             </div>
                         </div>
                         <div id="mensajeConsulta" class="mt-3"></div>
@@ -116,13 +123,12 @@
     </div> 
 </div> 
 
-<script src="js/config.js"></script>
-    <script src="js/dashboard-core.js"></script>
     <script src="vendor/jquery/jquery-3.2.1.min.js"></script>
-<script src="vendor/bootstrap/js/bootstrap5.bundle.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="vendor/bootstrap/js/bootstrap5.bundle.min.js"></script>
+    <script src="js/config.js"></script>
+    <script src="js/dashboard-core.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
 
 
 <script>
@@ -135,72 +141,81 @@ $(document).ready(function() {
     if (loggedInUsername) { $('#currentUserName').text(loggedInUsername); }
     
 
-    // Lógica para el Formulario de Consulta
+    let allComprobantesData = [];
+
+    function renderComprobantes(data) {
+        const $tableBody = $('#comprobantesTableBody');
+        const $imprimirPdfButton = $('#imprimirPdfButton');
+        $tableBody.empty();
+
+        if (data && data.length > 0) {
+            data.forEach(function(item) {
+                const fila = `
+                    <tr>
+                        <td>${item.id_comprobante}</td>
+                        <td>${item.id_orden}</td>
+                        <td>${item.nombre_cliente}</td>
+                        <td class="fw-bold text-success">$${parseFloat(item.monto).toFixed(2)}</td>
+                        <td>${new Date(item.fecha_emision).toLocaleDateString('es-EC')}</td>
+                        <td>${item.metodo_pago}</td>
+                        <td><span class="badge bg-success">${item.estado_pago}</span></td>
+                        <td>${item.nombre_usuario_registrador}</td>
+                        <td>
+                            <button class="btn btn-sm btn-danger btn-imprimir-comprobante" 
+                                    data-id-comprobante="${item.id_comprobante}"
+                                    data-id-orden="${item.id_orden}"
+                                    title="Imprimir Comprobante">
+                                <i class="fa fa-print"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+                $tableBody.append(fila);
+            });
+            $imprimirPdfButton.prop('disabled', false);
+        } else {
+            $tableBody.html('<tr><td colspan="9" class="text-center">No hay datos para mostrar.</td></tr>');
+            $imprimirPdfButton.prop('disabled', true);
+        }
+    }
+
+    $('#buscarCliente').on('input', function() {
+        const busqueda = $(this).val().toLowerCase();
+        const filtrados = allComprobantesData.filter(item => 
+            item.nombre_cliente.toLowerCase().includes(busqueda) || 
+            item.id_orden.toString().includes(busqueda)
+        );
+        renderComprobantes(filtrados);
+    });
+
     $('#formConsultarComprobantes').on('submit', function(event) {
         event.preventDefault();
         const mensajeDiv = $('#mensajeConsulta');
         const $resultadosDiv = $('#resultadosComprobantes');
-        const $tableBody = $('#comprobantesTableBody');
-        const $imprimirPdfButton = $('#imprimirPdfButton');
-
+        
         const fechaDesde = $('#fechaDesde').val();
         const fechaHasta = $('#fechaHasta').val();
 
-        mensajeDiv.text('').removeClass('alert-danger alert-info');
-        $resultadosDiv.hide();
-        $tableBody.empty();
-        $imprimirPdfButton.prop('disabled', true);
-
         if (!fechaDesde || !fechaHasta) {
-            mensajeDiv.text('Debe seleccionar un rango de fechas para la bósqueda.').addClass('alert alert-danger');
+            mensajeDiv.text('Debe seleccionar un rango de fechas.').addClass('alert alert-danger').show();
             return;
         }
 
-        mensajeDiv.text('Buscando comprobantes...').addClass('alert alert-info');
-        const urlConsulta = `${API_BASE_URL}/comprobantes-pago?fecha_desde=${fechaDesde}&fecha_hasta=${fechaHasta}`;
-
+        mensajeDiv.text('Buscando...').addClass('alert alert-info').show();
+        
         $.ajax({
-            url: urlConsulta,
+            url: `${API_BASE_URL}/comprobantes-pago?fecha_desde=${fechaDesde}&fecha_hasta=${fechaHasta}`,
             method: 'GET',
             headers: { 'Authorization': 'Bearer ' + token },
             success: function(data) {
-                mensajeDiv.text('').removeClass('alert-info');
+                mensajeDiv.hide();
                 $resultadosDiv.show();
-
-                if (data && data.length > 0) {
-                    data.forEach(function(item) {
-                        const fila = `
-                            <tr>
-                                <td>${item.id_comprobante}</td>
-                                <td>${item.id_orden}</td>
-                                <td>${item.nombre_cliente}</td>
-                                <td>$${parseFloat(item.monto).toFixed(2)}</td>
-                                <td>${new Date(item.fecha_emision).toLocaleDateString('es-EC')}</td>
-                                <td>${item.metodo_pago}</td>
-                                <td><span class="badge bg-success">${item.estado_pago}</span></td>
-                                <td>${item.nombre_usuario_registrador}</td>
-                                <td>
-                                    <button class="btn btn-sm btn-danger btn-imprimir-comprobante" 
-                                            data-id-comprobante="${item.id_comprobante}"
-                                            data-id-orden="${item.id_orden}"
-                                            title="Imprimir Comprobante">
-                                        <i class="fa fa-print"></i>
-                                    </button>
-                                </td>
-                            </tr>
-                        `;
-                        $tableBody.append(fila);
-                    });
-                    $imprimirPdfButton.prop('disabled', false);
-                } else {
-                    $tableBody.html('<tr><td colspan="8" class="text-center">No se encontraron comprobantes para el rango de fechas seleccionado.</td></tr>');
-                }
+                allComprobantesData = data;
+                renderComprobantes(allComprobantesData);
             },
             error: function(xhr) {
-                console.error("Error al consultar comprobantes:", xhr.responseText);
-                const errorMsg = xhr.responseJSON?.error || "Error al realizar la consulta.";
-                mensajeDiv.text(errorMsg).removeClass('alert-info').addClass('alert alert-danger');
-                $resultadosDiv.hide();
+                console.error("Error:", xhr.responseText);
+                mensajeDiv.text("Error al realizar la consulta.").addClass('alert alert-danger');
             }
         });
     });
@@ -310,192 +325,112 @@ $(document).ready(function() {
         
         logo.onload = function() {
             const { jsPDF } = window.jspdf;
-            const doc = new jsPDF({
-                orientation: 'portrait',
-                unit: 'pt',
-                format: 'a4'
-            });
+            const doc = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' });
             
             const pageWidth = doc.internal.pageSize.getWidth();
             const pageHeight = doc.internal.pageSize.getHeight();
             
             // --- ENCABEZADO ---
-            // Logo en la parte superior izquierda
-            doc.addImage(this, 'JPG', 40, 20, 50, 50);
+            doc.addImage(this, 'JPG', 40, 25, 60, 60);
             
-            doc.setFontSize(16);
-            doc.setTextColor(40);
-            doc.setFont(undefined, 'bold');
-            doc.text("CARROCERÍAS ALVARADO", 110, 35);
+            doc.setFontSize(22); doc.setTextColor(74, 35, 17); doc.setFont(undefined, 'bold');
+            doc.text("CARROCERÍAS ALVARADO", pageWidth - 40, 45, { align: 'right' });
             
-            doc.setFontSize(9);
-            doc.setFont(undefined, 'normal');
-            doc.text("Telf: +593 99 991 1866", 110, 50);
-            doc.text("Email: carroceriasalvarado@hotmail.com", 110, 62);
-            doc.text("Dir: Avda. Monseñor Leonidas Proaño (a pocos metros de la línea férrea)", 110, 74);
-            doc.text("Riobamba, Ecuador", 110, 86);
+            doc.setFontSize(9); doc.setTextColor(100); doc.setFont(undefined, 'normal');
+            doc.text("Telf: +593 99 991 1866", pageWidth - 40, 60, { align: 'right' });
+            doc.text("Email: carroceriasalvarado@hotmail.com", pageWidth - 40, 72, { align: 'right' });
+            doc.text("Dir: Avda. Monseñor Leonidas Proaño (a pocos metros de la línea férrea),", pageWidth - 40, 84, { align: 'right' });
+            doc.text("Riobamba, Ecuador", pageWidth - 40, 96, { align: 'right' });
             
-            // --- TÍTULO DEL COMPROBANTE ---
-            let currentY = 110;
-            doc.setFontSize(14);
-            doc.setFont(undefined, 'bold');
-            doc.text("COMPROBANTE DE PAGO", pageWidth / 2, currentY, { align: 'center' });
+            // Recuadro de Leyenda Legal
+            let currentY = 120;
+            doc.setDrawColor(200, 0, 0); doc.setLineWidth(1);
+            doc.rect(60, currentY, pageWidth - 120, 25);
+            doc.setFontSize(10); doc.setTextColor(200, 0, 0); doc.setFont(undefined, 'bold');
+            doc.text("ESTE DOCUMENTO ES UN REGISTRO INTERNO Y NO TIENE VALOR TRIBUTARIO", pageWidth / 2, currentY + 16, { align: 'center' });
             
-            currentY += 15;
-            doc.setFontSize(8);
-            doc.setTextColor(200, 0, 0);
-            doc.text("DOCUMENTO CONTROL INTERNO - SIN VALOR TRIBUTARIO", pageWidth / 2, currentY, { align: 'center' });
+            doc.setDrawColor(220); doc.line(40, currentY + 45, pageWidth - 40, currentY + 45);
             
-            doc.setTextColor(40);
-            doc.setFont(undefined, 'normal');
-            // --- INFORMACIÓN DEL COMPROBANTE ---
-            currentY += 25;
-            doc.setFontSize(11);
-            doc.setFont(undefined, 'bold');
-            doc.text(`Comprobante Nº: ${comprobante.id_comprobante}`, 40, currentY);
-            doc.text(`Orden Nº: ${orden.id_orden}`, pageWidth - 40, currentY, { align: 'right' });
+            // --- TÍTULO ---
+            currentY += 75;
+            doc.setFontSize(16); doc.setTextColor(74, 35, 17); doc.setFont(undefined, 'bold');
+            doc.text(`COMPROBANTE DE VENTA #${comprobante.id_comprobante}`, pageWidth / 2, currentY, { align: 'center' });
             
-            currentY += 20;
-            doc.setFont(undefined, 'normal');
-            doc.text(`Cliente: ${orden.nombre_cliente}`, 40, currentY);
+            // --- DATOS CLIENTE Y EMISIÓN ---
+            currentY += 35;
+            doc.setFontSize(9); doc.setTextColor(150); doc.setFont(undefined, 'normal');
+            doc.text("DATOS DEL CLIENTE", 40, currentY);
+            doc.text("DETALLES DE EMISIÓN", pageWidth - 40, currentY, { align: 'right' });
             
             currentY += 15;
-            // La fecha ya viene formateada desde la tabla
-            doc.text(`Fecha de Emisión: ${comprobante.fecha_emision}`, 40, currentY);
-            doc.text(`Método de Pago: ${comprobante.metodo_pago}`, pageWidth - 40, currentY, { align: 'right' });
+            doc.setFontSize(11); doc.setTextColor(40); doc.setFont(undefined, 'bold');
+            doc.text(orden.nombre_cliente || 'Consumidor Final', 40, currentY);
+            doc.setFontSize(10); doc.setFont(undefined, 'normal');
+            doc.text(`Fecha: ${comprobante.fecha_emision}`, pageWidth - 40, currentY, { align: 'right' });
             
-            currentY += 15;
-            const fechaInicio = orden.fecha_inicio ? new Date(orden.fecha_inicio).toLocaleDateString('es-EC') : '-';
-            const fechaFin = orden.fecha_fin ? new Date(orden.fecha_fin).toLocaleDateString('es-EC') : '-';
-            doc.text(`Periodo de Trabajo: ${fechaInicio} a ${fechaFin}`, 40, currentY);
+            currentY += 13;
+            doc.text(`RUC/CI: ${orden.cedula || '9999999999999'}`, 40, currentY);
+            doc.text(`Usuario: ${comprobante.nombre_usuario_registrador || 'Admin'}`, pageWidth - 40, currentY, { align: 'right' });
             
-            // --- DESCRIPCIÓN DEL TRABAJO ---
-            currentY += 25;
-            doc.setFont(undefined, 'bold');
-            doc.text("Descripción del Trabajo:", 40, currentY);
-            currentY += 15;
-            doc.setFont(undefined, 'normal');
-            const descripcionLines = doc.splitTextToSize(orden.descripcion || 'Sin descripción', pageWidth - 80);
-            doc.text(descripcionLines, 40, currentY);
-            currentY += (descripcionLines.length * 12) + 15;
+            currentY += 13;
+            doc.text(`Telf: ${orden.telefono || '0999999999'}`, 40, currentY);
+            doc.text(`Pago: ${comprobante.metodo_pago}`, pageWidth - 40, currentY, { align: 'right' });
             
-            // --- CÁLCULO DE MANO DE OBRA ---
-            let costoTotalManoObra = 0;
-            let diasLaborales = 0;
-            let horasTotales = 0;
-            
-            if (orden.fecha_inicio && orden.fecha_fin) {
-                const fechaInicioDate = new Date(orden.fecha_inicio);
-                const fechaFinDate = new Date(orden.fecha_fin);
-                const diffTime = Math.abs(fechaFinDate - fechaInicioDate);
-                diasLaborales = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
-                horasTotales = diasLaborales * 8;
-            }
-            
-            if (orden.empleados_asignados && orden.empleados_asignados.length > 0) {
-                orden.empleados_asignados.forEach(emp => {
-                    const costoHora = emp.costo_hora || 0;
-                    const costoTotal = horasTotales * costoHora;
-                    costoTotalManoObra += costoTotal;
-                });
-            }
-            
-            // Mostrar solo el total de mano de obra (sin detallar empleados)
-            doc.setFont(undefined, 'bold');
-            doc.text("Mano de Obra:", 40, currentY);
-            currentY += 15;
-            doc.setFont(undefined, 'normal');
-            doc.text(`Total Mano de Obra: $${costoTotalManoObra.toFixed(2)}`, 40, currentY);
-            currentY += 25;
-            
-            
-            // --- MATERIALES UTILIZADOS ---
-            doc.setFont(undefined, 'bold');
-            doc.text("Materiales Utilizados:", 40, currentY);
-            currentY += 10;
-            
+            // --- TABLA DE MATERIALES ---
+            currentY += 30;
             let costoTotalMateriales = 0;
             const bodyMateriales = [];
             if (orden.materiales_asignados && orden.materiales_asignados.length > 0) {
                 orden.materiales_asignados.forEach(mat => {
-                    costoTotalMateriales += mat.costo_total;
-                    bodyMateriales.push([
-                        mat.nombre_material,
-                        mat.cantidad_usada.toString(),
-                        `$${mat.costo_total.toFixed(2)}`
-                    ]);
+                    costoTotalMateriales += parseFloat(mat.costo_total);
+                    bodyMateriales.push([mat.nombre_material, mat.cantidad_usada.toString(), `$${(parseFloat(mat.costo_total)/parseFloat(mat.cantidad_usada)).toFixed(2)}`, `$${parseFloat(mat.costo_total).toFixed(2)}`]);
                 });
+            } else {
+                bodyMateriales.push(['Trabajos de Mantenimiento / Reparación', '1', `$${parseFloat(comprobante.monto).toFixed(2)}`, `$${parseFloat(comprobante.monto).toFixed(2)}`]);
             }
             
             doc.autoTable({
-                head: [['Material', 'Cantidad', 'Costo']],
-                body: bodyMateriales.length > 0 ? bodyMateriales : [['No hay materiales asignados', '', '$0.00']],
+                head: [['DESCRIPCIÓN', 'CANT.', 'P.UNIT.', 'TOTAL']],
+                body: bodyMateriales,
                 startY: currentY,
                 theme: 'grid',
-                headStyles: { fillColor: [45, 45, 45] },
-                margin: { left: 40, right: 40 }
-            });
-            
-            currentY = doc.lastAutoTable.finalY + 20;
-            
-            // --- RESUMEN FINANCIERO ---
-            // Usar los valores ya calculados y almacenados en la orden
-            const subtotalMateriales = orden.subtotal_materiales || costoTotalMateriales;
-            const margenPorcentaje = orden.margen_ganancia || 20;
-            const ivaPorcentaje = orden.iva_porcentaje || 0;
-            const subtotalConMargen = orden.subtotal_con_margen || (subtotalMateriales * (1 + margenPorcentaje / 100));
-            const montoIva = orden.monto_iva || 0;
-            const totalFinal = orden.total_orden || (subtotalConMargen + montoIva);
-            
-            // Construir el cuerpo de la tabla financiera
-            const bodyFinanciero = [
-                [{ content: 'Subtotal Materiales:', styles: { halign: 'right', fontStyle: 'bold' }}, { content: `$${subtotalMateriales.toFixed(2)}`, styles: { halign: 'right' }}],
-                [{ content: 'Costo Mano de Obra:', styles: { halign: 'right', fontStyle: 'bold' }}, { content: `$${costoTotalManoObra.toFixed(2)}`, styles: { halign: 'right' }}]
-            ];
-            
-            // Solo mostrar margen si existe
-            if (margenPorcentaje > 0) {
-                const margenMonto = subtotalConMargen - subtotalMateriales;
-                bodyFinanciero.push(
-                    [{ content: `Margen de Ganancia (${margenPorcentaje}%):`, styles: { halign: 'right', fontStyle: 'bold' }}, { content: `$${margenMonto.toFixed(2)}`, styles: { halign: 'right' }}]
-                );
-            }
-            
-            // Solo mostrar IVA si existe
-            if (ivaPorcentaje > 0) {
-                bodyFinanciero.push(
-                    [{ content: `IVA (${ivaPorcentaje}%):`, styles: { halign: 'right', fontStyle: 'bold' }}, { content: `$${montoIva.toFixed(2)}`, styles: { halign: 'right' }}]
-                );
-            }
-            
-            // Agregar total final
-            bodyFinanciero.push(
-                [{ content: 'TOTAL A PAGAR:', styles: { halign: 'right', fontStyle: 'bold', fontSize: 14, fillColor: [45, 45, 45], textColor: [255, 255, 255] }}, { content: `$${totalFinal.toFixed(2)}`, styles: { halign: 'right', fontStyle: 'bold', fontSize: 14, fillColor: [45, 45, 45], textColor: [255, 255, 255] }}]
-            );
-            
-            doc.autoTable({
-                body: bodyFinanciero,
-                startY: currentY,
-                theme: 'plain',
+                headStyles: { fillColor: [254, 245, 239], textColor: [74, 35, 17], fontSize: 9, fontStyle: 'bold' },
                 columnStyles: {
-                    0: { cellWidth: pageWidth - 240 },
-                    1: { cellWidth: 160 }
+                    0: { cellWidth: 'auto' },
+                    1: { cellWidth: 50, halign: 'center' },
+                    2: { cellWidth: 70, halign: 'center' },
+                    3: { cellWidth: 70, halign: 'center' }
                 },
                 margin: { left: 40, right: 40 }
             });
             
-            // --- PIE DE PÁGINA ---
-            currentY = pageHeight - 60;
-            doc.setFontSize(8);
-            doc.setTextColor(100);
-            doc.text("Este comprobante es un documento informativo sin validez fiscal.", pageWidth / 2, currentY, { align: 'center' });
-            currentY += 12;
-            doc.setTextColor(200, 0, 0);
-            doc.setFont(undefined, 'bold');
-            doc.text("DOCUMENTO CONTROL INTERNO - SIN VALOR TRIBUTARIO", pageWidth / 2, currentY, { align: 'center' });
+            currentY = doc.lastAutoTable.finalY;
             
-            // Guardar PDF
-            doc.save(`comprobante_${comprobante.id_comprobante}_orden_${orden.id_orden}.pdf`);
+            // --- RESUMEN FINANCIERO ---
+            const subtotal = parseFloat(comprobante.monto);
+            const iva = subtotal * 0.12; // Ejemplo IVA 12% o lo que uses
+            const total = subtotal + iva;
+
+            doc.autoTable({
+                body: [
+                    [{content: 'SUBTOTAL:', styles: {halign: 'right', fontStyle: 'bold'}}, {content: `$${subtotal.toFixed(2)}`, styles: {halign: 'right'}}],
+                    [{content: 'IVA:', styles: {halign: 'right', fontStyle: 'bold'}}, {content: `$${iva.toFixed(2)}`, styles: {halign: 'right'}}],
+                    [{content: 'TOTAL A PAGAR:', styles: {halign: 'right', fontStyle: 'bold', fontSize: 13, fillColor: [220, 220, 220]}}, {content: `$${total.toFixed(2)}`, styles: {halign: 'right', fontStyle: 'bold', fontSize: 13, fillColor: [220, 220, 220]}}]
+                ],
+                startY: currentY,
+                theme: 'plain',
+                columnStyles: { 0: { cellWidth: pageWidth - 180 }, 1: { cellWidth: 100 } },
+                margin: { left: 40, right: 40 }
+            });
+            
+            // --- PIE DE PÁGINA ---
+            currentY = pageHeight - 80;
+            doc.setFontSize(10); doc.setTextColor(100); doc.setFont(undefined, 'normal');
+            doc.setDrawColor(230); doc.line(40, currentY - 10, pageWidth - 40, currentY - 10);
+            doc.text("Muchas gracias por su preferencia. Carrocerías Alvarado agradece su confianza.", pageWidth / 2, currentY, { align: 'center' });
+            doc.text("Este documento es generado automáticamente por el sistema de inventario.", pageWidth / 2, currentY + 15, { align: 'center' });
+            
+            doc.save(`Comprobante_${comprobante.id_comprobante}.pdf`);
         };
     }
 });

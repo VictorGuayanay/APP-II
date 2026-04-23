@@ -141,14 +141,13 @@
     </div> 
 </div>  
 
-<script src="js/config.js"></script>
-    <script src="js/dashboard-core.js"></script>
     <script src="vendor/jquery/jquery-3.2.1.min.js"></script>
-<script src="vendor/bootstrap/js/bootstrap5.bundle.min.js"></script>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="vendor/bootstrap/js/bootstrap5.bundle.min.js"></script>
+    <script src="js/config.js"></script>
+    <script src="js/dashboard-core.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 
 <script>
@@ -309,84 +308,49 @@ $(document).ready(function() {
         });
     });
 
-    // Manejador del botón de imprimir PDF (sin cambios)
     $('#imprimirPdfButton').on('click', function() {
-        console.log("Generando PDF con encabezado y logo...");
-        
-        // 1. Crear el objeto de imagen y definir su ruta
-        //    Asegúrate de que la ruta 'images/logo_empresa.png' sea correcta y que la imagen exista.
         var logo = new Image();
-        logo.src = 'images/logo.jpg'; // IMPORTANTE: Reemplaza con la ruta real de tu logo!
-
-        // 2. Toda la lógica de creación del PDF debe ir dentro del 'onload' de la imagen
-        //    para asegurar que el logo se haya cargado antes de intentar aadirlo.
+        logo.src = 'images/logo.jpg';
         logo.onload = function() {
             const { jsPDF } = window.jspdf;
-            // Crear un nuevo documento PDF en orientación horizontal ('l' para landscape)
-            const doc = new jsPDF({
-                orientation: 'landscape',
-                unit: 'pt',
-                format: 'a4'
-            });
+            const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
+            const pageWidth = doc.internal.pageSize.getWidth();
+            const pageHeight = doc.internal.pageSize.getHeight();
 
-            // --- INICIO DEL ENCABEZADO ---
-            // 3. Añadir el logo al PDF (Parte superior izquierda)
-            doc.addImage(this, 'JPG', 20, 15, 40, 40); 
-
-            // Leyenda Legal - Destacada (Centrada arriba)
-            doc.setFontSize(8);
-            doc.setTextColor(200, 0, 0);
-            doc.setFont(undefined, 'bold');
-            doc.text("DOCUMENTO DE CONTROL INTERNO - SIN VALOR TRIBUTARIO", doc.internal.pageSize.getWidth() / 2, 20, { align: 'center' });
+            // --- ENCABEZADO ---
+            doc.addImage(this, 'JPG', 40, 20, 50, 50);
+            doc.setFontSize(16); doc.setTextColor(40); doc.setFont(undefined, 'bold');
+            doc.text("CARROCERÍAS ALVARADO", 110, 35);
+            doc.setFontSize(9); doc.setFont(undefined, 'normal');
+            doc.text("Telf: +593 99 991 1866", 110, 50);
+            doc.text("Email: carroceriasalvarado@hotmail.com", 110, 62);
+            doc.text("Dir: Avda. Monseñor Leonidas Proaño, Riobamba, Ecuador", 110, 74);
             
-            // Datos de la Empresa (Alineados a la derecha)
-            doc.setTextColor(40);
-            doc.setFontSize(18);
-            doc.text("CARROCERÍAS ALVARADO", 190, 35, { align: 'right' }); 
+            // Leyenda Tributaria
+            doc.setFontSize(8); doc.setTextColor(200, 0, 0); doc.setFont(undefined, 'bold');
+            doc.text("DOCUMENTO CONTROL INTERNO - SIN VALOR TRIBUTARIO", pageWidth / 2, 20, { align: 'center' });
             
-            doc.setFontSize(9);
-            doc.setFont(undefined, 'normal');
-            doc.text("Telf: +593 99 991 1866", 190, 42, { align: 'right' });
-            doc.text("Email: carroceriasalvarado@hotmail.com", 190, 47, { align: 'right' });
-            doc.text("Dir: Avda. Monseñor Leonidas Proaño, Riobamba, Ecuador", 190, 52, { align: 'right' });
-            // --- FIN DEL ENCABEZADO ---
-
-            // 5. Añadir título del reporte
             const fechaDesde = $('#fechaDesde').val();
             const fechaHasta = $('#fechaHasta').val();
-            const titulo = `Reporte de Uso de Materiales - Período: ${fechaDesde} al ${fechaHasta}`;
+            const titulo = `REPORTE DE USO DE MATERIALES (${fechaDesde} Al ${fechaHasta})`;
             
-            doc.setFontSize(14);
-            doc.setFont(undefined, 'bold');
-            doc.text(titulo, 40, 100); 
-            doc.setFont(undefined, 'normal');
-
-            // 6. Usar autoTable para generar la tabla desde el HTML
+            doc.setTextColor(40); doc.setFontSize(14);
+            doc.text(titulo, 40, 110);
+            
             doc.autoTable({
                 html: '#reporteTable',
-                startY: 110, // Iniciar la tabla más abajo para dejar espacio al título
+                startY: 120,
                 theme: 'grid',
-                headStyles: {
-                    fillColor: [45, 45, 45] // Color de cabecera (oscuro)
-                },
-                didDrawPage: function (data) {
-                    // Pie de página con número (se dibujará en cada página)
-                    const pageCount = doc.internal.getNumberOfPages();
-                    doc.setFontSize(8);
-                    doc.text('Página ' + doc.internal.pages.length, data.settings.margin.left, doc.internal.pageSize.height - 10);
-                }
+                headStyles: { fillColor: [45, 45, 45] },
+                margin: { left: 40, right: 40 }
             });
 
-            // 7. Guardar el PDF con un nombre de archivo dinámico
-            doc.save(`reporte_uso_materiales_${fechaDesde}_al_${fechaHasta}.pdf`);
+            doc.setFontSize(8); doc.setTextColor(150);
+            doc.text(`Página ${doc.internal.pages.length}`, 40, pageHeight - 20);
+            
+            doc.save(`Reporte_Materiales_${fechaDesde}_${fechaHasta}.pdf`);
         };
-
-        // Manejo de error si el logo no se puede cargar
-        logo.onerror = function() {
-            alert("Error: No se pudo cargar el logo de la empresa. Se generará el PDF sin él.");
-            // Aquí podrías llamar a una versión de la función que genera el PDF sin el logo
-            // Por simplicidad, por ahora solo notificamos al usuario.
-        };
+        logo.onerror = function() { alert("Error al cargar el logo."); };
     });
 });
 </script>

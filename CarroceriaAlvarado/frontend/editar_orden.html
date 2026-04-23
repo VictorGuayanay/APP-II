@@ -13,6 +13,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
     <link rel="stylesheet" href="css/fixed-layout.css">
+    <link rel="stylesheet" href="css/toast.css">
 </head>
 <body>
 
@@ -91,17 +92,30 @@
                 <div class="card-body">
                     <form id="formEditarOrden">
                         <!-- Datos B?sicos -->
-                        <div class="row">   
-                            <div class="col-md-6 mb-3">
+                        <div class="row align-items-end">   
+                            <div class="col-md-5 mb-3">
                                 <label for="selectCliente" class="form-label">Cliente <span class="text-danger">*</span></label>
-                                <select class="form-select" id="selectCliente" required>
-                                    <option value="">Cargando clientes...</option>
-                                </select>
+                                <div class="input-group">
+                                    <select class="form-select" id="selectCliente" required>
+                                        <option value="">Cargando clientes...</option>
+                                    </select>
+                                    <button type="button" id="btnAceptarCliente" class="btn btn-outline-success" title="Confirmar cambio de cliente">
+                                        <i class="fa fa-check"></i> Aceptar
+                                    </button>
+                                </div>
                             </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Estado Actual</label>
-                                <input type="text" id="estadoActual" class="form-control" readonly>
-                                <small class="text-muted">El estado no se puede editar desde aquí</small>
+                            <div class="col-md-4 mb-3" id="infoClienteContenedor" style="display: none;">
+                                <div class="alert alert-light border shadow-sm p-2 mb-0" style="font-size: 0.85rem; background-color: #fff9f0;">
+                                    <h6 class="mb-1 text-primary" style="font-size: 0.9rem;"><i class="fa fa-user"></i> Datos del Cliente</h6>
+                                    <div id="datosClienteEditable"></div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-3 text-end">
+                                <label class="form-label d-block text-muted small">Estado de la Orden</label>
+                                <div id="statusBadgeContainer">
+                                    <span id="txtEstado" class="badge rounded-pill p-2 px-3 fs-6 shadow-sm border border-2">...</span>
+                                </div>
+                                <input type="hidden" id="estadoActual">
                             </div>
                         </div>
                         <div class="row">
@@ -230,6 +244,7 @@
 
 <!-- Scripts -->
 <script src="js/config.js"></script>`r`n    <script src="js/dashboard-core.js"></script>
+    <script src="js/toast.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="vendor/bootstrap/js/bootstrap5.bundle.min.js"></script>
 <script src="js/settings_modal.js"></script>
@@ -274,13 +289,70 @@ $(document).ready(function() {
                 const $select = $('#selectCliente');
                 $select.empty().append('<option value="">Seleccione un cliente...</option>');
                 clientes.forEach(function(cliente) {
-                    $select.append(`<option value="${cliente.id_cliente}">${cliente.nombre}</option>`);
+                    $select.append(`<option value="${cliente.id_cliente}" 
+                        data-nombre="${cliente.nombre}" 
+                        data-cedula="${cliente.cedula || ''}" 
+                        data-email="${cliente.email || ''}" 
+                        data-telf="${cliente.telefono || ''}">${cliente.nombre}</option>`);
                 });
+
+                // Si ya hay un cliente seleccionado, disparar el evento change para mostrar la info
+                const currentClientId = $('#selectCliente').val();
+                if (currentClientId) {
+                    $('#selectCliente').trigger('change');
+                }
             },
             error: function(xhr) {
                 console.error('Error al cargar clientes:', xhr);
             }
         });
+    }
+
+    // Mostrar info del cliente seleccionado y manejar botón Aceptar
+    $('#selectCliente').on('change', function() {
+        const $option = $(this).find('option:selected');
+        if (!$option.val()) {
+            $('#infoClienteContenedor').fadeOut();
+            return;
+        }
+        const nombre = $option.data('nombre');
+        const cedula = $option.data('cedula');
+        const email = $option.data('email');
+        const telf = $option.data('telf');
+         
+        $('#datosClienteEditable').html(`
+            <strong>Cédula:</strong> ${cedula || 'N/A'}<br>
+            <strong>Nombre:</strong> ${nombre}<br>
+            <strong>Telf:</strong> ${telf || 'N/A'}<br>
+            <strong>Email:</strong> ${email || 'N/A'}
+        `);
+        $('#infoClienteContenedor').fadeIn();
+    });
+
+    $('#btnAceptarCliente').on('click', function() {
+        if ($('#selectCliente').val()) {
+            showSuccessToast("Cliente confirmado para la orden");
+        } else {
+            showErrorToast("Seleccione un cliente primero");
+        }
+    });
+
+    function actualizarUIEstado(estado) {
+        const $badge = $('#txtEstado');
+        $badge.text(estado || 'Desconocido');
+        $badge.removeClass('bg-warning bg-danger bg-success bg-info bg-secondary text-dark text-white');
+        
+        if (estado === 'Asignado') {
+            $badge.addClass('bg-warning text-dark'); // Amarillo
+        } else if (estado === 'Finalizado') {
+            $badge.addClass('bg-danger text-white'); // Rojo
+        } else if (estado === 'En Proceso') {
+            $badge.addClass('bg-info text-white');
+        } else if (estado === 'Facturado') {
+            $badge.addClass('bg-success text-white');
+        } else {
+            $badge.addClass('bg-secondary text-white');
+        }
     }
     
     // Variables globales para empleados
@@ -320,9 +392,14 @@ $(document).ready(function() {
                             <strong>${emp.nombre}</strong>
                             <span class="text-muted"> - ${emp.cargo || 'Sin cargo'}</span>
                         </div>
-                        <button type="button" class="btn btn-sm btn-warning btn-cambiar-empleado" data-index="${index}">
-                            <i class="fa fa-exchange"></i> Cambiar
-                        </button>
+                        <div class="btn-group">
+                            <button type="button" class="btn btn-sm btn-warning btn-cambiar-empleado" data-index="${index}" title="Cambiar empleado">
+                                <i class="fa fa-exchange"></i> Cambiar
+                            </button>
+                            <button type="button" class="btn btn-sm btn-danger btn-eliminar-empleado" data-index="${index}" title="Eliminar asignación">
+                                <i class="fa fa-trash"></i> Borrar
+                            </button>
+                        </div>
                     </div>
                 </div>
             `;
@@ -351,6 +428,17 @@ $(document).ready(function() {
     }
     
     // Mostrar modal para seleccionar empleado
+    // Eliminar asignación de empleado
+    $(document).on('click', '.btn-eliminar-empleado', function() {
+        const index = $(this).data('index');
+        const emp = empleadosAsignados[index];
+        if (confirm(`¿Está seguro de que desea eliminar a ${emp.nombre} de esta orden?`)) {
+            empleadosAsignados.splice(index, 1);
+            mostrarEmpleadosAsignados();
+            showInfoToast("Empleado eliminado de la orden");
+        }
+    });
+
     function mostrarModalSeleccionEmpleado(indexACambiar) {
         obtenerEmpleadosDisponibles(function(empleadosDisponibles) {
             // Filtrar empleados que ya est?n asignados a esta orden
@@ -489,7 +577,12 @@ $(document).ready(function() {
                         // El backend devuelve precio_unitario, no precio_venta
                         const precio = m.precio_unitario || m.precio_venta || 0;
                         const precioFormat = precio ? `$${parseFloat(precio).toFixed(2)}` : 'N/A';
-                        $selectMaterial.append(`<option value="${m.id_material}" data-nombre="${m.nombre}" data-precio="${precio}">${m.nombre} - ${precioFormat} (Stock: ${m.cantidad})</option>`);
+                        $selectMaterial.append(`<option value="${m.id_material}" 
+                            data-nombre="${m.nombre}" 
+                            data-precio="${precio}" 
+                            data-stock-base="${m.cantidad}">
+                            ${m.nombre} - ${precioFormat} (Stock: ${m.cantidad})
+                        </option>`);
                     });
                 } else {
                     $selectMaterial.append('<option value="">No hay materiales disponibles</option>');
@@ -523,14 +616,26 @@ $(document).ready(function() {
         const cantidad = parseInt($('#cantidadMaterial').val());
         
         if (!idMaterial || !cantidad || cantidad <= 0) {
-            alert('Por favor, seleccione un material y una cantidad válida');
+            showErrorToast('Por favor, seleccione un material y una cantidad válida');
+            return;
+        }
+
+        // Obtener stock disponible considerando el carrito
+        const stockBase = parseFloat($selectedOption.data('stock-base')) || 0;
+        let cantEnLista = 0;
+        materialesAgregados.forEach(m => {
+            if (m.id_material == idMaterial) cantEnLista += m.cantidad;
+        });
+        
+        if (cantidad > (stockBase - cantEnLista)) {
+            showErrorToast(`Stock insuficiente. Disponible: ${stockBase - cantEnLista}`);
             return;
         }
         
         // Verificar si ya existe
         const existe = materialesAgregados.find(m => m.id_material === parseInt(idMaterial));
         if (existe) {
-            alert('Este material ya fue agregado. Elimínelo primero si desea cambiar la cantidad.');
+            showWarningToast('Este material ya está en la lista. Use el botón editar para cambiar la cantidad.');
             return;
         }
         
@@ -568,10 +673,18 @@ $(document).ready(function() {
         materialesAgregados.forEach(function(mat, index) {
             const item = `
                 <li class="list-group-item d-flex justify-content-between align-items-center">
-                    <span><strong>${mat.nombre}</strong> - Cantidad: ${mat.cantidad} - Precio Unit: $${mat.precio_unitario.toFixed(2)} - Total: $${mat.costo_total.toFixed(2)}</span>
-                    <button type="button" class="btn btn-danger btn-sm btn-eliminar-material" data-index="${index}">
-                        <i class="fa fa-trash"></i>
-                    </button>
+                    <div>
+                        <strong>${mat.nombre}</strong><br>
+                        <small class="text-muted">Cant: ${mat.cantidad} | P.Unit: $${mat.precio_unitario.toFixed(2)} | Total: $${mat.costo_total.toFixed(2)}</small>
+                    </div>
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-outline-primary btn-sm btn-editar-material" data-index="${index}" title="Editar cantidad">
+                            <i class="fa fa-pencil"></i>
+                        </button>
+                        <button type="button" class="btn btn-outline-danger btn-sm btn-eliminar-material" data-index="${index}" title="Eliminar material">
+                            <i class="fa fa-trash"></i>
+                        </button>
+                    </div>
                 </li>
             `;
             $lista.append(item);
@@ -584,6 +697,46 @@ $(document).ready(function() {
         materialesAgregados.splice(index, 1);
         actualizarListaMateriales();
         actualizarResumenFinanciero();
+        showInfoToast("Material eliminado de la lista");
+    });
+
+    // Editar cantidad de material
+    $(document).on('click', '.btn-editar-material', function() {
+        const index = $(this).data('index');
+        const mat = materialesAgregados[index];
+        
+        // Obtener el stock base de la lista desplegable si el material aún está ahí, 
+        // o asumir que el stock es al menos la cantidad actual + algo más si no lo encontramos
+        const materialOption = $(`#selectMaterialProveedor option[value="${mat.id_material}"]`);
+        const stockBase = materialOption.length ? parseFloat(materialOption.data('stock-base')) : (mat.cantidad + 100);
+        
+        let cantEnOtros = 0;
+        materialesAgregados.forEach((m, i) => {
+            if (i !== index && m.id_material === mat.id_material) cantEnOtros += m.cantidad;
+        });
+        
+        const disponible = stockBase - cantEnOtros;
+        
+        const nuevaCantStr = prompt(`Editar cantidad para "${mat.nombre}":\nStock Disponible: ${disponible}`, mat.cantidad);
+        if (nuevaCantStr === null) return;
+        
+        const nuevaCant = parseInt(nuevaCantStr);
+        if (isNaN(nuevaCant) || nuevaCant <= 0) {
+            showErrorToast("Ingrese una cantidad válida");
+            return;
+        }
+        
+        if (nuevaCant > disponible) {
+            showErrorToast(`Stock insuficiente. Máximo: ${disponible}`);
+            return;
+        }
+        
+        mat.cantidad = nuevaCant;
+        mat.costo_total = mat.precio_unitario * nuevaCant;
+        
+        actualizarListaMateriales();
+        actualizarResumenFinanciero();
+        showSuccessToast("Cantidad actualizada");
     });
     
     // Actualizar resumen financiero
@@ -686,8 +839,10 @@ $(document).ready(function() {
             console.log('Datos de la orden:', orden);
             
             // Prellenar formulario
-            $('#selectCliente').val(orden.id_cliente);
+            $('#selectCliente').val(orden.id_cliente).trigger('change');
             $('#estadoActual').val(orden.estado);
+            actualizarUIEstado(orden.estado);
+            
             $('#fechaInicio').val(orden.fecha_inicio.split('T')[0]);
             $('#fechaFin').val(orden.fecha_fin ? orden.fecha_fin.split('T')[0] : '');
             $('#descripcionOrden').val(orden.descripcion);

@@ -12,6 +12,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/fixed-layout.css">
+    <link rel="stylesheet" href="css/toast.css">
 </head>
 <body>
 
@@ -87,6 +88,14 @@
                                     <option value="">Cargando clientes...</option>
                                 </select>
                             </div>
+                            <div class="col-md-6 mb-3" id="infoClienteContenedor" style="display: none;">
+                                <div class="alert alert-light border shadow-sm p-2 mb-0" style="font-size: 0.85rem;">
+                                    <h6 class="mb-1 text-primary"><i class="fa fa-info-circle"></i> Datos del Cliente</h6>
+                                    <div id="datosClienteOT"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label for="selectTipoTrabajo" class="form-label">Tipo de Trabajo <span class="text-danger">*</span></label>
                                 <select class="form-select" id="selectTipoTrabajo" required>
@@ -105,8 +114,8 @@
                                 <input type="date" class="form-control" id="fechaInicio" required>
                             </div>
                             <div class="col-md-6 mb-3">
-                                <label for="fechaFin" class="form-label">Fecha de Finalización (Opcional)</label>
-                                <input type="date" class="form-control" id="fechaFin">
+                                <label for="fechaFin" class="form-label">Fecha de Finalización <span class="text-danger">*</span></label>
+                                <input type="date" class="form-control" id="fechaFin" required>
                             </div>
                         </div>
                         <div class="mb-3">
@@ -290,6 +299,7 @@
 <script src="vendor/bootstrap/js/bootstrap5.bundle.min.js"></script>
 <script src="js/config.js"></script>
 <script src="js/dashboard-core.js"></script>
+<script src="js/toast.js"></script>
 
 <script>
 // Función para poblar el selector de clientes
@@ -309,7 +319,13 @@ function cargarSelectCliente() {
             $selectCliente.empty().append('<option value="">Seleccione un cliente...</option>');
             if (clientes && clientes.length > 0) {
                 clientes.forEach(function(cliente) {
-                    $selectCliente.append(`<option value="${cliente.id_cliente}">${cliente.nombre}</option>`);
+                    $selectCliente.append(`<option value="${cliente.id_cliente}" 
+                        data-ruc="${cliente.cedula || ''}" 
+                        data-nombre="${cliente.nombre}" 
+                        data-telefono="${cliente.telefono || ''}" 
+                        data-email="${cliente.email || ''}">
+                        ${cliente.nombre}
+                    </option>`);
                 });
             } else {
                 $selectCliente.append('<option value="">No hay clientes disponibles</option>');
@@ -372,6 +388,27 @@ $(document).ready(function() {
     // Cargar selector de clientes al iniciar
     cargarSelectCliente();
 
+    // Mostrar info del cliente seleccionado
+    $('#selectCliente').on('change', function() {
+        const $option = $(this).find('option:selected');
+        if ($option.val()) {
+            const ruc = $option.data('ruc');
+            const nombre = $option.data('nombre');
+            const telf = $option.data('telefono');
+            const email = $option.data('email');
+            
+            $('#datosClienteOT').html(`
+                <strong>RUC/CI:</strong> ${ruc || 'N/A'}<br>
+                <strong>Nombre:</strong> ${nombre}<br>
+                <strong>Telf:</strong> ${telf || 'N/A'}<br>
+                <strong>Email:</strong> ${email || 'N/A'}
+            `);
+            $('#infoClienteContenedor').fadeIn();
+        } else {
+            $('#infoClienteContenedor').fadeOut();
+        }
+    });
+
     // --- NUEVO: Cargar Proveedores ---
     function cargarProveedores() {
         const $selectProveedor = $('#selectProveedor');
@@ -416,7 +453,12 @@ $(document).ready(function() {
                     if (materiales && materiales.length > 0) {
                         materiales.forEach(function(m) {
                             const precioFormat = m.precio_venta ? `$${parseFloat(m.precio_venta).toFixed(2)}` : 'N/A';
-                            $selectMaterial.append(`<option value="${m.id_material}" data-nombre="${m.nombre}" data-precio="${m.precio_venta}">${m.nombre} - ${precioFormat} (Stock: ${m.cantidad})</option>`);
+                            $selectMaterial.append(`<option value="${m.id_material}" 
+                                data-nombre="${m.nombre}" 
+                                data-precio="${m.precio_venta}" 
+                                data-stock-base="${m.cantidad}">
+                                ${m.nombre} - ${precioFormat} (Stock: ${m.cantidad})
+                            </option>`);
                         });
                     } else {
                         $selectMaterial.append('<option value="">No hay materiales disponibles</option>');
@@ -448,6 +490,22 @@ $(document).ready(function() {
         }
     });
 
+    // Función para obtener stock real disponible (API - Carrito)
+    function obtenerStockDisponibleReal(id_material) {
+        const materialOption = $(`#selectMaterialProveedor option[value="${id_material}"]`);
+        if (!materialOption.length) return 0;
+        
+        const stockBase = parseFloat(materialOption.data('stock-base')) || 0;
+        let cantidadEnCarrito = 0;
+        materialesAgregados.forEach(m => {
+            if (m.id_material == id_material) {
+                cantidadEnCarrito += m.cantidad;
+            }
+        });
+        
+        return stockBase - cantidadEnCarrito;
+    }
+
     // Agregar material a la lista
     $('#btnAgregarMaterial').on('click', function() {
         const materialId = $('#selectMaterialProveedor').val();
@@ -457,14 +515,20 @@ $(document).ready(function() {
         const cantidad = parseInt($('#cantidadMaterial').val());
 
         if (!materialId || !cantidad || cantidad < 1) {
-            alert('Debe seleccionar un material y especificar una cantidad válida.');
+            showErrorToast('Debe seleccionar un material y especificar una cantidad válida.');
             return;
         }
 
-        // Verificar si el material ya fue agregado
+        const stockDisponible = obtenerStockDisponibleReal(materialId);
+        if (cantidad > stockDisponible) {
+            showErrorToast(`Stock insuficiente. Solo quedan ${stockDisponible} unidades.`);
+            return;
+        }
+
+        // Si ya existe, sumamos la cantidad (opcional, pero mejor editemos)
         const yaExiste = materialesAgregados.find(m => m.id_material === parseInt(materialId));
         if (yaExiste) {
-            alert('Este material ya fue agregado. Puede eliminarlo y agregarlo nuevamente con otra cantidad.');
+            showWarningToast('Este material ya está en la lista. Use el botón editar para cambiar la cantidad.');
             return;
         }
 
@@ -479,13 +543,48 @@ $(document).ready(function() {
 
         // Actualizar UI
         actualizarListaMateriales();
+        showSuccessToast(`Agregado: ${materialNombre}`);
 
-        // Limpiar selección
-        $('#selectProveedor').val('');
-        $('#selectMaterialProveedor').empty().prop('disabled', true).append('<option value="">Primero seleccione un proveedor</option>');
+        // Limpiar selección pero no el proveedor necesarimente (o sí)
+        $('#selectMaterialProveedor').val('');
         $('#cantidadMaterial').val('').prop('disabled', true);
         $('#btnAgregarMaterial').prop('disabled', true);
     });
+
+    // Función para editar cantidad de material
+    window.editarCantidadMaterial = function(index) {
+        const material = materialesAgregados[index];
+        const materialOption = $(`#selectMaterialProveedor option[value="${material.id_material}"]`);
+        const stockBase = parseFloat(materialOption.data('stock-base')) || (material.cantidad + 100);
+        
+        // Cantidad en otros items (en caso de duplicados, aunque evitamos duplicados)
+        let cantidadEnOtros = 0;
+        materialesAgregados.forEach((m, i) => {
+            if (i !== index && m.id_material === material.id_material) {
+                cantidadEnOtros += m.cantidad;
+            }
+        });
+        
+        const stockDisponibleParaEditar = stockBase - cantidadEnOtros;
+        
+        const nuevaCantStr = prompt(`Editar cantidad para "${material.nombre}":\nDisponible: ${stockDisponibleParaEditar}`, material.cantidad);
+        if (nuevaCantStr === null) return;
+        
+        const nuevaCant = parseInt(nuevaCantStr);
+        if (isNaN(nuevaCant) || nuevaCant <= 0) {
+            showErrorToast("Ingrese una cantidad válida.");
+            return;
+        }
+        
+        if (nuevaCant > stockDisponibleParaEditar) {
+            showErrorToast(`Stock insuficiente. Máximo: ${stockDisponibleParaEditar}`);
+            return;
+        }
+        
+        material.cantidad = nuevaCant;
+        actualizarListaMateriales();
+        showSuccessToast("Cantidad actualizada");
+    };
 
     function calcularSubtotal() {
         let subtotal = 0;
@@ -542,10 +641,18 @@ $(document).ready(function() {
                 const precioTotal = (m.cantidad * m.precio_unitario).toFixed(2);
                 $lista.append(`
                     <li class="list-group-item d-flex justify-content-between align-items-center">
-                        <span><strong>${m.nombre}</strong> - Cantidad: ${m.cantidad} - Precio Unit: $${m.precio_unitario.toFixed(2)} - Total: $${precioTotal}</span>
-                        <button type="button" class="btn btn-sm btn-danger btn-eliminar-material" data-index="${index}">
-                            <i class="fa fa-trash"></i>
-                        </button>
+                        <div>
+                            <strong>${m.nombre}</strong><br>
+                            <small class="text-muted">Cant: ${m.cantidad} | P.Unit: $${m.precio_unitario.toFixed(2)} | Total: $${precioTotal}</small>
+                        </div>
+                        <div class="btn-group">
+                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="editarCantidadMaterial(${index})" title="Editar">
+                                <i class="fa fa-pencil"></i>
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-danger" onclick="eliminarMaterial(${index})" title="Eliminar">
+                                <i class="fa fa-trash"></i>
+                            </button>
+                        </div>
                     </li>
                 `);
             });
@@ -558,11 +665,11 @@ $(document).ready(function() {
     }
 
     // Eliminar material de la lista
-    $(document).on('click', '.btn-eliminar-material', function() {
-        const index = $(this).data('index');
+    window.eliminarMaterial = function(index) {
         materialesAgregados.splice(index, 1);
         actualizarListaMateriales();
-    });
+        showInfoToast("Material eliminado de la lista");
+    };
 
     // Event listener para recalcular cuando cambie el margen de ganancia
     $('#margenGanancia').on('change', function() {

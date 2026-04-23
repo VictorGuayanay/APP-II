@@ -12,6 +12,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/fixed-layout.css">
+    <link rel="stylesheet" href="css/toast.css">
 </head>
 <body>
 
@@ -438,6 +439,7 @@
 <script src="vendor/jquery/jquery-3.2.1.min.js"></script>
 <script src="js/config.js"></script>
 <script src="js/dashboard-core.js"></script>
+<script src="js/toast.js"></script>
 <script src="vendor/bootstrap/js/bootstrap5.bundle.min.js"></script>
 
 <script>
@@ -674,6 +676,51 @@ function eliminarDelCarrito(index) {
     carritoProductos.splice(index, 1);
     actualizarTablaCarrito();
     habilitarBotonVenta();
+    // Actualizar stock visible si el material eliminado estaba seleccionado
+    actualizarInfoMaterial();
+}
+
+// Función para editar cantidad de producto en el carrito
+function editarCantidad(index) {
+    const producto = carritoProductos[index];
+    const stockOriginal = parseFloat($(`#ventaNombreMaterial option[value="${producto.id_material}"]`).data('stock')) || (producto.cantidad + 100); // Fallback amigable
+    
+    // Calculamos el stock disponible real para este producto (Stock Base - Cantidad en OTROS items del carrito)
+    let cantidadEnOtrosItems = 0;
+    carritoProductos.forEach((p, i) => {
+        if (i !== index && p.id_material === producto.id_material) {
+            cantidadEnOtrosItems += p.cantidad;
+        }
+    });
+    
+    const stockDisponibleParaEditar = stockOriginal - cantidadEnOtrosItems;
+    
+    const nuevaCantidadStr = prompt(`Editar cantidad para "${producto.nombre_material}":\nStock Máximo Disponible: ${stockDisponibleParaEditar}`, producto.cantidad);
+    
+    if (nuevaCantidadStr === null) return; // Usuario canceló
+    
+    const nuevaCantidad = parseInt(nuevaCantidadStr);
+    if (isNaN(nuevaCantidad) || nuevaCantidad <= 0) {
+        alert("Por favor, ingrese una cantidad válida mayor a 0.");
+        return;
+    }
+    
+    if (nuevaCantidad > stockDisponibleParaEditar) {
+        alert(`Stock insuficiente. Solo quedan ${stockDisponibleParaEditar} unidades disponibles.`);
+        return;
+    }
+    
+    // Actualizar producto
+    producto.cantidad = nuevaCantidad;
+    producto.subtotal = producto.precio_unitario * nuevaCantidad;
+    producto.ganancia = producto.subtotal * (producto.porcentaje_ganancia / 100);
+    producto.iva = producto.subtotal * (producto.porcentaje_iva / 100);
+    producto.total = producto.subtotal + producto.ganancia + producto.iva;
+    
+    // Refrescar
+    actualizarTablaCarrito();
+    actualizarInfoMaterial();
+    showSuccessToast("Cantidad actualizada");
 }
 
 // Función para actualizar tabla del carrito
@@ -716,8 +763,11 @@ function actualizarTablaCarrito() {
                 <td>${producto.porcentaje_iva}%</td>
                 <td>$${producto.iva.toFixed(2)}</td>
                 <td class="fw-bold">$${producto.total.toFixed(2)}</td>
-                <td>
-                    <button class="btn btn-sm btn-danger" onclick="eliminarDelCarrito(${index})">
+                <td class="text-nowrap">
+                    <button class="btn btn-sm btn-outline-primary me-1" onclick="editarCantidad(${index})" title="Editar Cantidad">
+                        <i class="fa fa-pencil"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger" onclick="eliminarDelCarrito(${index})" title="Eliminar">
                         <i class="fa fa-trash"></i>
                     </button>
                 </td>
@@ -848,17 +898,36 @@ function actualizarInfoMaterial() {
     const $option = $select.find('option:selected');
     
     if ($option.val()) {
-        const stock = $option.data('stock') || 0;
-        const precio = parseFloat($option.data('precio')) || 0;
+        const idMaterial = $option.val();
+        const stockBase = parseFloat($option.data('stock')) || 0;
         const unidad = $option.data('unidad') || 'N/A';
+        const precio = parseFloat($option.data('precio')) || 0;
+
+        // Calcular cuánto de este material ya está en el carrito
+        let cantidadEnCarrito = 0;
+        carritoProductos.forEach(p => {
+            if (p.id_material == idMaterial) {
+                cantidadEnCarrito += p.cantidad;
+            }
+        });
+
+        const stockDisponibleReal = stockBase - cantidadEnCarrito;
         
-        $('#ventaStockDisponible').val(stock + ' ' + unidad);
+        $('#ventaStockDisponible').val(stockDisponibleReal + ' ' + unidad);
         $('#ventaPrecioUnitario').val('$' + precio.toFixed(2));
         $('#ventaUnidad').val(unidad);
+        
+        // Deshabilitar botón de agregar si no hay stock real
+        if (stockDisponibleReal <= 0) {
+            $('#mensajeProducto').html('<div class="alert alert-warning py-1 small">Stock agotado (considerando carrito)</div>');
+        } else {
+            $('#mensajeProducto').html('');
+        }
         
         calcularTotal();
     } else {
         limpiarCampos();
+        $('#mensajeProducto').html('');
     }
 }
 
@@ -1090,8 +1159,20 @@ $(document).ready(function () {
             return;
         }
 
-        if (cantidad > stock) {
-            mensajeDiv.html(`<div class="alert alert-danger">Stock insuficiente. Disponible: ${stock}</div>`);
+        // Validación de stock real contemplando el carrito
+        const idMaterial = $select.val();
+        const stockBase = parseFloat($option.data('stock')) || 0;
+        let cantidadEnCarrito = 0;
+        carritoProductos.forEach(p => {
+            if (p.id_material == idMaterial) {
+                cantidadEnCarrito += p.cantidad;
+            }
+        });
+
+        const stockDisponibleReal = stockBase - cantidadEnCarrito;
+
+        if (cantidad > stockDisponibleReal) {
+            mensajeDiv.html(`<div class="alert alert-danger">Stock insuficiente. Disponible real: ${stockDisponibleReal}</div>`);
             return;
         }
 
@@ -1115,6 +1196,7 @@ $(document).ready(function () {
         };
 
         agregarAlCarrito(producto);
+        actualizarInfoMaterial();
         mensajeDiv.html('<div class="alert alert-success"><i class="fa fa-check-circle"></i> Producto agregado al carrito</div>');
         setTimeout(() => mensajeDiv.html(''), 3000);
         
