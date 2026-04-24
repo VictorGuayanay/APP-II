@@ -408,22 +408,61 @@ function generarPDFDeOrden(orden) {
             margin: { left: 40, right: 40 }
         });
         
-        currentY = doc.lastAutoTable.finalY;
+        currentY = doc.lastAutoTable.finalY + 5;
         
-        // --- RESUMEN FINANCIERO ---
-        const subtotalMateriales = parseFloat(orden.subtotal_materiales) || costoTotalMateriales;
-        const margenPct = parseFloat(orden.margen_ganancia) || 20;
-        const ivaPct = parseFloat(orden.iva_porcentaje) || 0;
-        const subtotalMargen = subtotalMateriales * (1 + margenPct / 100);
-        const montoIva = subtotalMargen * (ivaPct / 100);
-        const totalFinal = subtotalMargen + montoIva + costoTotalManoObra;
+        // --- RESUMEN FINANCIERO (misma fórmula que detalle_orden.html) ---
+        // 1. Subtotales base
+        const subtotalMat   = costoTotalMateriales;
+        const subtotalMO    = costoTotalManoObra;
+        const subtotalGen   = subtotalMat + subtotalMO;
+        // 2. Margen y subtotal con margen
+        const margenPct     = parseFloat(orden.margen_ganancia) || 20;
+        const margenMonto   = subtotalGen * (margenPct / 100);
+        const subConMargen  = subtotalGen + margenMonto;
+        // 3. IVA aplicado sobre el subtotal con margen
+        const ivaPct        = parseFloat(orden.iva_porcentaje) || 0;
+        const montoIva      = subConMargen * (ivaPct / 100);
+        // 4. Total final
+        const totalFinal    = subConMargen + montoIva;
+
+        // Construir filas del resumen financiero
+        const resumenRows = [
+            [
+                { content: 'Subtotal Materiales:', styles: { halign: 'right', fontStyle: 'bold' } },
+                { content: `$${subtotalMat.toFixed(2)}`, styles: { halign: 'right' } }
+            ],
+            [
+                { content: 'Mano de Obra:', styles: { halign: 'right', fontStyle: 'bold' } },
+                { content: `$${subtotalMO.toFixed(2)}`, styles: { halign: 'right' } }
+            ],
+            [
+                { content: 'Subtotal:', styles: { halign: 'right', fontStyle: 'bold' } },
+                { content: `$${subtotalGen.toFixed(2)}`, styles: { halign: 'right' } }
+            ],
+            [
+                { content: `Margen de Ganancia (${margenPct}%):`, styles: { halign: 'right', fontStyle: 'bold' } },
+                { content: `$${margenMonto.toFixed(2)}`, styles: { halign: 'right' } }
+            ]
+        ];
+
+        if (ivaPct > 0) {
+            resumenRows.push([
+                { content: 'Subtotal con Margen:', styles: { halign: 'right', fontStyle: 'bold' } },
+                { content: `$${subConMargen.toFixed(2)}`, styles: { halign: 'right' } }
+            ]);
+            resumenRows.push([
+                { content: `IVA (${ivaPct}%):`, styles: { halign: 'right', fontStyle: 'bold' } },
+                { content: `$${montoIva.toFixed(2)}`, styles: { halign: 'right' } }
+            ]);
+        }
+
+        resumenRows.push([
+            { content: 'TOTAL A PAGAR:', styles: { halign: 'right', fontStyle: 'bold', fontSize: 13, fillColor: [240, 240, 240] } },
+            { content: `$${totalFinal.toFixed(2)}`, styles: { halign: 'right', fontStyle: 'bold', fontSize: 13, fillColor: [240, 240, 240] } }
+        ]);
 
         doc.autoTable({
-            body: [
-                [{content: 'SUBTOTAL:', styles: {halign: 'right', fontStyle: 'bold'}}, {content: `$${(subtotalMargen + costoTotalManoObra).toFixed(2)}`, styles: {halign: 'right'}}],
-                [{content: 'IVA:', styles: {halign: 'right', fontStyle: 'bold'}}, {content: `$${montoIva.toFixed(2)}`, styles: {halign: 'right'}}],
-                [{content: 'TOTAL A PAGAR:', styles: {halign: 'right', fontStyle: 'bold', fontSize: 13, fillColor: [220, 220, 220]}}, {content: `$${totalFinal.toFixed(2)}`, styles: {halign: 'right', fontStyle: 'bold', fontSize: 13, fillColor: [220, 220, 220]}}]
-            ],
+            body: resumenRows,
             startY: currentY,
             theme: 'plain',
             columnStyles: { 0: { cellWidth: pageWidth - 180 }, 1: { cellWidth: 100 } },

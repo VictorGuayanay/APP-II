@@ -15,6 +15,7 @@
     <style>
         .bg-light-danger { background-color: rgba(220, 53, 69, 0.1); }
         .bg-light-success { background-color: rgba(40, 167, 69, 0.1); }
+        .bg-light-warning { background-color: rgba(255, 193, 7, 0.15); }
         .action-card {
             transition: transform 0.2s, box-shadow 0.2s;
             cursor: default;
@@ -26,6 +27,23 @@
         button:disabled {
             cursor: not-allowed;
             opacity: 0.6;
+        }
+        /* Toast container */
+        .toast-container-custom {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+        }
+        .toast-custom {
+            min-width: 320px;
+            border-radius: 10px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+            animation: slideInRight 0.4s ease;
+        }
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to   { transform: translateX(0);   opacity: 1; }
         }
     </style>
 </head>
@@ -197,7 +215,7 @@
                     
                     <div class="row mt-3 g-4" id="accionesOrdenContainer">
                         <!-- Finalizar Orden -->
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <div class="action-card h-100 p-4 border rounded shadow-sm text-center bg-white">
                                 <div class="action-icon bg-light-danger mb-3 mx-auto d-flex align-items-center justify-content-center" style="width: 70px; height: 70px; border-radius: 50%;">
                                     <i class="fa fa-check-circle fa-2x text-danger"></i>
@@ -211,7 +229,7 @@
                         </div>
                         
                         <!-- Generar Comprobante -->
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <div class="action-card h-100 p-4 border rounded shadow-sm text-center bg-white">
                                 <div class="action-icon bg-light-success mb-3 mx-auto d-flex align-items-center justify-content-center" style="width: 70px; height: 70px; border-radius: 50%;">
                                     <i class="fa fa-file-text fa-2x text-success"></i>
@@ -220,6 +238,20 @@
                                 <p class="text-muted small mb-4">Genera el documento PDF de pago para entregar al cliente.</p>
                                 <button class="btn btn-success btn-lg w-100 shadow-sm py-2" id="generatePaymentButton">
                                     <i class="fa fa-file-pdf-o me-2"></i> Generar Comprobante
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Imprimir Cotización -->
+                        <div class="col-md-4">
+                            <div class="action-card h-100 p-4 border rounded shadow-sm text-center bg-white">
+                                <div class="action-icon bg-light-warning mb-3 mx-auto d-flex align-items-center justify-content-center" style="width: 70px; height: 70px; border-radius: 50%;">
+                                    <i class="fa fa-print fa-2x text-warning"></i>
+                                </div>
+                                <h5 class="fw-bold">Cotización</h5>
+                                <p class="text-muted small mb-4">Imprime una cotización del trabajo para entregar al cliente sin generar cobro.</p>
+                                <button class="btn btn-warning btn-lg w-100 shadow-sm py-2" id="printQuoteButton">
+                                    <i class="fa fa-print me-2"></i> Imprimir Cotización
                                 </button>
                             </div>
                         </div>
@@ -428,6 +460,18 @@
         </div>
     </div>
 
+</div>
+
+<!-- Toast de notificación -->
+<div class="toast-container-custom">
+    <div id="appToast" class="toast-custom toast align-items-center border-0" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="4000">
+        <div class="d-flex">
+            <div class="toast-body fs-6" id="appToastBody">
+                Mensaje aquí.
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Cerrar"></button>
+        </div>
+    </div>
 </div>
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -904,34 +948,48 @@
             });
         });
 
-       
-        // Abrir modal para generar comprobante
+        // ── Función helper: mostrar toast ──────────────────────────────────────
+        function showToast(message, type) {
+            // type: 'success' | 'danger' | 'warning' | 'info'
+            const $toast = $('#appToast');
+            const $body  = $('#appToastBody');
+            // Limpiar clases de color anteriores
+            $toast.removeClass('bg-success bg-danger bg-warning bg-info text-white text-dark');
+            if (type === 'success') {
+                $toast.addClass('bg-success text-white');
+            } else if (type === 'danger') {
+                $toast.addClass('bg-danger text-white');
+            } else if (type === 'warning') {
+                $toast.addClass('bg-warning text-dark');
+            } else {
+                $toast.addClass('bg-info text-white');
+            }
+            $body.html(message);
+            const toastEl = document.getElementById('appToast');
+            const bsToast = bootstrap.Toast.getOrCreateInstance(toastEl);
+            bsToast.show();
+        }
+
+        // ── Abrir modal para generar comprobante ──────────────────────────────
         $('#generatePaymentButton').on('click', function() {
             console.log('Clic en Generar Comprobante, orden ID:', idOrden);
-            if (!$(this).is(':visible')) {
-                console.error('Botón Generar Comprobante no está visible o accesible');
-                return;
-            }
             $('#modalOrderId').text(idOrden);
             $('#modalMontoTotal').text(totalFinalACobrar.toFixed(2) || '0.00');
-            try {
-                const myModal = new bootstrap.Modal(document.getElementById('confirmPaymentModal'), {});
-                console.log('Intentando mostrar modal de comprobante');
-                myModal.show();
-            } catch (e) {
-                console.error('Error al abrir el modal de comprobante:', e);
-            }
+            const myModal = new bootstrap.Modal(document.getElementById('confirmPaymentModal'), {});
+            myModal.show();
         });
 
-        // Confirmar generación de comprobante
+        // ── Confirmar generación de comprobante ───────────────────────────────
         $('#confirmGeneratePaymentButton').on('click', function() {
-            console.log('Clic en Confirmar y Generar Comprobante');
+            const $btn = $(this);
             const metodoPago = $('#metodoPagoSelect').val();
             if (!metodoPago) {
-                showError('Por favor, seleccione un método de pago.');
+                showToast('Por favor, seleccione un método de pago.', 'warning');
                 return;
             }
-            console.log('Enviando solicitud para generar comprobante:', { id_orden: idOrden, metodo_pago: metodoPago });
+            // Deshabilitar botón mientras procesa
+            $btn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Generando...');
+
             $.ajax({
                 url: `${API_BASE_URL}/comprobantes-pago`,
                 method: 'POST',
@@ -941,28 +999,139 @@
                     metodo_pago: metodoPago
                 }),
                 success: function(response) {
-                    console.log('Comprobante generado:', response);
-                    $('#mensajeAnadirMaterial').text(response.message || "Comprobante generado con éxito.").removeClass('alert-info alert-danger').addClass('alert alert-success show');
-                    $('#generatePaymentButton').prop('disabled', true).html('<i class="fa fa-file-pdf-o"></i> Comprobante Generado');
                     bootstrap.Modal.getInstance(document.getElementById('confirmPaymentModal')).hide();
+                    $('#generatePaymentButton').prop('disabled', true).html('<i class="fa fa-check"></i> Comprobante Generado');
+                    showToast('<i class="fa fa-check-circle me-2"></i> ¡Comprobante generado exitosamente!', 'success');
                     cargarDetallesDeOrden(idOrden);
                 },
                 error: function(xhr) {
-                    console.error('Error al generar comprobante:', xhr.responseText);
-                    const errorMsg = xhr.responseJSON?.error || "Error al generar el comprobante.";
-                    
-                    if (errorMsg.includes("Ya existe un comprobante")) {
-                        $('#generatePaymentButton').prop('disabled', true).html('<i class="fa fa-file-pdf-o"></i> Comprobante Ya Existente');
+                    $btn.prop('disabled', false).html('<i class="fa fa-check"></i> Confirmar y Generar');
+                    const errorMsg = xhr.responseJSON?.error || 'Error al generar el comprobante.';
+                    if (errorMsg.includes('Ya existe un comprobante')) {
                         bootstrap.Modal.getInstance(document.getElementById('confirmPaymentModal')).hide();
-                        $('#ordenFinalizadaAlert').removeClass('alert-success').addClass('alert-info text-dark').show();
-                        $('#ordenFinalizadaAlert .alert-heading').html('<i class="fa fa-info-circle"></i> Comprobante Existente');
-                        $('#ordenFinalizadaAlert p').text(errorMsg);
+                        $('#generatePaymentButton').prop('disabled', true).html('<i class="fa fa-file-pdf-o"></i> Comprobante Ya Existente');
+                        showToast('<i class="fa fa-info-circle me-2"></i> ' + errorMsg, 'warning');
                     } else {
-                        showError(errorMsg);
+                        showToast('<i class="fa fa-times-circle me-2"></i> ' + errorMsg, 'danger');
                     }
                 }
             });
         });
+
+        // ── Imprimir Cotización ───────────────────────────────────────────────
+        $('#printQuoteButton').on('click', function() {
+            imprimirCotizacion();
+        });
+
+        function imprimirCotizacion() {
+            // Recopilamos los datos ya mostrados en pantalla
+            const ordenId       = $('#ordenIdTitulo').text();
+            const totalFinal    = totalFinalACobrar.toFixed(2);
+            const subtotalMat   = $('#resumenSubtotalMateriales').text();
+            const costoMano     = $('#resumenCostoManoObra').text();
+            const subtotalGen   = $('#resumenSubtotalGeneral').text();
+            const margenPct     = $('#resumenMargenPorcentaje').text();
+            const margenMonto   = $('#resumenMargenMonto').text();
+            const ivaPct        = $('#resumenIvaPorcentaje').text();
+            const ivaMonto      = $('#resumenIvaMonto').text();
+            const mostrarIva    = $('#resumenIvaRow').is(':visible');
+
+            // Datos del cliente y descripción (información general)
+            const clienteHtml   = $('#infoGeneralOrden').html();
+
+            // Materiales
+            let materialesHtml = '<tr><td colspan="4" class="text-center">Sin materiales</td></tr>';
+            const $rows = $('#materialesUsadosTableBody tr');
+            if ($rows.length) { materialesHtml = $rows.prop('outerHTML'); }
+
+            // Empleados (mano de obra)
+            let empleadosHtml = '<tr><td colspan="6" class="text-center">Sin empleados</td></tr>';
+            const $empRows = $('#manoObraTableBody tr');
+            if ($empRows.length) { empleadosHtml = $empRows.prop('outerHTML'); }
+
+            const ivaRow = mostrarIva
+                ? `<tr><td class="text-end"><strong>IVA (${ivaPct}%):</strong></td><td class="text-end">${ivaMonto}</td></tr>`
+                : '';
+
+            const fechaHoy = new Date().toLocaleDateString('es-EC', { year:'numeric', month:'long', day:'numeric' });
+
+            const htmlCotizacion = `
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Cotización - Orden #${ordenId}</title>
+    <style>
+        body { font-family: Arial, sans-serif; font-size: 13px; margin: 30px; color: #333; }
+        h1  { font-size: 20px; color: #c0392b; }
+        h2  { font-size: 15px; border-bottom: 2px solid #c0392b; padding-bottom: 4px; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
+        th  { background: #c0392b; color: #fff; padding: 7px 10px; text-align: left; }
+        td  { padding: 6px 10px; border-bottom: 1px solid #eee; }
+        .text-end { text-align: right; }
+        .total-row td { font-size: 15px; font-weight: bold; background: #f9f9f9; }
+        .disclaimer { margin-top: 30px; font-size: 11px; color: #888; border-top: 1px solid #ddd; padding-top: 10px; }
+        .header-info { display: flex; justify-content: space-between; margin-bottom: 20px; }
+        .badge-sin-valor { display:inline-block; border:2px solid #c0392b; color:#c0392b; padding:4px 12px; border-radius:4px; font-size:12px; font-weight:bold; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+    <div class="header-info">
+        <div>
+            <h1>Carrocerías Alvarado</h1>
+            <p style="margin:0">Carrocería y Talleres de Reparación</p>
+            <p style="margin:0">Tel: +593 98 765 4321 | carroceriasalvarado@gmail.com</p>
+        </div>
+        <div style="text-align:right">
+            <div class="badge-sin-valor">COTIZACIÓN - SIN VALOR TRIBUTARIO</div>
+            <p style="margin:0"><strong>Orden #:</strong> ${ordenId}</p>
+            <p style="margin:0"><strong>Fecha:</strong> ${fechaHoy}</p>
+        </div>
+    </div>
+
+    <h2>Materiales Utilizados</h2>
+    <table>
+        <thead><tr><th>ID Detalle</th><th>ID Material</th><th>Nombre</th><th>Cantidad Usada</th><th class="text-end">Costo Total</th></tr></thead>
+        <tbody>${materialesHtml}</tbody>
+    </table>
+
+    <h2>Mano de Obra</h2>
+    <table>
+        <thead><tr><th>Empleado</th><th>Cargo</th><th>Costo/Hora</th><th>Días</th><th>Horas</th><th class="text-end">Costo Total</th></tr></thead>
+        <tbody>${empleadosHtml}</tbody>
+    </table>
+
+    <h2>Resumen Financiero</h2>
+    <table style="max-width:460px; margin-left:auto;">
+        <tbody>
+            <tr><td class="text-end"><strong>Subtotal Materiales:</strong></td><td class="text-end">${subtotalMat}</td></tr>
+            <tr><td class="text-end"><strong>Costo Mano de Obra:</strong></td><td class="text-end">${costoMano}</td></tr>
+            <tr><td class="text-end"><strong>Subtotal:</strong></td><td class="text-end">${subtotalGen}</td></tr>
+            <tr><td class="text-end"><strong>Margen de Ganancia (${margenPct}%):</strong></td><td class="text-end">${margenMonto}</td></tr>
+            ${ivaRow}
+        </tbody>
+        <tfoot class="total-row">
+            <tr><td class="text-end">TOTAL ESTIMADO:</td><td class="text-end">\$${totalFinal}</td></tr>
+        </tfoot>
+    </table>
+
+    <div class="disclaimer">
+        Este documento es una <strong>cotización referencial</strong> y no constituye un comprobante de pago ni tiene valor tributario.
+        Los valores pueden variar según los materiales y horas finales utilizados.
+    </div>
+
+    <script>window.onload = function(){ window.print(); }<\/script>
+</body>
+</html>`;
+
+            const ventana = window.open('', '_blank', 'width=900,height=700');
+            if (ventana) {
+                ventana.document.write(htmlCotizacion);
+                ventana.document.close();
+            } else {
+                showToast('<i class="fa fa-exclamation-triangle me-2"></i> Permita las ventanas emergentes para imprimir la cotización.', 'warning');
+            }
+        }
 
         // Abrir modal para finalizar orden con resumen completo
         $('#finalizeOrderButton').on('click', function() {

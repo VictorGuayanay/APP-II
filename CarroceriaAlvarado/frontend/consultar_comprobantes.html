@@ -82,15 +82,29 @@
                                 <label for="fechaHasta" class="form-label fw-bold small">Fecha Hasta</label>
                                 <input type="date" class="form-control" id="fechaHasta">
                             </div>
+                            <div class="col-md-2">
+                                <button type="submit" class="btn btn-primary w-100"><i class="fa fa-search me-1"></i> Consultar</button>
+                            </div>
+                        </div>
+                        <div class="row align-items-end g-3 mt-1">
                             <div class="col-md-4">
-                                <label for="buscarCliente" class="form-label fw-bold small">Filtrar por Cliente</label>
+                                <label for="buscarCliente" class="form-label fw-bold small"><i class="fa fa-user me-1"></i>Filtrar por Cliente</label>
                                 <div class="input-group">
                                     <span class="input-group-text"><i class="fa fa-search"></i></span>
                                     <input type="text" class="form-control" id="buscarCliente" placeholder="Nombre del cliente...">
                                 </div>
                             </div>
+                            <div class="col-md-3">
+                                <label for="buscarNumOrden" class="form-label fw-bold small"><i class="fa fa-hashtag me-1"></i>Filtrar por Número de Orden</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fa fa-file-text-o"></i></span>
+                                    <input type="number" class="form-control" id="buscarNumOrden" placeholder="Ej: 58" min="1">
+                                </div>
+                            </div>
                             <div class="col-md-2">
-                                <button type="submit" class="btn btn-primary w-100">Consultar</button>
+                                <button type="button" class="btn btn-outline-secondary w-100" id="limpiarFiltrosBtn">
+                                    <i class="fa fa-times me-1"></i> Limpiar Filtros
+                                </button>
                             </div>
                         </div>
                         <div id="mensajeConsulta" class="mt-3"></div>
@@ -179,13 +193,32 @@ $(document).ready(function() {
         }
     }
 
-    $('#buscarCliente').on('input', function() {
-        const busqueda = $(this).val().toLowerCase();
-        const filtrados = allComprobantesData.filter(item => 
-            item.nombre_cliente.toLowerCase().includes(busqueda) || 
-            item.id_orden.toString().includes(busqueda)
-        );
+    // ── Función de filtrado local combinado ────────────────────────────────
+    function aplicarFiltrosLocales() {
+        const busquedaCliente = $('#buscarCliente').val().toLowerCase().trim();
+        const busquedaOrden   = $('#buscarNumOrden').val().trim();
+
+        const filtrados = allComprobantesData.filter(function(item) {
+            const coincideCliente = !busquedaCliente ||
+                item.nombre_cliente.toLowerCase().includes(busquedaCliente);
+
+            const coincideOrden = !busquedaOrden ||
+                item.id_orden.toString() === busquedaOrden;
+
+            return coincideCliente && coincideOrden;
+        });
+
         renderComprobantes(filtrados);
+    }
+
+    $('#buscarCliente').on('input', aplicarFiltrosLocales);
+    $('#buscarNumOrden').on('input', aplicarFiltrosLocales);
+
+    // Limpiar filtros locales
+    $('#limpiarFiltrosBtn').on('click', function() {
+        $('#buscarCliente').val('');
+        $('#buscarNumOrden').val('');
+        renderComprobantes(allComprobantesData);
     });
 
     $('#formConsultarComprobantes').on('submit', function(event) {
@@ -196,26 +229,37 @@ $(document).ready(function() {
         const fechaDesde = $('#fechaDesde').val();
         const fechaHasta = $('#fechaHasta').val();
 
-        if (!fechaDesde || !fechaHasta) {
-            mensajeDiv.text('Debe seleccionar un rango de fechas.').addClass('alert alert-danger').show();
+        // Validar: si uno de los dos campos de fecha tiene valor, el otro también debe tenerlo
+        if ((fechaDesde && !fechaHasta) || (!fechaDesde && fechaHasta)) {
+            mensajeDiv.removeClass().addClass('alert alert-warning mt-3')
+                .text('Si filtra por fecha debe completar tanto "Fecha Desde" como "Fecha Hasta".').show();
             return;
         }
 
-        mensajeDiv.text('Buscando...').addClass('alert alert-info').show();
+        // Construir URL de forma dinámica (las fechas son opcionales)
+        let apiUrl = `${API_BASE_URL}/comprobantes-pago`;
+        const params = [];
+        if (fechaDesde) params.push(`fecha_desde=${fechaDesde}`);
+        if (fechaHasta) params.push(`fecha_hasta=${fechaHasta}`);
+        if (params.length > 0) apiUrl += '?' + params.join('&');
+
+        mensajeDiv.removeClass().addClass('alert alert-info mt-3').text('Buscando...').show();
         
         $.ajax({
-            url: `${API_BASE_URL}/comprobantes-pago?fecha_desde=${fechaDesde}&fecha_hasta=${fechaHasta}`,
+            url: apiUrl,
             method: 'GET',
             headers: { 'Authorization': 'Bearer ' + token },
             success: function(data) {
                 mensajeDiv.hide();
                 $resultadosDiv.show();
                 allComprobantesData = data;
-                renderComprobantes(allComprobantesData);
+                // Aplicar filtros locales activos (cliente / número de orden)
+                aplicarFiltrosLocales();
             },
             error: function(xhr) {
                 console.error("Error:", xhr.responseText);
-                mensajeDiv.text("Error al realizar la consulta.").addClass('alert alert-danger');
+                mensajeDiv.removeClass().addClass('alert alert-danger mt-3')
+                    .text('Error al realizar la consulta. Verifique su sesión e intente de nuevo.').show();
             }
         });
     });
@@ -318,8 +362,47 @@ $(document).ready(function() {
         });
     });
     
-    // Funci?n para generar PDF del comprobante
+    // ── Helper: calcular días laborales entre dos fechas ──────────────────────────
+    function calcularDiasLaborales(fechaInicio, fechaFin) {
+        if (!fechaInicio) return 0;
+        const inicio = new Date(fechaInicio.split('T')[0] + 'T12:00:00');
+        const fin    = fechaFin ? new Date(fechaFin.split('T')[0] + 'T12:00:00') : new Date();
+        const diffTime = fin - inicio;
+        if (diffTime < 0) return 1;
+        return Math.ceil(diffTime / (1000 * 60 * 60 * 24)) || 1;
+    }
+
+    // ── Función para generar PDF del comprobante individual ──────────────────────
     function generarPDFComprobante(orden, comprobante) {
+        // ──── CÁLCULO DEL TOTAL REAL (igual que detalle_orden.html) ──────────────────
+        // 1. Subtotal materiales
+        let subtotalMateriales = 0;
+        if (orden.materiales_asignados && orden.materiales_asignados.length > 0) {
+            orden.materiales_asignados.forEach(function(mat) {
+                subtotalMateriales += parseFloat(mat.costo_total) || 0;
+            });
+        }
+
+        // 2. Costo de mano de obra (todos los empleados × días × 8 h × costo/hora)
+        let costoManoObra = 0;
+        if (orden.empleados_asignados && orden.empleados_asignados.length > 0) {
+            const dias       = calcularDiasLaborales(orden.fecha_inicio, orden.fecha_fin);
+            const horasTotal = dias * 8;
+            orden.empleados_asignados.forEach(function(emp) {
+                costoManoObra += horasTotal * (parseFloat(emp.costo_hora) || 0);
+            });
+        }
+
+        // 3. Subtotal general, margen, IVA y total final
+        const subtotalGeneral    = subtotalMateriales + costoManoObra;
+        const margenPct          = parseFloat(orden.margen_ganancia) || 20;
+        const ivaPct             = parseFloat(orden.iva_porcentaje)  || 0;
+        const margenMonto        = subtotalGeneral * (margenPct / 100);
+        const subtotalConMargen  = subtotalGeneral + margenMonto;
+        const montoIva           = subtotalConMargen * (ivaPct / 100);
+        const totalFinal         = subtotalConMargen + montoIva;
+
+        // ──── GENERACIÓN DEL PDF ─────────────────────────────────────────────
         var logo = new Image();
         logo.src = 'images/logo.jpg';
         
@@ -327,7 +410,7 @@ $(document).ready(function() {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' });
             
-            const pageWidth = doc.internal.pageSize.getWidth();
+            const pageWidth  = doc.internal.pageSize.getWidth();
             const pageHeight = doc.internal.pageSize.getHeight();
             
             // --- ENCABEZADO ---
@@ -342,7 +425,7 @@ $(document).ready(function() {
             doc.text("Dir: Avda. Monseñor Leonidas Proaño (a pocos metros de la línea férrea),", pageWidth - 40, 84, { align: 'right' });
             doc.text("Riobamba, Ecuador", pageWidth - 40, 96, { align: 'right' });
             
-            // Recuadro de Leyenda Legal
+            // Leyenda legal
             let currentY = 120;
             doc.setDrawColor(200, 0, 0); doc.setLineWidth(1);
             doc.rect(60, currentY, pageWidth - 120, 25);
@@ -369,66 +452,103 @@ $(document).ready(function() {
             doc.text(`Fecha: ${comprobante.fecha_emision}`, pageWidth - 40, currentY, { align: 'right' });
             
             currentY += 13;
-            doc.text(`RUC/CI: ${orden.cedula || '9999999999999'}`, 40, currentY);
-            doc.text(`Usuario: ${comprobante.nombre_usuario_registrador || 'Admin'}`, pageWidth - 40, currentY, { align: 'right' });
+            doc.text(`Cédula/RUC: ${orden.cedula_cliente || orden.cedula || '9999999999999'}`, 40, currentY);
+            doc.text(`Método Pago: ${comprobante.metodo_pago}`, pageWidth - 40, currentY, { align: 'right' });
             
             currentY += 13;
-            doc.text(`Telf: ${orden.telefono || '0999999999'}`, 40, currentY);
-            doc.text(`Pago: ${comprobante.metodo_pago}`, pageWidth - 40, currentY, { align: 'right' });
-            
+            doc.text(`Teléfono: ${orden.telefono_cliente || orden.telefono || 'N/A'}`, 40, currentY);
+            doc.text(`Registrado por: ${comprobante.nombre_usuario_registrador || 'Admin'}`, pageWidth - 40, currentY, { align: 'right' });
+
             // --- TABLA DE MATERIALES ---
             currentY += 30;
-            let costoTotalMateriales = 0;
             const bodyMateriales = [];
             if (orden.materiales_asignados && orden.materiales_asignados.length > 0) {
-                orden.materiales_asignados.forEach(mat => {
-                    costoTotalMateriales += parseFloat(mat.costo_total);
-                    bodyMateriales.push([mat.nombre_material, mat.cantidad_usada.toString(), `$${(parseFloat(mat.costo_total)/parseFloat(mat.cantidad_usada)).toFixed(2)}`, `$${parseFloat(mat.costo_total).toFixed(2)}`]);
+                orden.materiales_asignados.forEach(function(mat) {
+                    const costoMat  = parseFloat(mat.costo_total) || 0;
+                    const cant      = parseFloat(mat.cantidad_usada) || 1;
+                    const pUnit     = costoMat / cant;
+                    bodyMateriales.push([
+                        mat.nombre_material,
+                        cant.toString(),
+                        `$${pUnit.toFixed(2)}`,
+                        `$${costoMat.toFixed(2)}`
+                    ]);
                 });
             } else {
-                bodyMateriales.push(['Trabajos de Mantenimiento / Reparación', '1', `$${parseFloat(comprobante.monto).toFixed(2)}`, `$${parseFloat(comprobante.monto).toFixed(2)}`]);
+                bodyMateriales.push(['Sin materiales asignados', '-', '-', '$0.00']);
             }
-            
+
             doc.autoTable({
-                head: [['DESCRIPCIÓN', 'CANT.', 'P.UNIT.', 'TOTAL']],
+                head: [['MATERIAL / DESCRIPCIÓN', 'CANT.', 'P. UNIT.', 'COSTO TOTAL']],
                 body: bodyMateriales,
                 startY: currentY,
                 theme: 'grid',
                 headStyles: { fillColor: [254, 245, 239], textColor: [74, 35, 17], fontSize: 9, fontStyle: 'bold' },
                 columnStyles: {
                     0: { cellWidth: 'auto' },
-                    1: { cellWidth: 50, halign: 'center' },
-                    2: { cellWidth: 70, halign: 'center' },
-                    3: { cellWidth: 70, halign: 'center' }
+                    1: { cellWidth: 45, halign: 'center' },
+                    2: { cellWidth: 65, halign: 'right' },
+                    3: { cellWidth: 75, halign: 'right' }
                 },
                 margin: { left: 40, right: 40 }
             });
-            
-            currentY = doc.lastAutoTable.finalY;
-            
-            // --- RESUMEN FINANCIERO ---
-            const subtotal = parseFloat(comprobante.monto);
-            const iva = subtotal * 0.12; // Ejemplo IVA 12% o lo que uses
-            const total = subtotal + iva;
+
+            currentY = doc.lastAutoTable.finalY + 5;
+
+            // --- RESUMEN FINANCIERO (tabla de totales) ---
+            // Construir filas del resumen
+            const resumenBody = [
+                [
+                    { content: 'Subtotal Materiales:', styles: { halign: 'right', fontStyle: 'bold' } },
+                    { content: `$${subtotalMateriales.toFixed(2)}`, styles: { halign: 'right' } }
+                ],
+                [
+                    { content: 'Mano de Obra:', styles: { halign: 'right', fontStyle: 'bold' } },
+                    { content: `$${costoManoObra.toFixed(2)}`, styles: { halign: 'right' } }
+                ],
+                [
+                    { content: 'Subtotal:', styles: { halign: 'right', fontStyle: 'bold' } },
+                    { content: `$${subtotalGeneral.toFixed(2)}`, styles: { halign: 'right' } }
+                ],
+                [
+                    { content: `Margen de Ganancia (${margenPct}%):`, styles: { halign: 'right', fontStyle: 'bold' } },
+                    { content: `$${margenMonto.toFixed(2)}`, styles: { halign: 'right' } }
+                ]
+            ];
+
+            if (ivaPct > 0) {
+                resumenBody.push([
+                    { content: `Subtotal con Margen:`, styles: { halign: 'right', fontStyle: 'bold' } },
+                    { content: `$${subtotalConMargen.toFixed(2)}`, styles: { halign: 'right' } }
+                ]);
+                resumenBody.push([
+                    { content: `IVA (${ivaPct}%):`, styles: { halign: 'right', fontStyle: 'bold' } },
+                    { content: `$${montoIva.toFixed(2)}`, styles: { halign: 'right' } }
+                ]);
+            }
+
+            resumenBody.push([
+                { content: 'TOTAL A COBRAR:', styles: { halign: 'right', fontStyle: 'bold', fontSize: 13, fillColor: [240, 240, 240] } },
+                { content: `$${totalFinal.toFixed(2)}`, styles: { halign: 'right', fontStyle: 'bold', fontSize: 13, fillColor: [240, 240, 240] } }
+            ]);
 
             doc.autoTable({
-                body: [
-                    [{content: 'SUBTOTAL:', styles: {halign: 'right', fontStyle: 'bold'}}, {content: `$${subtotal.toFixed(2)}`, styles: {halign: 'right'}}],
-                    [{content: 'IVA:', styles: {halign: 'right', fontStyle: 'bold'}}, {content: `$${iva.toFixed(2)}`, styles: {halign: 'right'}}],
-                    [{content: 'TOTAL A PAGAR:', styles: {halign: 'right', fontStyle: 'bold', fontSize: 13, fillColor: [220, 220, 220]}}, {content: `$${total.toFixed(2)}`, styles: {halign: 'right', fontStyle: 'bold', fontSize: 13, fillColor: [220, 220, 220]}}]
-                ],
+                body: resumenBody,
                 startY: currentY,
                 theme: 'plain',
-                columnStyles: { 0: { cellWidth: pageWidth - 180 }, 1: { cellWidth: 100 } },
+                columnStyles: {
+                    0: { cellWidth: pageWidth - 180 },
+                    1: { cellWidth: 100 }
+                },
                 margin: { left: 40, right: 40 }
             });
-            
+
             // --- PIE DE PÁGINA ---
             currentY = pageHeight - 80;
             doc.setFontSize(10); doc.setTextColor(100); doc.setFont(undefined, 'normal');
             doc.setDrawColor(230); doc.line(40, currentY - 10, pageWidth - 40, currentY - 10);
             doc.text("Muchas gracias por su preferencia. Carrocerías Alvarado agradece su confianza.", pageWidth / 2, currentY, { align: 'center' });
-            doc.text("Este documento es generado automáticamente por el sistema de inventario.", pageWidth / 2, currentY + 15, { align: 'center' });
+            doc.text("Este documento es generado automáticamente por el sistema de gestión.", pageWidth / 2, currentY + 15, { align: 'center' });
             
             doc.save(`Comprobante_${comprobante.id_comprobante}.pdf`);
         };

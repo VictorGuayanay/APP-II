@@ -3130,28 +3130,54 @@ def crear_orden_trabajo(decoded_user_rol, decoded_user_id):
         for id_empleado in ids_empleados_a_asignar:
             cursor.execute("INSERT INTO AsignacionesOrdenEmpleado (id_orden, id_empleado) VALUES (?, ?)", (nueva_orden_id, id_empleado))
         
-        # NUEVO: Guardar materiales en DetalleOrdenMateriales
+        # NUEVO: Guardar materiales en DetalleOrdenMateriales Y descontar stock
         if materiales and len(materiales) > 0:
             print(f"Guardando {len(materiales)} materiales para la orden {nueva_orden_id}")
             for material in materiales:
                 id_material = material.get('id_material')
-                cantidad = material.get('cantidad')
+                cantidad    = material.get('cantidad')
                 precio_unitario = material.get('precio_unitario', 0)
                 
                 if not id_material or not cantidad:
                     print(f"Material inválido, saltando: {material}")
                     continue
                 
-                # Calcular costo total del material
-                costo_total = cantidad * precio_unitario
+                cantidad = int(cantidad)
                 
-                # Insertar en DetalleOrdenMateriales
+                # ── Verificar stock disponible antes de descontar ──────────────
+                cursor.execute(
+                    "SELECT nombre, cantidad FROM Materiales WHERE id_material = ?",
+                    (id_material,)
+                )
+                row_mat = cursor.fetchone()
+                if not row_mat:
+                    raise ValueError(f"Material con ID {id_material} no encontrado en el inventario.")
+                
+                nombre_mat, stock_actual = row_mat
+                if stock_actual < cantidad:
+                    raise ValueError(
+                        f"Stock insuficiente para '{nombre_mat}': "
+                        f"se solicitaron {cantidad} unidades pero solo hay {stock_actual} disponibles."
+                    )
+                
+                # ── Descontar stock del inventario ─────────────────────────────
+                cursor.execute(
+                    "UPDATE Materiales SET cantidad = cantidad - ?, "
+                    "fecha_ultima_actualizacion = GETDATE(), "
+                    "id_usuario_ultima_actualizacion = ? "
+                    "WHERE id_material = ?",
+                    (cantidad, decoded_user_id, id_material)
+                )
+                print(f"Stock descontado: '{nombre_mat}' (ID {id_material}) - {cantidad} unidades. Nuevo stock: {stock_actual - cantidad}")
+                
+                # ── Insertar en DetalleOrdenMateriales ────────────────────────
+                costo_total = cantidad * precio_unitario
                 sql_insert_material = """
                     INSERT INTO DetalleOrdenMateriales (id_orden, id_material, cantidad_usada, costo_total)
                     VALUES (?, ?, ?, ?)
                 """
                 cursor.execute(sql_insert_material, (nueva_orden_id, id_material, cantidad, costo_total))
-                print(f"Material {id_material} guardado: cantidad={cantidad}, costo_total=${costo_total}")
+                print(f"Material {id_material} guardado en orden: cantidad={cantidad}, costo_total=${costo_total}")
         
         conn.commit()
         
@@ -3162,6 +3188,10 @@ def crear_orden_trabajo(decoded_user_rol, decoded_user_id):
             'ids_empleados_asignados': ids_empleados_a_asignar
         }), 201
 
+    except ValueError as ve:
+        if conn: conn.rollback()
+        print(f"Error de validación en POST /ordenes-trabajo: {str(ve)}")
+        return jsonify({'error': str(ve)}), 409
     except Exception as e:
         if conn: conn.rollback()
         print(f"Error en POST /ordenes-trabajo: {str(e)}")
@@ -4137,9 +4167,21 @@ def confirmar_y_finalizar_orden(decoded_user_rol, decoded_user_id, id_orden):
                            (int(cantidad_usada_final), nuevo_costo_total, id_detalle))
 
         # 4. Finalmente, actualizar el estado de la orden de trabajo a 'Finalizado'
-        fecha_fin_actualizada = datetime.date.today()
-        sql_update_orden = "UPDATE OrdenesTrabajo SET estado = 'Finalizado', fecha_fin = ?, fecha_ultima_actualizacion = GETDATE(), id_usuario_ultima_actualizacion = ? WHERE id_orden = ?"
-        cursor.execute(sql_update_orden, (fecha_fin_actualizada, decoded_user_id, id_orden))
+        # IMPORTANTE: Solo actualizamos fecha_fin si todavía está NULL (nunca fue definida).
+        # Si ya tiene un valor, se respeta para no alterar la fecha acordada con el cliente.
+        cursor.execute("SELECT fecha_fin FROM OrdenesTrabajo WHERE id_orden = ?", (id_orden,))
+        row_fecha = cursor.fetchone()
+        fecha_fin_actual = row_fecha[0] if row_fecha else None
+
+        if fecha_fin_actual is None:
+            # No se había definido una fecha fin, usamos la fecha de hoy como cierre real
+            fecha_fin_a_guardar = datetime.date.today()
+            sql_update_orden = "UPDATE OrdenesTrabajo SET estado = 'Finalizado', fecha_fin = ?, fecha_ultima_actualizacion = GETDATE(), id_usuario_ultima_actualizacion = ? WHERE id_orden = ?"
+            cursor.execute(sql_update_orden, (fecha_fin_a_guardar, decoded_user_id, id_orden))
+        else:
+            # Ya existe una fecha fin definida por el usuario; la conservamos
+            sql_update_orden = "UPDATE OrdenesTrabajo SET estado = 'Finalizado', fecha_ultima_actualizacion = GETDATE(), id_usuario_ultima_actualizacion = ? WHERE id_orden = ?"
+            cursor.execute(sql_update_orden, (decoded_user_id, id_orden))
         
         conn.commit() # Confirmar todos los cambios de la transacción
         
