@@ -49,7 +49,8 @@
                     <li class="active"><a href="ver_inventario.html">Ver Inventario</a></li>
                     <li><a href="anadir_material.html">Añadir Material</a></li>
                     <li><a href="gestion_categorias.html">Gestión de Categorías</a></li>
-                    <li><a href="entradas_salidas_inventario.html">Entradas/Salidas</a></li>
+                    <li><a href="entradas_salidas_inventario.html">Ventas</a></li>
+                    <li><a href="ordenes_reposicion.html"><i class="fa fa-refresh"></i> Órdenes de Reposición</a></li>
                 </ul>
             </li>
             
@@ -81,7 +82,39 @@
 
         <div class="content-area container-fluid pt-4">
             <h2 class="card-header-title">Inventario Disponible</h2>
-            
+
+            <!-- Panel de Alertas de Stock Bajo -->
+            <div id="panelAlertasStock" class="mb-4" style="display:none;">
+                <div class="card border-0 shadow-sm" style="border-left: 4px solid #e67e22 !important; border-radius: 10px; overflow: hidden;">
+                    <div class="card-header d-flex align-items-center justify-content-between py-3" style="background: linear-gradient(135deg, #fff3e0, #ffe0b2); border-bottom: 1px solid #ffcc80;">
+                        <div class="d-flex align-items-center gap-2">
+                            <span style="font-size:1.3rem;">📉</span>
+                            <strong style="color:#bf360c; font-size:1rem;">Alertas de Stock Bajo</strong>
+                            <span id="contadorAlertas" class="badge rounded-pill ms-1" style="background:#e67e22; color:#fff;">0</span>
+                        </div>
+                        <button class="btn btn-sm" onclick="$('#listaAlertas').slideToggle()" style="background:#ffcc80; color:#bf360c; border:none; border-radius:6px; font-size:0.82rem;">
+                            <i class="fa fa-chevron-down"></i> Mostrar/Ocultar
+                        </button>
+                    </div>
+                    <div id="listaAlertas" class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-sm mb-0" style="font-size:0.92rem;">
+                                <thead style="background:#fff3e0;">
+                                    <tr>
+                                        <th class="ps-3" style="color:#bf360c;">Material</th>
+                                        <th style="color:#bf360c;">Stock Actual</th>
+                                        <th style="color:#bf360c;">Umbral Alerta</th>
+                                        <th style="color:#bf360c;">Acción</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tbodyAlertas"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Fin Panel de Alertas -->
+
             <div class="dashboard-card animate__animated animate__fadeInUp">
                 <div class="card-header">
                     Lista de Materiales
@@ -323,8 +356,57 @@
         </div>
     </div>
 </div>
+
+<!-- Modal: Crear Orden de Reposición -->
+<div class="modal fade" id="modalCrearReposicion" tabindex="-1" aria-labelledby="modalReposicionLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 14px; overflow: hidden;">
+            <div class="modal-header text-white border-0" style="background: linear-gradient(135deg, #e67e22, #d35400);">
+                <h5 class="modal-title" id="modalReposicionLabel">
+                    <i class="fa fa-cart-plus me-2"></i> Crear Orden de Reposición
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div id="infoMaterialReposicion" class="alert mb-3" style="background:#fff3e0; border:1px solid #ffcc80; color:#7f3300; border-radius:8px; display:none;">
+                    <strong><i class="fa fa-exclamation-triangle me-1"></i></strong>
+                    <span id="textoAlertaReposicion"></span>
+                </div>
+                <input type="hidden" id="reposicionIdMaterial">
+                <div class="mb-3">
+                    <label for="reposicionNombreMaterial" class="form-label fw-bold">Material</label>
+                    <input type="text" class="form-control" id="reposicionNombreMaterial" readonly style="background:#f8f9fa;">
+                </div>
+                <div class="mb-3">
+                    <label for="reposicionCantidad" class="form-label fw-bold">Cantidad a Solicitar <span class="text-danger">*</span></label>
+                    <input type="number" min="1" class="form-control" id="reposicionCantidad" placeholder="Ej: 50" required>
+                </div>
+                <div class="mb-3">
+                    <label for="reposicionProveedor" class="form-label fw-bold">Proveedor</label>
+                    <select class="form-select" id="reposicionProveedor">
+                        <option value="">Sin asignar</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="reposicionNotas" class="form-label fw-bold">Notas / Observaciones</label>
+                    <textarea class="form-control" id="reposicionNotas" rows="2" placeholder="Ej: Urgente para orden #15..."></textarea>
+                </div>
+                <div id="mensajeReposicion" class="mt-2"></div>
+            </div>
+            <div class="modal-footer border-0 bg-light">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn text-white px-4" id="btnEnviarReposicion" style="background: linear-gradient(135deg, #e67e22, #d35400); border: none;">
+                    <i class="fa fa-check me-1"></i> Crear Orden
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script src="js/config.js"></script>
     <script src="js/dashboard-core.js"></script>
+
+
     <script src="vendor/jquery/jquery-3.2.1.min.js"></script>
 <script src="vendor/bootstrap/js/bootstrap5.bundle.min.js"></script>
 <script src="js/toast.js"></script>
@@ -410,7 +492,7 @@ function mostrarMateriales(materiales) {
                 <td>${m.id_material}</td>
                 <td><strong>${m.codigo_material || '-'}</strong></td>
                 <td>${m.nombre}</td>
-                <td><span class="badge bg-info text-dark">${m.nombre_categoria || 'S/C'}</span></td>
+                <td><span class="badge" style="background-color: #FFD5A8; color: #7A3E00;">${m.nombre_categoria || 'S/C'}</span></td>
                 <td><strong>${m.cantidad}</strong></td>
                 <td>${m.abreviatura_unidad || m.nombre_unidad || '-'}</td>
                 <td>${m.ubicacion || '-'}</td>
@@ -696,8 +778,148 @@ $(document).ready(function () {
     $('#confirmDeleteMaterialModal').on('hidden.bs.modal', function () {
         materialIdParaEliminar = null; 
     });
+
+    // ============================================================
+    // LÓGICA DE ALERTAS DE STOCK BAJO Y ÓRDENES DE REPOSICIÓN
+    // ============================================================
+
+    /**
+     * Carga las alertas de stock bajo desde /notificaciones y
+     * renderiza el panel de alertas en la parte superior.
+     */
+    function cargarAlertasStock() {
+        $.ajax({
+            url: `${API_BASE_URL}/notificaciones`,
+            method: 'GET',
+            headers: { 'Authorization': 'Bearer ' + token },
+            success: function(notificaciones) {
+                const alertasStock = notificaciones.filter(n => n.tipo === 'stock_bajo');
+                if (alertasStock.length === 0) {
+                    $('#panelAlertasStock').hide();
+                    return;
+                }
+
+                $('#contadorAlertas').text(alertasStock.length);
+                const umbral = umbralGlobalStockBajo || 10;
+                let html = '';
+                alertasStock.forEach(function(alerta) {
+                    const stockColor = alerta.id_recurso <= 0 ? '#c0392b' : '#e67e22';
+                    html += `
+                        <tr style="border-bottom: 1px solid #ffe0b2;">
+                            <td class="ps-3 py-2">
+                                <strong>${alerta.mensaje.split("'")[1] || 'Material'}</strong>
+                            </td>
+                            <td class="py-2">
+                                <span class="badge rounded-pill" style="background:${stockColor}; color:#fff; font-size:0.9rem;">
+                                    ${alerta.mensaje.match(/(\d+) unidades/)?.[1] || '?'} uds.
+                                </span>
+                            </td>
+                            <td class="py-2 text-muted">&le; ${umbral} uds.</td>
+                            <td class="py-2">
+                                <button class="btn btn-sm text-white btn-crear-reposicion"
+                                    data-id="${alerta.id_recurso}"
+                                    data-nombre="${alerta.mensaje.split("'")[1] || ''}"
+                                    data-stock="${alerta.mensaje.match(/(\d+) unidades/)?.[1] || 0}"
+                                    style="background: linear-gradient(135deg,#e67e22,#d35400); border:none; font-size:0.82rem; border-radius:6px; padding: 3px 10px;">
+                                    <i class="fa fa-cart-plus me-1"></i> Crear Orden
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                });
+
+                $('#tbodyAlertas').html(html);
+                $('#panelAlertasStock').show();
+            },
+            error: function() {
+                // Si falla la carga de notificaciones, no mostrar el panel (no crítico)
+                console.warn('No se pudieron cargar las alertas de stock.');
+            }
+        });
+    }
+
+    /**
+     * Carga los proveedores activos en el select del modal de reposición.
+     */
+    function cargarProveedoresReposicion() {
+        $.ajax({
+            url: `${API_BASE_URL}/proveedores`,
+            method: 'GET',
+            headers: { 'Authorization': 'Bearer ' + token },
+            success: function(proveedores) {
+                const $sel = $('#reposicionProveedor');
+                $sel.find('option:not(:first)').remove();
+                proveedores.filter(p => p.estado === 'Activo').forEach(p => {
+                    $sel.append(`<option value="${p.id_proveedor}">${p.nombre_proveedor}</option>`);
+                });
+            }
+        });
+    }
+
+    // Abrir modal de reposición al clicar en "Crear Orden" desde el panel de alertas
+    $(document).on('click', '.btn-crear-reposicion', function() {
+        const idMaterial = $(this).data('id');
+        const nombre    = $(this).data('nombre');
+        const stock     = $(this).data('stock');
+
+        $('#reposicionIdMaterial').val(idMaterial);
+        $('#reposicionNombreMaterial').val(nombre);
+        $('#reposicionCantidad').val('');
+        $('#reposicionNotas').val('');
+        $('#mensajeReposicion').html('');
+
+        if (parseInt(stock) <= 0) {
+            $('#textoAlertaReposicion').text(`Sin stock. Solicita reposición de inmediato.`);
+        } else {
+            $('#textoAlertaReposicion').text(`Stock actual: ${stock} unidades (por debajo del umbral de alerta).`);
+        }
+        $('#infoMaterialReposicion').show();
+
+        new bootstrap.Modal(document.getElementById('modalCrearReposicion')).show();
+    });
+
+    // Enviar la orden de reposición
+    $('#btnEnviarReposicion').on('click', function() {
+        const idMaterial         = parseInt($('#reposicionIdMaterial').val());
+        const cantidadSolicitada = parseInt($('#reposicionCantidad').val());
+        const idProveedor        = $('#reposicionProveedor').val() || null;
+        const notas              = $('#reposicionNotas').val().trim() || null;
+        const $msg               = $('#mensajeReposicion');
+
+        if (!idMaterial || !cantidadSolicitada || cantidadSolicitada <= 0) {
+            $msg.html('<div class="alert alert-danger py-1 px-2">Ingresa una cantidad válida mayor a 0.</div>');
+            return;
+        }
+
+        const $btn = $(this);
+        $btn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin me-1"></i> Creando...');
+
+        $.ajax({
+            url: `${API_BASE_URL}/ordenes-reposicion`,
+            method: 'POST',
+            headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+            data: JSON.stringify({ id_material: idMaterial, cantidad_solicitada: cantidadSolicitada, id_proveedor: idProveedor, notas: notas }),
+            success: function(resp) {
+                bootstrap.Modal.getInstance(document.getElementById('modalCrearReposicion')).hide();
+                showSuccessToast('Orden de reposición #' + resp.id_orden_reposicion + ' creada exitosamente. Puedes gestionarla en Órdenes de Reposición.');
+            },
+            error: function(xhr) {
+                const err = xhr.responseJSON?.error || 'Error al crear la orden.';
+                $msg.html(`<div class="alert alert-danger py-1 px-2">${err}</div>`);
+            },
+            complete: function() {
+                $btn.prop('disabled', false).html('<i class="fa fa-check me-1"></i> Crear Orden');
+            }
+        });
+    });
+
+    // Cargar alertas al iniciar la página
+    cargarAlertasStock();
+    cargarProveedoresReposicion();
+
 });
 </script>
 </body>
 </html>
+
 

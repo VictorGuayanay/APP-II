@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <title>Órdenes de Reposición - Carrocerías Alvarado</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Gestión de órdenes de reposición de materiales con stock bajo.">
+    <link rel="stylesheet" type="text/css" href="vendor/bootstrap/css/bootstrap5.min.css">
+    <link rel="stylesheet" type="text/css" href="fonts/font-awesome-4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" type="text/css" href="css/main.css">
+    <link rel="stylesheet" type="text/css" href="css/modern-design.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/fixed-layout.css">
+    <link rel="stylesheet" href="css/toast.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    <style>
+        .badge-pendiente  { background: #e67e22; color: #fff; }
+        .badge-recibida   { background: #27ae60; color: #fff; }
+        .badge-cancelada  { background: #95a5a6; color: #fff; }
+        .btn-recibir      { background: linear-gradient(135deg,#27ae60,#1e8449); border:none; color:#fff; }
+        .btn-recibir:hover { background: linear-gradient(135deg,#1e8449,#196F3D); color:#fff; }
+        .btn-cancelar-ord { background: linear-gradient(135deg,#e74c3c,#c0392b); border:none; color:#fff; }
+        .filter-btn.active { background: #e67e22 !important; color:#fff !important; border-color:#e67e22 !important; }
+    </style>
+</head>
+<body>
+
+<div class="admin-wrapper">
+    <nav id="sidebar">
+        <div class="sidebar-header">
+            <h3>Carrocerías Alvarado</h3>
+        </div>
+        <ul class="list-unstyled components">
+            <p class="ms-3">Administración</p>
+            <li>
+                <a href="#dashboardSubmenu" data-bs-toggle="collapse" aria-expanded="false" class="dropdown-toggle">
+                    <i class="fa fa-tachometer"></i> Dashboard
+                </a>
+                <ul class="collapse list-unstyled" id="dashboardSubmenu">
+                    <li><a href="vision_general.html">Visión General</a></li>
+                </ul>
+            </li>
+            <li>
+                <a href="admin.html">
+                    <i class="fa fa-users"></i> Panel Principal
+                </a>
+            </li>
+            <li class="active">
+                <a href="#inventarioSubmenu" data-bs-toggle="collapse" aria-expanded="true" class="dropdown-toggle">
+                    <i class="fa fa-cubes"></i> Inventario
+                </a>
+                <ul class="collapse show list-unstyled" id="inventarioSubmenu">
+                    <li><a href="ver_inventario.html">Ver Inventario</a></li>
+                    <li><a href="anadir_material.html">Añadir Material</a></li>
+                    <li><a href="gestion_categorias.html">Gestión de Categorías</a></li>
+                    <li><a href="entradas_salidas_inventario.html">Ventas</a></li>
+                    <li class="active"><a href="ordenes_reposicion.html"><i class="fa fa-refresh"></i> Órdenes de Reposición</a></li>
+                </ul>
+            </li>
+            <li><a href="ingresar_empleado.html"><i class="fa fa-address-card"></i> Ingreso Empleados</a></li>
+            <li><a href="ingresar_cliente.html"><i class="fa fa-user-plus"></i> Ingreso Clientes</a></li>
+            <li><a href="ingresar_proveedor.html"><i class="fa fa-truck"></i> Ingreso Proveedores</a></li>
+            <li><a href="ver_proveedores.html"><i class="fa fa-list"></i> Ver Proveedores</a></li>
+            <li><a href="orden_trabajo.html"><i class="fa fa-briefcase"></i> Órdenes de Trabajo</a></li>
+            <li><a href="listar_ordenes_trabajo.html"><i class="fa fa-briefcase"></i> Listar Órdenes de Trabajo</a></li>
+            <li><a href="consultar_comprobantes.html"><i class="fa fa-money"></i> Comprobante</a></li>
+            <li><a href="reportes.html"><i class="fa fa-bar-chart"></i> Reportes</a></li>
+            <li><a href="#" data-bs-toggle="modal" data-bs-target="#settingsModal"><i class="fa fa-cog"></i> Configuración</a></li>
+        </ul>
+    </nav>
+
+    <div id="content">
+        <nav class="navbar navbar-expand-lg navbar-light top-navbar">
+            <div class="container-fluid">
+                <button type="button" id="sidebarCollapse" class="btn btn-info" style="background-color:#0073aa;border-color:#0073aa;">
+                    <i class="fa fa-align-left"></i> <span>Menú</span>
+                </button>
+                <div class="user-info">
+                    <span>Hola, <strong id="currentUserName">Usuario</strong>!</span>
+                    <a href="#" id="logoutButton" class="btn-logout ms-3"><i class="fa fa-sign-out"></i> Cerrar Sesión</a>
+                </div>
+            </div>
+        </nav>
+
+        <div class="content-area container-fluid pt-4">
+            <h2 class="card-header-title">Órdenes de Reposición</h2>
+
+            <div class="dashboard-card animate__animated animate__fadeInUp">
+                <div class="card-header d-flex align-items-center justify-content-between">
+                    <span><i class="fa fa-refresh me-2"></i> Gestión de Órdenes</span>
+                    <button class="btn btn-sm text-white" id="btnNuevaOrden" style="background:linear-gradient(135deg,#e67e22,#d35400);border:none;border-radius:8px;">
+                        <i class="fa fa-plus me-1"></i> Nueva Orden
+                    </button>
+                </div>
+                <div class="card-body">
+                    <!-- Filtros de estado -->
+                    <div class="d-flex gap-2 mb-3 flex-wrap">
+                        <button class="btn btn-sm btn-outline-secondary filter-btn active" data-estado="">Todos</button>
+                        <button class="btn btn-sm btn-outline-warning filter-btn" data-estado="Pendiente">⏳ Pendientes</button>
+                        <button class="btn btn-sm btn-outline-success filter-btn" data-estado="Recibida">✅ Recibidas</button>
+                        <button class="btn btn-sm btn-outline-secondary filter-btn" data-estado="Cancelada">🚫 Canceladas</button>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle" id="tablaOrdenes">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Material</th>
+                                    <th>Stock Actual</th>
+                                    <th>Cant. Solicitada</th>
+                                    <th>Cant. Recibida</th>
+                                    <th>Proveedor</th>
+                                    <th>Estado</th>
+                                    <th>Fecha Creación</th>
+                                    <th>Creado Por</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbodyOrdenes">
+                                <tr><td colspan="10" class="text-center py-4">
+                                    <div class="spinner-border text-warning"></div><p class="mt-2">Cargando órdenes...</p>
+                                </td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Nueva Orden de Reposición -->
+<div class="modal fade" id="modalNuevaOrden" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius:14px;overflow:hidden;">
+            <div class="modal-header text-white border-0" style="background:linear-gradient(135deg,#e67e22,#d35400);">
+                <h5 class="modal-title"><i class="fa fa-cart-plus me-2"></i> Nueva Orden de Reposición</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Material <span class="text-danger">*</span></label>
+                    <select class="form-select" id="nuevaOrdenMaterial">
+                        <option value="">Cargando materiales...</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Stock Actual</label>
+                    <input type="text" class="form-control" id="nuevaOrdenStockActual" readonly style="background:#f8f9fa;">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Cantidad a Solicitar <span class="text-danger">*</span></label>
+                    <input type="number" min="1" class="form-control" id="nuevaOrdenCantidad" placeholder="Ej: 50">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Proveedor</label>
+                    <select class="form-select" id="nuevaOrdenProveedor">
+                        <option value="">Sin asignar</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Notas</label>
+                    <textarea class="form-control" id="nuevaOrdenNotas" rows="2" placeholder="Observaciones adicionales..."></textarea>
+                </div>
+                <div id="mensajeNuevaOrden"></div>
+            </div>
+            <div class="modal-footer border-0 bg-light">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn text-white px-4" id="btnGuardarNuevaOrden" style="background:linear-gradient(135deg,#e67e22,#d35400);border:none;">
+                    <i class="fa fa-check me-1"></i> Crear Orden
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Recibir Mercadería -->
+<div class="modal fade" id="modalRecibirMercaderia" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius:14px;overflow:hidden;">
+            <div class="modal-header text-white border-0" style="background:linear-gradient(135deg,#27ae60,#1e8449);">
+                <h5 class="modal-title"><i class="fa fa-truck me-2"></i> Recibir Mercadería</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <input type="hidden" id="recibirOrdenId">
+                <div class="alert mb-3" style="background:#e8f8f5;border:1px solid #a9dfbf;color:#1a5b34;border-radius:8px;">
+                    <div class="mb-1"><strong>Material:</strong> <span id="recibirNombreMaterial">-</span></div>
+                    <div class="mb-1"><strong>Stock Actual:</strong> <span id="recibirStockActual">-</span></div>
+                    <div><strong>Cantidad Solicitada:</strong> <span id="recibirCantidadSolicitada">-</span></div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Cantidad Recibida Real <span class="text-danger">*</span></label>
+                    <input type="number" min="1" class="form-control" id="recibirCantidadReal" placeholder="Ingresa la cantidad que llegó">
+                    <small class="text-muted">El stock se actualizará automáticamente al confirmar.</small>
+                </div>
+                <div id="mensajeRecibir"></div>
+            </div>
+            <div class="modal-footer border-0 bg-light">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-recibir px-4" id="btnConfirmarRecibir">
+                    <i class="fa fa-check me-1"></i> Confirmar Recepción
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/dashboard-core.js"></script>
+<script src="vendor/jquery/jquery-3.2.1.min.js"></script>
+<script src="vendor/bootstrap/js/bootstrap5.bundle.min.js"></script>
+<script src="js/toast.js"></script>
+
+<script>
+let filtroEstadoActual = '';
+let materialesCache = [];
+
+$(document).ready(function() {
+    const token = localStorage.getItem('token');
+    const userRol = localStorage.getItem('userRol');
+    const loggedInUsername = localStorage.getItem('loggedInUsername');
+    const rolesPermitidos = ['Administrador', 'Supervisor'];
+
+    if (!token || !userRol || !rolesPermitidos.includes(userRol)) {
+        window.location.href = 'index.html';
+        return;
+    }
+    if (loggedInUsername) $('#currentUserName').text(loggedInUsername);
+
+    cargarOrdenes();
+    cargarMaterialesSelect();
+    cargarProveedoresSelect();
+
+    // Filtros por estado
+    $('.filter-btn').on('click', function() {
+        $('.filter-btn').removeClass('active');
+        $(this).addClass('active');
+        filtroEstadoActual = $(this).data('estado');
+        cargarOrdenes(filtroEstadoActual);
+    });
+
+    // Abrir modal nueva orden
+    $('#btnNuevaOrden').on('click', function() {
+        $('#nuevaOrdenMaterial').val('');
+        $('#nuevaOrdenStockActual').val('');
+        $('#nuevaOrdenCantidad').val('');
+        $('#nuevaOrdenNotas').val('');
+        $('#mensajeNuevaOrden').html('');
+        new bootstrap.Modal(document.getElementById('modalNuevaOrden')).show();
+    });
+
+    // Actualizar stock actual al seleccionar material
+    $('#nuevaOrdenMaterial').on('change', function() {
+        const id = parseInt($(this).val());
+        const mat = materialesCache.find(m => m.id_material === id);
+        $('#nuevaOrdenStockActual').val(mat ? mat.cantidad + ' uds.' : '');
+    });
+
+    // Guardar nueva orden
+    $('#btnGuardarNuevaOrden').on('click', function() {
+        const idMaterial = parseInt($('#nuevaOrdenMaterial').val());
+        const cantidad   = parseInt($('#nuevaOrdenCantidad').val());
+        const proveedor  = $('#nuevaOrdenProveedor').val() || null;
+        const notas      = $('#nuevaOrdenNotas').val().trim() || null;
+        const $msg       = $('#mensajeNuevaOrden');
+
+        if (!idMaterial) { $msg.html('<div class="alert alert-danger py-1 px-2">Selecciona un material.</div>'); return; }
+        if (!cantidad || cantidad <= 0) { $msg.html('<div class="alert alert-danger py-1 px-2">Ingresa una cantidad válida.</div>'); return; }
+
+        const $btn = $(this).prop('disabled', true).html('<i class="fa fa-spinner fa-spin me-1"></i> Guardando...');
+
+        $.ajax({
+            url: `${API_BASE_URL}/ordenes-reposicion`,
+            method: 'POST',
+            headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+            data: JSON.stringify({ id_material: idMaterial, cantidad_solicitada: cantidad, id_proveedor: proveedor, notas: notas }),
+            success: function(resp) {
+                bootstrap.Modal.getInstance(document.getElementById('modalNuevaOrden')).hide();
+                showSuccessToast('Orden #' + resp.id_orden_reposicion + ' creada exitosamente.');
+                cargarOrdenes(filtroEstadoActual);
+            },
+            error: function(xhr) {
+                $msg.html('<div class="alert alert-danger py-1 px-2">' + (xhr.responseJSON?.error || 'Error al crear.') + '</div>');
+            },
+            complete: function() { $btn.prop('disabled', false).html('<i class="fa fa-check me-1"></i> Crear Orden'); }
+        });
+    });
+
+    // Confirmar recepción
+    $('#btnConfirmarRecibir').on('click', function() {
+        const idOrden    = $('#recibirOrdenId').val();
+        const cantidad   = parseInt($('#recibirCantidadReal').val());
+        const $msg       = $('#mensajeRecibir');
+
+        if (!cantidad || cantidad <= 0) { $msg.html('<div class="alert alert-danger py-1 px-2">Ingresa una cantidad válida.</div>'); return; }
+
+        const $btn = $(this).prop('disabled', true).html('<i class="fa fa-spinner fa-spin me-1"></i> Procesando...');
+
+        $.ajax({
+            url: `${API_BASE_URL}/ordenes-reposicion/${idOrden}/recibir`,
+            method: 'PUT',
+            headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+            data: JSON.stringify({ cantidad_recibida: cantidad }),
+            success: function(resp) {
+                bootstrap.Modal.getInstance(document.getElementById('modalRecibirMercaderia')).hide();
+                showSuccessToast(`✅ Mercadería recibida. Stock de "${resp.nuevo_stock}" uds. registrado.`);
+                cargarOrdenes(filtroEstadoActual);
+            },
+            error: function(xhr) {
+                $msg.html('<div class="alert alert-danger py-1 px-2">' + (xhr.responseJSON?.error || 'Error al procesar.') + '</div>');
+            },
+            complete: function() { $btn.prop('disabled', false).html('<i class="fa fa-check me-1"></i> Confirmar Recepción'); }
+        });
+    });
+
+    // Cancelar orden (delegado)
+    $(document).on('click', '.btn-cancelar-orden', function() {
+        const id     = $(this).data('id');
+        const nombre = $(this).data('nombre');
+        if (!confirm(`¿Cancelar la orden de reposición para "${nombre}"?`)) return;
+
+        $.ajax({
+            url: `${API_BASE_URL}/ordenes-reposicion/${id}/cancelar`,
+            method: 'PUT',
+            headers: { 'Authorization': 'Bearer ' + token },
+            success: function() {
+                showSuccessToast('Orden cancelada.');
+                cargarOrdenes(filtroEstadoActual);
+            },
+            error: function(xhr) { showErrorToast(xhr.responseJSON?.error || 'Error al cancelar.'); }
+        });
+    });
+
+    // Abrir modal recibir (delegado)
+    $(document).on('click', '.btn-recibir-orden', function() {
+        const id       = $(this).data('id');
+        const nombre   = $(this).data('nombre');
+        const stock    = $(this).data('stock');
+        const solicit  = $(this).data('solicitada');
+
+        $('#recibirOrdenId').val(id);
+        $('#recibirNombreMaterial').text(nombre);
+        $('#recibirStockActual').text(stock + ' uds.');
+        $('#recibirCantidadSolicitada').text(solicit + ' uds.');
+        $('#recibirCantidadReal').val(solicit);
+        $('#mensajeRecibir').html('');
+
+        new bootstrap.Modal(document.getElementById('modalRecibirMercaderia')).show();
+    });
+});
+
+function cargarOrdenes(estado) {
+    const token = localStorage.getItem('token');
+    const $tbody = $('#tbodyOrdenes');
+    $tbody.html('<tr><td colspan="10" class="text-center py-4"><div class="spinner-border text-warning"></div></td></tr>');
+
+    const url = estado ? `${API_BASE_URL}/ordenes-reposicion?estado=${encodeURIComponent(estado)}` : `${API_BASE_URL}/ordenes-reposicion`;
+
+    $.ajax({
+        url: url,
+        method: 'GET',
+        headers: { 'Authorization': 'Bearer ' + token },
+        success: function(ordenes) {
+            if (!ordenes.length) {
+                $tbody.html('<tr><td colspan="10" class="text-center text-muted py-4">No hay órdenes registradas.</td></tr>');
+                return;
+            }
+            let html = '';
+            ordenes.forEach(function(o) {
+                const fecha = o.fecha_creacion ? new Date(o.fecha_creacion).toLocaleString('es-EC') : 'N/A';
+                let badgeClass = 'badge-pendiente';
+                if (o.estado === 'Recibida')  badgeClass = 'badge-recibida';
+                if (o.estado === 'Cancelada') badgeClass = 'badge-cancelada';
+
+                let acciones = '';
+                if (o.estado === 'Pendiente') {
+                    acciones = `
+                        <button class="btn btn-sm btn-recibir btn-recibir-orden me-1"
+                            data-id="${o.id_orden_reposicion}"
+                            data-nombre="${o.nombre_material}"
+                            data-stock="${o.stock_actual}"
+                            data-solicitada="${o.cantidad_solicitada}"
+                            title="Registrar recepción">
+                            <i class="fa fa-truck"></i> Recibir
+                        </button>
+                        <button class="btn btn-sm btn-cancelar-ord btn-cancelar-orden"
+                            data-id="${o.id_orden_reposicion}"
+                            data-nombre="${o.nombre_material}"
+                            title="Cancelar orden">
+                            <i class="fa fa-times"></i>
+                        </button>`;
+                }
+
+                const proveedorTxt = o.nombre_proveedor || '<span class="text-muted">Sin asignar</span>';
+                const cantRecib = o.estado === 'Recibida' ? `<strong class="text-success">${o.cantidad_recibida}</strong>` : '-';
+
+                html += `
+                    <tr>
+                        <td><strong>#${o.id_orden_reposicion}</strong></td>
+                        <td>${o.nombre_material}</td>
+                        <td><span class="badge rounded-pill bg-secondary">${o.stock_actual} uds.</span></td>
+                        <td>${o.cantidad_solicitada}</td>
+                        <td>${cantRecib}</td>
+                        <td>${proveedorTxt}</td>
+                        <td><span class="badge ${badgeClass}" style="font-size:0.82rem;">${o.estado}</span></td>
+                        <td><small>${fecha}</small></td>
+                        <td><small>${o.nombre_creador || '-'}</small></td>
+                        <td class="text-nowrap">${acciones}</td>
+                    </tr>`;
+            });
+            $tbody.html(html);
+        },
+        error: function(xhr) {
+            $tbody.html('<tr><td colspan="10" class="text-center text-danger">Error al cargar las órdenes.</td></tr>');
+        }
+    });
+}
+
+function cargarMaterialesSelect() {
+    const token = localStorage.getItem('token');
+    $.ajax({
+        url: `${API_BASE_URL}/materiales`,
+        method: 'GET',
+        headers: { 'Authorization': 'Bearer ' + token },
+        success: function(materiales) {
+            materialesCache = materiales;
+            const $sel = $('#nuevaOrdenMaterial').empty().append('<option value="">Seleccionar material...</option>');
+            materiales.forEach(m => {
+                $sel.append(`<option value="${m.id_material}">${m.nombre} (Stock: ${m.cantidad})</option>`);
+            });
+        }
+    });
+}
+
+function cargarProveedoresSelect() {
+    const token = localStorage.getItem('token');
+    $.ajax({
+        url: `${API_BASE_URL}/proveedores`,
+        method: 'GET',
+        headers: { 'Authorization': 'Bearer ' + token },
+        success: function(proveedores) {
+            const $sel = $('#nuevaOrdenProveedor').find('option:not(:first)').remove().end();
+            proveedores.filter(p => p.estado === 'Activo').forEach(p => {
+                $sel.append(`<option value="${p.id_proveedor}">${p.nombre_proveedor}</option>`);
+            });
+        }
+    });
+}
+</script>
+</body>
+</html>

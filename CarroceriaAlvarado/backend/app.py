@@ -4433,6 +4433,336 @@ def obtener_detalle_venta(decoded_user_rol, decoded_user_id, id_venta):
         if conn:
             conn.close()
 
+# --- ENDPOINTS DE ÓRDENES DE REPOSICIÓN ---
+
+@app.route('/ordenes-reposicion', methods=['POST'])
+@roles_required('Administrador', 'Supervisor')
+def crear_orden_reposicion(decoded_user_rol, decoded_user_id):
+    """
+    Crea una nueva orden de reposición para un material con stock bajo.
+    Body: { id_material, cantidad_solicitada, id_proveedor (opt), notas (opt) }
+    """
+    print(f"API POST /ordenes-reposicion: Solicitud de usuario ID {decoded_user_id} con rol {decoded_user_rol}")
+
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'No se recibieron datos JSON'}), 400
+
+    id_material = data.get('id_material')
+    cantidad_solicitada = data.get('cantidad_solicitada')
+    id_proveedor = data.get('id_proveedor') or None
+    notas = data.get('notas') or None
+
+    if not id_material or not cantidad_solicitada:
+        return jsonify({'error': 'Se requiere id_material y cantidad_solicitada'}), 400
+
+    try:
+        cantidad_solicitada = int(cantidad_solicitada)
+        if cantidad_solicitada <= 0:
+            return jsonify({'error': 'La cantidad solicitada debe ser mayor a 0'}), 400
+    except (ValueError, TypeError):
+        return jsonify({'error': 'cantidad_solicitada debe ser un número entero'}), 400
+
+    conn = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        # Verificar que el material existe
+        cursor.execute("SELECT id_material, nombre, cantidad FROM Materiales WHERE id_material = ?", (id_material,))
+        material = cursor.fetchone()
+        if not material:
+            return jsonify({'error': f'Material con ID {id_material} no encontrado'}), 404
+
+        # Verificar que el proveedor existe si se proporcionó
+        if id_proveedor:
+            cursor.execute("SELECT id_proveedor FROM Proveedores WHERE id_proveedor = ?", (id_proveedor,))
+            if not cursor.fetchone():
+                return jsonify({'error': f'Proveedor con ID {id_proveedor} no encontrado'}), 404
+
+        sql_insert = """
+            INSERT INTO OrdenesReposicion
+                (id_material, cantidad_solicitada, id_proveedor, notas,
+                 estado, fecha_creacion, id_usuario_creador)
+            VALUES (?, ?, ?, ?, 'Pendiente', GETDATE(), ?)
+        """
+        cursor.execute(sql_insert, (id_material, cantidad_solicitada, id_proveedor, notas, decoded_user_id))
+        cursor.execute("SELECT @@IDENTITY AS id;")
+        nueva_id = int(cursor.fetchone()[0])
+        conn.commit()
+
+        print(f"API POST /ordenes-reposicion: Orden #{nueva_id} creada para material ID {id_material}")
+        return jsonify({
+            'message': f'Orden de reposición creada exitosamente para el material "{material[1]}".',
+            'id_orden_reposicion': nueva_id
+        }), 201
+
+    except Exception as e:
+        if conn: conn.rollback()
+        print(f"Error en POST /ordenes-reposicion: {str(e)}")
+        return jsonify({'error': f'Error interno del servidor: {str(e)}'}), 500
+    finally:
+        if conn:
+            conn.close()
+
+
+@app.route('/ordenes-reposicion', methods=['GET'])
+@roles_required('Administrador', 'Supervisor')
+def listar_ordenes_reposicion(decoded_user_rol, decoded_user_id):
+    """
+    Lista todas las órdenes de reposición.
+    Parámetro opcional: ?estado=Pendiente|Recibida|Cancelada
+    """
+    print(f"API GET /ordenes-reposicion: Solicitud de usuario ID {decoded_user_id}")
+
+    filtro_estado = request.args.get('estado')
+
+    conn = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        sql_base = """
+            SELECT
+                orep.id_orden_reposicion,
+                orep.id_material,
+                m.nombre          AS nombre_material,
+                m.cantidad        AS stock_actual,
+                orep.cantidad_solicitada,
+                orep.cantidad_recibida,
+                orep.estado,
+                orep.id_proveedor,
+                p.nombre_proveedor,
+                orep.notas,
+                orep.fecha_creacion,
+                orep.fecha_recepcion,
+                orep.id_usuario_creador,
+                u_creador.username AS nombre_creador,
+                orep.id_usuario_receptor,
+                u_receptor.username AS nombre_receptor
+            FROM OrdenesReposicion orep
+            JOIN Materiales m ON orep.id_material = m.id_material
+            LEFT JOIN Proveedores p ON orep.id_proveedor = p.id_proveedor
+            JOIN Usuarios u_creador ON orep.id_usuario_creador = u_creador.id_usuario
+            LEFT JOIN Usuarios u_receptor ON orep.id_usuario_receptor = u_receptor.id_usuario
+        """
+        params = []
+        if filtro_estado:
+            sql_base += " WHERE orep.estado = ?"
+            params.append(filtro_estado)
+
+        sql_base += " ORDER BY orep.fecha_creacion DESC"
+
+        cursor.execute(sql_base, params)
+        columns = [column[0] for column in cursor.description]
+        ordenes = []
+        for row in cursor.fetchall():
+            orden = dict(zip(columns, row))
+            if orden.get('fecha_creacion'):
+                orden['fecha_creacion'] = orden['fecha_creacion'].isoformat()
+            if orden.get('fecha_recepcion'):
+                orden['fecha_recepcion'] = orden['fecha_recepcion'].isoformat()
+            ordenes.append(orden)
+
+        print(f"API GET /ordenes-reposicion: Devolviendo {len(ordenes)} órdenes.")
+        return jsonify(ordenes), 200
+
+    except Exception as e:
+        print(f"Error en GET /ordenes-reposicion: {str(e)}")
+        return jsonify({'error': f'Error interno del servidor: {str(e)}'}), 500
+    finally:
+        if conn:
+            conn.close()
+
+
+@app.route('/ordenes-reposicion/<int:id_orden>', methods=['GET'])
+@roles_required('Administrador', 'Supervisor')
+def detalle_orden_reposicion(decoded_user_rol, decoded_user_id, id_orden):
+    """Devuelve el detalle completo de una orden de reposición."""
+    print(f"API GET /ordenes-reposicion/{id_orden}: Solicitud de usuario ID {decoded_user_id}")
+
+    conn = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        sql = """
+            SELECT
+                orep.id_orden_reposicion,
+                orep.id_material,
+                m.nombre          AS nombre_material,
+                m.cantidad        AS stock_actual,
+                m.id_unidad,
+                u_med.abreviatura AS abreviatura_unidad,
+                orep.cantidad_solicitada,
+                orep.cantidad_recibida,
+                orep.estado,
+                orep.id_proveedor,
+                p.nombre_proveedor,
+                orep.notas,
+                orep.fecha_creacion,
+                orep.fecha_recepcion,
+                u_creador.username AS nombre_creador,
+                u_receptor.username AS nombre_receptor
+            FROM OrdenesReposicion orep
+            JOIN Materiales m ON orep.id_material = m.id_material
+            LEFT JOIN Unidades_de_Medida u_med ON m.id_unidad = u_med.id_unidad
+            LEFT JOIN Proveedores p ON orep.id_proveedor = p.id_proveedor
+            JOIN Usuarios u_creador ON orep.id_usuario_creador = u_creador.id_usuario
+            LEFT JOIN Usuarios u_receptor ON orep.id_usuario_receptor = u_receptor.id_usuario
+            WHERE orep.id_orden_reposicion = ?
+        """
+        cursor.execute(sql, (id_orden,))
+        columns = [column[0] for column in cursor.description]
+        row = cursor.fetchone()
+
+        if not row:
+            return jsonify({'error': f'Orden de reposición #{id_orden} no encontrada'}), 404
+
+        orden = dict(zip(columns, row))
+        if orden.get('fecha_creacion'):
+            orden['fecha_creacion'] = orden['fecha_creacion'].isoformat()
+        if orden.get('fecha_recepcion'):
+            orden['fecha_recepcion'] = orden['fecha_recepcion'].isoformat()
+
+        return jsonify(orden), 200
+
+    except Exception as e:
+        print(f"Error en GET /ordenes-reposicion/{id_orden}: {str(e)}")
+        return jsonify({'error': f'Error interno del servidor: {str(e)}'}), 500
+    finally:
+        if conn:
+            conn.close()
+
+
+@app.route('/ordenes-reposicion/<int:id_orden>/recibir', methods=['PUT'])
+@roles_required('Administrador', 'Supervisor')
+def recibir_orden_reposicion(decoded_user_rol, decoded_user_id, id_orden):
+    """
+    Marca la orden como 'Recibida', registra la cantidad recibida y
+    actualiza el stock del material automáticamente.
+    Body: { cantidad_recibida }
+    """
+    print(f"API PUT /ordenes-reposicion/{id_orden}/recibir: Solicitud de usuario ID {decoded_user_id}")
+
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'No se recibieron datos JSON'}), 400
+
+    cantidad_recibida_str = data.get('cantidad_recibida')
+    if cantidad_recibida_str is None:
+        return jsonify({'error': 'Se requiere cantidad_recibida'}), 400
+
+    try:
+        cantidad_recibida = int(cantidad_recibida_str)
+        if cantidad_recibida <= 0:
+            return jsonify({'error': 'La cantidad recibida debe ser mayor a 0'}), 400
+    except (ValueError, TypeError):
+        return jsonify({'error': 'cantidad_recibida debe ser un número entero'}), 400
+
+    conn = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        conn.autocommit = False
+
+        # 1. Obtener la orden y verificar que existe y está Pendiente
+        cursor.execute("""
+            SELECT orep.id_material, orep.estado, m.cantidad, m.id_unidad
+            FROM OrdenesReposicion orep
+            JOIN Materiales m ON orep.id_material = m.id_material
+            WHERE orep.id_orden_reposicion = ?
+        """, (id_orden,))
+        orden = cursor.fetchone()
+
+        if not orden:
+            return jsonify({'error': f'Orden de reposición #{id_orden} no encontrada'}), 404
+
+        id_material, estado, stock_actual, id_unidad = orden
+
+        if estado != 'Pendiente':
+            return jsonify({'error': f'La orden ya fue procesada (estado: {estado}). Solo se pueden recibir órdenes Pendientes.'}), 400
+
+        # 2. Actualizar el stock del material
+        nuevo_stock = stock_actual + cantidad_recibida
+        fecha_ahora = datetime.datetime.now()
+
+        cursor.execute("""
+            UPDATE Materiales
+            SET cantidad = ?,
+                fecha_ultima_actualizacion = ?,
+                id_usuario_ultima_actualizacion = ?
+            WHERE id_material = ?
+        """, (nuevo_stock, fecha_ahora, decoded_user_id, id_material))
+
+        # 3. Marcar la orden como Recibida
+        cursor.execute("""
+            UPDATE OrdenesReposicion
+            SET estado = 'Recibida',
+                cantidad_recibida = ?,
+                fecha_recepcion = ?,
+                id_usuario_receptor = ?
+            WHERE id_orden_reposicion = ?
+        """, (cantidad_recibida, fecha_ahora, decoded_user_id, id_orden))
+
+        conn.commit()
+
+        print(f"API PUT /ordenes-reposicion/{id_orden}/recibir: Stock de material ID {id_material} actualizado de {stock_actual} a {nuevo_stock}")
+        return jsonify({
+            'message': f'Mercadería recibida exitosamente. Stock actualizado.',
+            'id_orden_reposicion': id_orden,
+            'id_material': id_material,
+            'cantidad_recibida': cantidad_recibida,
+            'stock_anterior': stock_actual,
+            'nuevo_stock': nuevo_stock
+        }), 200
+
+    except Exception as e:
+        if conn: conn.rollback()
+        print(f"Error en PUT /ordenes-reposicion/{id_orden}/recibir: {str(e)}")
+        return jsonify({'error': f'Error interno del servidor: {str(e)}'}), 500
+    finally:
+        if conn:
+            conn.autocommit = True
+            conn.close()
+
+
+@app.route('/ordenes-reposicion/<int:id_orden>/cancelar', methods=['PUT'])
+@roles_required('Administrador', 'Supervisor')
+def cancelar_orden_reposicion(decoded_user_rol, decoded_user_id, id_orden):
+    """Cancela una orden de reposición Pendiente."""
+    print(f"API PUT /ordenes-reposicion/{id_orden}/cancelar: Solicitud de usuario ID {decoded_user_id}")
+
+    conn = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        cursor.execute("SELECT estado FROM OrdenesReposicion WHERE id_orden_reposicion = ?", (id_orden,))
+        row = cursor.fetchone()
+        if not row:
+            return jsonify({'error': f'Orden #{id_orden} no encontrada'}), 404
+
+        if row[0] != 'Pendiente':
+            return jsonify({'error': f'Solo se pueden cancelar órdenes Pendientes (estado actual: {row[0]})'}), 400
+
+        cursor.execute("""
+            UPDATE OrdenesReposicion SET estado = 'Cancelada'
+            WHERE id_orden_reposicion = ?
+        """, (id_orden,))
+        conn.commit()
+
+        return jsonify({'message': f'Orden #{id_orden} cancelada exitosamente.'}), 200
+
+    except Exception as e:
+        if conn: conn.rollback()
+        print(f"Error en PUT /ordenes-reposicion/{id_orden}/cancelar: {str(e)}")
+        return jsonify({'error': f'Error interno del servidor: {str(e)}'}), 500
+    finally:
+        if conn:
+            conn.close()
+
+
 # --- ENDPOINT DE HEALTH CHECK PARA VERIFICAR CONEXIÓN A BD ---
 @app.route('/health', methods=['GET'])
 @app.route('/db-status', methods=['GET'])
