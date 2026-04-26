@@ -1,13 +1,13 @@
 # fly.toml configuration file for CarroceriaAlvarado Backend
 
-app = "carroceria-alvarado-backend"
-primary_region = "bog" # Puedes cambiarlo a tu región más cercana (ej: bog, qro, mia)
+app = "carroceriaalvarado"
+primary_region = "gru" # Puedes cambiarlo a tu región más cercana (ej: bog, qro, mia)
 
 [build]
   dockerfile = "Dockerfile"
 
 [http_service]
-  internal_port = 5001
+  internal_port = 8080
   force_https = true
   auto_stop_machines = true
   auto_start_machines = true

@@ -8,7 +8,7 @@
  */
 
 // URL del Backend API
-const API_BASE_URL = 'http://127.0.0.1:5001';
+const API_BASE_URL = 'https://carroceriaalvarado.fly.dev';
 
 // Exportar para uso en otros archivos
 window.CONFIG = {
