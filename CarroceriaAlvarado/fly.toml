@@ -21,5 +21,6 @@ primary_region = "gru" # Puedes cambiarlo a tu región más cercana (ej: bog, qr
 
 [env]
   FLASK_ENV = "production"
+  DB_SERVER = "db.carroceriasalvarado.com"
   DB_NAME = "CarroceriaAlvaradoDB"
   DB_DRIVER = "ODBC Driver 17 for SQL Server"

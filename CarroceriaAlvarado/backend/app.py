@@ -64,7 +64,7 @@ _TOKEN_BLACKLIST_CACHE = set()
 
 # Configuración de base de datos dinámica
 _db_driver = os.environ.get('DB_DRIVER', 'ODBC Driver 17 for SQL Server')
-_db_server = os.environ.get('DB_SERVER', r'DESKTOP-OJ81G31\SQLEXPRESS')
+_db_server = os.environ.get('DB_SERVER', 'db.carroceriasalvarado.com')
 _db_name = os.environ.get('DB_NAME', 'CarroceriaAlvaradoDB')
 _db_user = os.environ.get('DB_USER')
 _db_pass = os.environ.get('DB_PASSWORD')
