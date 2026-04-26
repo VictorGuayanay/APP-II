@@ -63,31 +63,12 @@ _TOKEN_BLACKLIST_CACHE = set()
 
 
 # Configuración de base de datos dinámica
-_db_driver = os.environ.get('DB_DRIVER', 'ODBC Driver 17 for SQL Server')
-_db_server = os.environ.get('DB_SERVER', 'db.carroceriasalvarado.com')
-_db_name = os.environ.get('DB_NAME', 'CarroceriaAlvaradoDB')
-_db_user = os.environ.get('DB_USER')
-_db_pass = os.environ.get('DB_PASSWORD')
-
-if _db_user and _db_pass:
-    # Autenticación de SQL Server (Producción/Railway)
-    conn_str = (
-        f"DRIVER={{{_db_driver}}};"
-        f"SERVER={_db_server};"
-        f"DATABASE={_db_name};"
-        f"UID={_db_user};"
-        f"PWD={_db_pass};"
-        f"charset=utf8;"
-    )
-else:
-    # Autenticación de Windows (Desarrollo local)
-    conn_str = (
-        f"DRIVER={{{_db_driver}}};"
-        f"SERVER={_db_server};"
-        f"DATABASE={_db_name};"
-        f"Trusted_Connection={os.environ.get('DB_TRUSTED_CONNECTION', 'yes')};"
-        f"charset=utf8;"
-    )
+conn_str = (
+    f"DRIVER={{{os.environ.get('DB_DRIVER', 'ODBC Driver 17 for SQL Server')}}};"
+    f"SERVER={os.environ.get('DB_SERVER', r'DESKTOP-OJ81G31\SQLEXPRESS')};" 
+    f"DATABASE={os.environ.get('DB_NAME', 'CarroceriaAlvaradoDB')};"
+    f"Trusted_Connection={os.environ.get('DB_TRUSTED_CONNECTION', 'yes')};"
+)
 
 SMTP_SERVER = os.environ.get('SMTP_SERVER', 'smtp.gmail.com')
 SMTP_PORT = int(os.environ.get('SMTP_PORT', 587))
