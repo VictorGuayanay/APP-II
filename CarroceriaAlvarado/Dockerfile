@@ -23,24 +23,24 @@ RUN echo "deb [arch=amd64] https://packages.microsoft.com/debian/11/prod bullsey
 # Paso 4: Actualizar e instalar el driver
 RUN apt-get update && ACCEPT_EULA=Y apt-get install -y msodbcsql17 mssql-tools
 
-# Paso 5: Configurar el PATH para los tools de SQL
+# Paso 5: Configurar el PATH
 ENV PATH="$PATH:/opt/mssql-tools/bin"
 
 # Paso 6: Limpiar
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Configuración de la APP (Ajustada para trabajar desde la raíz del repo)
+# Configuración de la APP (Desde la raíz del proyecto)
 WORKDIR /app
 
-# Copiamos el requirements desde la carpeta backend
-COPY backend/requirements.txt .
+# Copiamos los requerimientos (ahora están en la raíz)
+COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copiamos el contenido de la carpeta backend al directorio de trabajo
+# Copiamos el contenido de la carpeta backend al directorio de trabajo del contenedor
 COPY backend/ .
 
-# Exponer puerto (Fly.io usa 8080 por defecto)
+# Exponer puerto de Fly.io
 EXPOSE 8080
 
-# Comando de inicio usando el puerto que asigne Fly.io
+# Comando de inicio
 CMD ["sh", "-c", "gunicorn app:app --bind 0.0.0.0:${PORT:-8080} --workers 2"]
