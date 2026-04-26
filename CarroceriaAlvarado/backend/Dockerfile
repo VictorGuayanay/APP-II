@@ -8,17 +8,16 @@ ENV PYTHONUNBUFFERED 1
 # Paso 1: Instalar herramientas base
 RUN apt-get update && apt-get install -y curl gnupg2 unixodbc-dev
 
-# Paso 2: Configurar la llave de seguridad de Microsoft de forma moderna
-RUN curl -sSL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor -o /usr/share/keyrings/microsoft-prod.gpg
+# Paso 2: Instalar la llave de Microsoft directamente en el llavero de confianza de APT
+RUN curl https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor -o /etc/apt/trusted.gpg.d/microsoft.gpg
 
-# Paso 3: Añadir el repositorio de Microsoft específicamente para Bullseye y AMD64
-RUN echo "deb [arch=amd64 signed-by=/usr/share/keyrings/microsoft-prod.gpg] https://packages.microsoft.com/debian/11/prod bullseye main" > /etc/apt/sources.list.d/mssql-release.list
+# Paso 3: Añadir el repositorio de Microsoft (sin el signed-by, ya que está en el llavero global)
+RUN echo "deb [arch=amd64] https://packages.microsoft.com/debian/11/prod bullseye main" > /etc/apt/sources.list.d/mssql-release.list
 
-# Paso 4: Actualizar e instalar el driver (msodbcsql17)
-# Incluimos mssql-tools por si acaso se necesitan dependencias compartidas
+# Paso 4: Actualizar e instalar el driver
 RUN apt-get update && ACCEPT_EULA=Y apt-get install -y msodbcsql17 mssql-tools
 
-# Paso 5: Configurar el PATH para los tools de SQL (opcional pero útil)
+# Paso 5: Configurar el PATH
 ENV PATH="$PATH:/opt/mssql-tools/bin"
 
 # Paso 6: Limpiar
