@@ -8,6 +8,7 @@ import bcrypt
 import jwt  # PyJWT
 import datetime
 import smtplib
+import json
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from functools import wraps
@@ -21,6 +22,7 @@ app = Flask(__name__)
 
 # 1. Configuración de SECRET_KEY
 app.config['SECRET_KEY'] = os.environ.get("FLASK_SECRET_KEY", "fallback_secret_key_low_security")
+app.json.ensure_ascii = False  # Para manejar correctamente ñ y tildes en JSON
 print(f"APP INIT: app.config['SECRET_KEY'] establecida.")
 
 # Variables Globales para Configuración (Cargadas desde .env con fallbacks)
@@ -61,18 +63,44 @@ _TOKEN_BLACKLIST_CACHE = set()
 
 
 # Configuración de base de datos dinámica
-conn_str = (
-    f"DRIVER={{{os.environ.get('DB_DRIVER', 'ODBC Driver 17 for SQL Server')}}};"
-    f"SERVER={os.environ.get('DB_SERVER', r'DESKTOP-OJ81G31\SQLEXPRESS')};" 
-    f"DATABASE={os.environ.get('DB_NAME', 'CarroceriaAlvaradoDB')};"
-    f"Trusted_Connection={os.environ.get('DB_TRUSTED_CONNECTION', 'yes')};"
-)
+_db_driver = os.environ.get('DB_DRIVER', 'ODBC Driver 17 for SQL Server')
+_db_server = os.environ.get('DB_SERVER', r'DESKTOP-OJ81G31\SQLEXPRESS')
+_db_name = os.environ.get('DB_NAME', 'CarroceriaAlvaradoDB')
+_db_user = os.environ.get('DB_USER')
+_db_pass = os.environ.get('DB_PASSWORD')
+
+if _db_user and _db_pass:
+    # Autenticación de SQL Server (Producción/Railway)
+    conn_str = (
+        f"DRIVER={{{_db_driver}}};"
+        f"SERVER={_db_server};"
+        f"DATABASE={_db_name};"
+        f"UID={_db_user};"
+        f"PWD={_db_pass};"
+        f"charset=utf8;"
+    )
+else:
+    # Autenticación de Windows (Desarrollo local)
+    conn_str = (
+        f"DRIVER={{{_db_driver}}};"
+        f"SERVER={_db_server};"
+        f"DATABASE={_db_name};"
+        f"Trusted_Connection={os.environ.get('DB_TRUSTED_CONNECTION', 'yes')};"
+        f"charset=utf8;"
+    )
 
 SMTP_SERVER = os.environ.get('SMTP_SERVER', 'smtp.gmail.com')
 SMTP_PORT = int(os.environ.get('SMTP_PORT', 587))
 SMTP_USERNAME = os.environ.get('SMTP_USERNAME', 'victorguayanay@gmail.com')
 SMTP_PASSWORD = os.environ.get('SMTP_PASSWORD', '')  # Requiere variable de entorno
 FRONTEND_BASE_URL = os.environ.get('FRONTEND_BASE_URL', 'http://127.0.0.1:8000')
+
+@app.after_request
+def add_header(response):
+    """Asegura que el charset sea UTF-8 en todas las respuestas."""
+    if response.mimetype == 'application/json':
+        response.headers['Content-Type'] = 'application/json; charset=utf-8'
+    return response
 
 
 def get_db_connection():
