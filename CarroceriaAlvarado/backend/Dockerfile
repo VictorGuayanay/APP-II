@@ -5,13 +5,19 @@ FROM python:3.11-slim-bullseye
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 
-# Paso 1: Instalar herramientas base
-RUN apt-get update && apt-get install -y curl gnupg2 unixodbc-dev
+# Paso 1: Instalar herramientas base y COMPILADORES (necesarios para pyodbc)
+RUN apt-get update && apt-get install -y \
+    curl \
+    gnupg2 \
+    unixodbc-dev \
+    gcc \
+    g++ \
+    build-essential
 
-# Paso 2: Instalar la llave de Microsoft directamente en el llavero de confianza de APT
+# Paso 2: Instalar la llave de Microsoft
 RUN curl https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor -o /etc/apt/trusted.gpg.d/microsoft.gpg
 
-# Paso 3: Añadir el repositorio de Microsoft (sin el signed-by, ya que está en el llavero global)
+# Paso 3: Añadir el repositorio de Microsoft
 RUN echo "deb [arch=amd64] https://packages.microsoft.com/debian/11/prod bullseye main" > /etc/apt/sources.list.d/mssql-release.list
 
 # Paso 4: Actualizar e instalar el driver
