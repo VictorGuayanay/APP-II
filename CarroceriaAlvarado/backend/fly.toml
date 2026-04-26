@@ -1,0 +1,25 @@
+# fly.toml configuration file for CarroceriaAlvarado Backend
+
+app = "carroceria-alvarado-backend"
+primary_region = "bog" # Puedes cambiarlo a tu región más cercana (ej: bog, qro, mia)
+
+[build]
+  dockerfile = "Dockerfile"
+
+[http_service]
+  internal_port = 5001
+  force_https = true
+  auto_stop_machines = true
+  auto_start_machines = true
+  min_machines_running = 0
+  processes = ["app"]
+
+[[vm]]
+  cpu_kind = "shared"
+  cpus = 1
+  memory_mb = 512
+
+[env]
+  FLASK_ENV = "production"
+  DB_NAME = "CarroceriaAlvaradoDB"
+  DB_DRIVER = "ODBC Driver 17 for SQL Server"
